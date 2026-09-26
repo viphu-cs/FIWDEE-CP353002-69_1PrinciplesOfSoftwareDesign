@@ -1,0 +1,626 @@
+@startuml class-diagram
+title FIWDEE Massage Management & Booking System - Complete UML Class Diagram with Design Patterns
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam roundcorner 6
+skinparam linetype ortho
+skinparam packagePadding 12
+skinparam nodesep 40
+skinparam ranksep 45
+
+' =========================================================================
+' 1. PRESENTATION LAYER
+' =========================================================================
+package "presentation" <<Layer: Presentation>> {
+    class BookingController <<Controller>> {
+        - bookingService: BookingService
+        - bookingMapper: BookingMapper
+        + BookingController(bookingService: BookingService, bookingMapper: BookingMapper)
+        + createBooking(request: BookingRequestDTO): ResponseEntity<BookingResponseDTO>
+        + confirmBooking(bookingId: Long): ResponseEntity<BookingResponseDTO>
+        + checkInBooking(bookingId: Long): ResponseEntity<BookingResponseDTO>
+        + startService(bookingId: Long): ResponseEntity<BookingResponseDTO>
+        + completeBooking(bookingId: Long): ResponseEntity<BookingResponseDTO>
+        + cancelBooking(bookingId: Long): ResponseEntity<Void>
+        + getBookingById(bookingId: Long): ResponseEntity<BookingResponseDTO>
+    }
+
+    class PaymentController <<Controller>> {
+        - paymentService: PaymentService
+        - paymentMapper: PaymentMapper
+        + PaymentController(paymentService: PaymentService, paymentMapper: PaymentMapper)
+        + processPayment(request: PaymentRequestDTO): ResponseEntity<PaymentResponseDTO>
+        + getReceipt(paymentId: Long): ResponseEntity<PaymentResponseDTO>
+    }
+
+    class QueueController <<Controller>> {
+        - queueService: QueueService
+        + QueueController(queueService: QueueService)
+        + getDailyQueue(): ResponseEntity<List<QueueItemResponseDTO>>
+        + callNextQueue(): ResponseEntity<QueueItemResponseDTO>
+    }
+
+    class BookingRequestDTO <<DTO>> {
+        + customerId: Long
+        + serviceId: Long
+        + durationOptionId: Long
+        + therapistId: Long
+        + roomId: Long
+        + startDateTime: DateTime
+        + bookingChannel: String
+        + specialNotes: String
+    }
+
+    class BookingResponseDTO <<DTO>> {
+        + bookingId: Long
+        + bookingReferenceCode: String
+        + customerName: String
+        + serviceName: String
+        + durationMinutes: Integer
+        + totalPrice: Decimal
+        + therapistName: String
+        + roomNumber: String
+        + startDateTime: DateTime
+        + endDateTime: DateTime
+        + status: BookingStatus
+    }
+
+    class PaymentRequestDTO <<DTO>> {
+        + bookingId: Long
+        + amount: Decimal
+        + paymentMethod: PaymentMethod
+        + transactionNote: String
+    }
+
+    class PaymentResponseDTO <<DTO>> {
+        + paymentId: Long
+        + paymentReferenceCode: String
+        + receiptNumber: String
+        + netAmount: Decimal
+        + paymentMethod: PaymentMethod
+        + paymentStatus: PaymentStatus
+        + paidAt: DateTime
+    }
+
+    class QueueItemResponseDTO <<DTO>> {
+        + queueId: Long
+        + queueNumber: String
+        + queueDate: Date
+        + checkInTime: DateTime
+        + queueStatus: QueueStatus
+        + priorityLevel: Integer
+        + customerName: String
+    }
+
+    class BookingMapper <<Mapper>> {
+        + toEntity(dto: BookingRequestDTO): Booking
+        + toResponseDTO(entity: Booking): BookingResponseDTO
+    }
+
+    class PaymentMapper <<Mapper>> {
+        + toEntity(dto: PaymentRequestDTO, booking: Booking): Payment
+        + toResponseDTO(entity: Payment): PaymentResponseDTO
+    }
+}
+
+' =========================================================================
+' 2. APPLICATION / SERVICE LAYER
+' =========================================================================
+package "application" <<Layer: Application>> {
+    class BookingService <<Service>> {
+        - bookingRepository: BookingRepository
+        - roomRepository: RoomRepository
+        - therapistRepository: TherapistRepository
+        - eventPublisher: ApplicationEventPublisher
+        + BookingService(br: BookingRepository, rr: RoomRepository, tr: TherapistRepository, ep: ApplicationEventPublisher)
+        + createBooking(booking: Booking): Booking
+        + confirmBooking(bookingId: Long): Booking
+        + checkInBooking(bookingId: Long): Booking
+        + startService(bookingId: Long): Booking
+        + completeBooking(bookingId: Long): Booking
+        + cancelBooking(bookingId: Long): void
+        + markNoShow(bookingId: Long): void
+        + getBookingById(bookingId: Long): Booking
+    }
+
+    class PaymentService <<Service>> {
+        - paymentRepository: PaymentRepository
+        - bookingRepository: BookingRepository
+        - strategyFactory: PaymentStrategyFactory
+        + PaymentService(pr: PaymentRepository, br: BookingRepository, sf: PaymentStrategyFactory)
+        + processPayment(bookingId: Long, method: PaymentMethod, note: String): Payment
+        + processRefund(paymentId: Long, amount: Decimal, reason: String, staffName: String): Refund
+        + getPaymentById(paymentId: Long): Payment
+    }
+
+    class QueueService <<Service>> {
+        - queueRepository: QueueItemRepository
+        - bookingRepository: BookingRepository
+        + QueueService(qr: QueueItemRepository, br: BookingRepository)
+        + generateQueueItem(booking: Booking): QueueItem
+        + callNextQueue(): QueueItem
+        + updateQueueStatus(queueId: Long, status: QueueStatus): void
+    }
+
+    class TherapistService <<Service>> {
+        - therapistRepository: TherapistRepository
+        - scheduleRepository: TherapistScheduleRepository
+        + TherapistService(tr: TherapistRepository, sr: TherapistScheduleRepository)
+        + calculateEarnings(therapistId: Long, startDate: Date, endDate: Date): Decimal
+        + getAvailableTherapists(date: Date, startTime: Time, serviceId: Long): List<Therapist>
+    }
+}
+
+' =========================================================================
+' 3. DOMAIN LAYER
+' =========================================================================
+package "domain" <<Layer: Domain>> {
+    class Shop {
+        + shopId: Long
+        + shopName: String
+        + address: String
+        + phoneNumber: String
+        + description: String
+        + isActive: Boolean
+    }
+
+    class BusinessHours {
+        + businessHoursId: Long
+        + dayOfWeek: DayOfWeek
+        + openTime: Time
+        + closeTime: Time
+        + isClosed: Boolean
+    }
+
+    class User {
+        + userId: Long
+        + username: String
+        + passwordHash: String
+        + fullName: String
+        + email: String
+        + phoneNumber: String
+        + role: UserRole
+        + isActive: Boolean
+        + createdAt: DateTime
+    }
+
+    class Customer extends User {
+        + customerId: Long
+        + healthNotes: String
+        + preferredPressure: String
+        + registeredDate: DateTime
+    }
+
+    class Therapist extends User {
+        + therapistId: Long
+        + nickname: String
+        + bio: String
+        + commissionRate: Decimal
+        + employmentStatus: String
+        + averageRating: Decimal
+        + isActive: Boolean
+    }
+
+    class Receptionist extends User {
+        + receptionistId: Long
+        + staffCode: String
+        + counterStation: String
+    }
+
+    class Owner extends User {
+        + ownerId: Long
+        + managementLevel: String
+    }
+
+    class Service {
+        + serviceId: Long
+        + serviceCode: String
+        + serviceName: String
+        + description: String
+        + category: String
+        + requiredRoomType: RoomType
+        + isActive: Boolean
+    }
+
+    class ServiceDurationOption {
+        + durationOptionId: Long
+        + durationMinutes: Integer
+        + price: Decimal
+        + isActive: Boolean
+    }
+
+    class TherapistSkill {
+        + skillId: Long
+        + skillLevel: String
+        + isCertified: Boolean
+        + certifiedDate: Date
+    }
+
+    class Room {
+        + roomId: Long
+        + roomNumber: String
+        + roomType: RoomType
+        + capacity: Integer
+        + roomStatus: RoomStatus
+        + cleaningBufferMinutes: Integer
+        + isActive: Boolean
+    }
+
+    class TherapistSchedule {
+        + scheduleId: Long
+        + scheduleDate: Date
+        + isDayOff: Boolean
+        + leaveReason: String
+        + notes: String
+    }
+
+    class WorkShift {
+        + shiftId: Long
+        + shiftName: String
+        + startTime: Time
+        + endTime: Time
+        + shiftStatus: String
+    }
+
+    class Booking {
+        + bookingId: Long
+        + bookingReferenceCode: String
+        + startDateTime: DateTime
+        + endDateTime: DateTime
+        + totalPrice: Decimal
+        + status: BookingStatus
+        + bookingChannel: String
+        + specialNotes: String
+        + actualStartTime: DateTime
+        + actualEndTime: DateTime
+        + createdAt: DateTime
+        + updatedAt: DateTime
+        - currentState: BookingState
+        + transitionTo(state: BookingState): void
+        + confirm(): void
+        + checkIn(): void
+        + startService(): void
+        + complete(): void
+        + cancel(): void
+        + markNoShow(): void
+    }
+
+    class QueueItem {
+        + queueId: Long
+        + queueNumber: String
+        + queueDate: Date
+        + checkInTime: DateTime
+        + calledTime: DateTime
+        + queueStatus: QueueStatus
+        + priorityLevel: Integer
+    }
+
+    class Payment {
+        + paymentId: Long
+        + paymentReferenceCode: String
+        + receiptNumber: String
+        + grossAmount: Decimal
+        + discountAmount: Decimal
+        + netAmount: Decimal
+        + paymentMethod: PaymentMethod
+        + paymentStatus: PaymentStatus
+        + paidAt: DateTime
+        + transactionNote: String
+    }
+
+    class Refund {
+        + refundId: Long
+        + refundReferenceCode: String
+        + refundAmount: Decimal
+        + reason: String
+        + status: RefundStatus
+        + refundedAt: DateTime
+        + processedByStaff: String
+    }
+
+    class Review {
+        + reviewId: Long
+        + overallRating: Integer
+        + therapistRating: Integer
+        + cleanlinessRating: Integer
+        + comment: String
+        + submittedAt: DateTime
+    }
+
+    enum UserRole {
+        CUSTOMER
+        RECEPTIONIST
+        THERAPIST
+        OWNER
+    }
+
+    enum BookingStatus {
+        PENDING
+        CONFIRMED
+        CHECKED_IN
+        IN_SERVICE
+        COMPLETED
+        CANCELLED
+        NO_SHOW
+    }
+
+    enum RoomType {
+        SINGLE
+        COUPLE
+        VIP
+        FOOT_MASSAGE
+    }
+
+    enum RoomStatus {
+        AVAILABLE
+        OCCUPIED
+        CLEANING
+        MAINTENANCE
+    }
+
+    enum QueueStatus {
+        WAITING
+        CALLED
+        IN_SERVICE
+        COMPLETED
+        CANCELLED
+    }
+
+    enum PaymentMethod {
+        CASH
+        QR_PROMPTPAY
+        CREDIT_CARD
+    }
+
+    enum PaymentStatus {
+        PENDING
+        COMPLETED
+        REFUNDED
+        FAILED
+    }
+
+    enum RefundStatus {
+        PENDING
+        COMPLETED
+        FAILED
+    }
+
+    enum DayOfWeek {
+        MONDAY
+        TUESDAY
+        WEDNESDAY
+        THURSDAY
+        FRIDAY
+        SATURDAY
+        SUNDAY
+    }
+}
+
+' =========================================================================
+' 4. PERSISTENCE / INFRASTRUCTURE LAYER
+' =========================================================================
+package "infrastructure" <<Layer: Persistence>> {
+    interface BookingRepository <<Repository>> {
+        + findById(id: Long): Optional<Booking>
+        + save(booking: Booking): Booking
+        + findByCustomer(customer: Customer): List<Booking>
+        + findActiveBookingsByRoomAndPeriod(roomId: Long, start: DateTime, end: DateTime): List<Booking>
+        + findActiveBookingsByTherapistAndPeriod(therapistId: Long, start: DateTime, end: DateTime): List<Booking>
+    }
+
+    interface PaymentRepository <<Repository>> {
+        + findById(id: Long): Optional<Payment>
+        + save(payment: Payment): Payment
+        + findByBooking(booking: Booking): Optional<Payment>
+    }
+
+    interface RoomRepository <<Repository>> {
+        + findById(id: Long): Optional<Room>
+        + findAvailableRooms(type: RoomType, start: DateTime, end: DateTime): List<Room>
+    }
+
+    interface TherapistRepository <<Repository>> {
+        + findById(id: Long): Optional<Therapist>
+        + findActiveTherapists(): List<Therapist>
+    }
+
+    interface ServiceRepository <<Repository>> {
+        + findById(id: Long): Optional<Service>
+        + findByIsActiveTrue(): List<Service>
+    }
+
+    interface QueueItemRepository <<Repository>> {
+        + findByQueueDateAndStatus(date: Date, status: QueueStatus): List<QueueItem>
+        + save(queueItem: QueueItem): QueueItem
+    }
+
+    interface CustomerRepository <<Repository>> {
+        + findById(id: Long): Optional<Customer>
+        + findByPhoneNumber(phoneNumber: String): Optional<Customer>
+    }
+
+    interface TherapistScheduleRepository <<Repository>> {
+        + findByTherapistAndScheduleDate(therapist: Therapist, date: Date): Optional<TherapistSchedule>
+    }
+}
+
+' =========================================================================
+' 5. GOF BEHAVIORAL PATTERNS
+' =========================================================================
+package "pattern.state" <<GoF: State Pattern>> {
+    interface BookingState <<State Interface>> {
+        + confirm(booking: Booking): void
+        + checkIn(booking: Booking): void
+        + startService(booking: Booking): void
+        + complete(booking: Booking): void
+        + cancel(booking: Booking): void
+        + markNoShow(booking: Booking): void
+        + getStatus(): BookingStatus
+    }
+
+    abstract class AbstractBookingState <<Abstract Base State>> implements BookingState {
+        + confirm(booking: Booking): void
+        + checkIn(booking: Booking): void
+        + startService(booking: Booking): void
+        + complete(booking: Booking): void
+        + cancel(booking: Booking): void
+        + markNoShow(booking: Booking): void
+        # throwInvalidTransition(action: String): void
+    }
+
+    class PendingState extends AbstractBookingState {
+        + confirm(booking: Booking): void
+        + cancel(booking: Booking): void
+        + markNoShow(booking: Booking): void
+        + getStatus(): BookingStatus
+    }
+
+    class ConfirmedState extends AbstractBookingState {
+        + checkIn(booking: Booking): void
+        + cancel(booking: Booking): void
+        + markNoShow(booking: Booking): void
+        + getStatus(): BookingStatus
+    }
+
+    class CheckedInState extends AbstractBookingState {
+        + startService(booking: Booking): void
+        + cancel(booking: Booking): void
+        + getStatus(): BookingStatus
+    }
+
+    class InServiceState extends AbstractBookingState {
+        + complete(booking: Booking): void
+        + getStatus(): BookingStatus
+    }
+
+    class CompletedState extends AbstractBookingState {
+        + getStatus(): BookingStatus
+    }
+
+    class CancelledState extends AbstractBookingState {
+        + getStatus(): BookingStatus
+    }
+
+    class NoShowState extends AbstractBookingState {
+        + getStatus(): BookingStatus
+    }
+}
+
+package "pattern.strategy" <<GoF: Strategy Pattern>> {
+    interface PaymentStrategy <<Strategy Interface>> {
+        + processPayment(payment: Payment): Boolean
+        + getSupportedMethod(): PaymentMethod
+    }
+
+    class CashPaymentStrategy implements PaymentStrategy {
+        + processPayment(payment: Payment): Boolean
+        + getSupportedMethod(): PaymentMethod
+    }
+
+    class QRPaymentStrategy implements PaymentStrategy {
+        + processPayment(payment: Payment): Boolean
+        + generatePromptPayQR(payment: Payment): String
+        + getSupportedMethod(): PaymentMethod
+    }
+
+    class CardPaymentStrategy implements PaymentStrategy {
+        + processPayment(payment: Payment): Boolean
+        + chargeCreditCard(payment: Payment): Boolean
+        + getSupportedMethod(): PaymentMethod
+    }
+
+    class PaymentStrategyFactory <<Factory>> {
+        - strategyMap: Map<PaymentMethod, PaymentStrategy>
+        + PaymentStrategyFactory(strategies: List<PaymentStrategy>)
+        + getStrategy(method: PaymentMethod): PaymentStrategy
+    }
+}
+
+package "pattern.observer" <<GoF: Observer Pattern>> {
+    class BookingStatusChangedEvent <<Event Object>> {
+        + bookingId: Long
+        + oldStatus: BookingStatus
+        + newStatus: BookingStatus
+        + timestamp: DateTime
+        + BookingStatusChangedEvent(source: Object, bookingId: Long, oldStatus: BookingStatus, newStatus: BookingStatus)
+    }
+
+    class NotificationListener <<Observer>> {
+        + onBookingStatusChanged(event: BookingStatusChangedEvent): void
+        - sendCustomerNotification(event: BookingStatusChangedEvent): void
+    }
+
+    class QueueListener <<Observer>> {
+        - queueService: QueueService
+        + QueueListener(queueService: QueueService)
+        + onBookingStatusChanged(event: BookingStatusChangedEvent): void
+    }
+}
+
+' =========================================================================
+' RELATIONSHIPS & ASSOCIATIONS (100% Exact Matching Domain Model)
+' =========================================================================
+Shop "1" *-- "1..*" BusinessHours : hasBusinessHours
+User <|-- Customer : Generalizes
+User <|-- Therapist : Generalizes
+User <|-- Receptionist : Generalizes
+User <|-- Owner : Generalizes
+
+Service "1" *-- "1..*" ServiceDurationOption : offers
+Therapist "1" -- "0..*" TherapistSkill : hasSkill
+Service "1" -- "0..*" TherapistSkill : qualifiedFor
+
+Therapist "1" -- "0..*" TherapistSchedule : hasSchedule
+TherapistSchedule "1" *-- "0..*" WorkShift : containsShift
+
+Customer "1" -- "0..*" Booking : places
+Therapist "0..1" -- "0..*" Booking : performs
+Room "1" -- "0..*" Booking : hosts
+Service "1" -- "0..*" Booking : specifies
+Booking "0..*" -- "1" ServiceDurationOption : selectsDuration
+Booking "1" -- "0..1" QueueItem : generatesQueueItem
+Receptionist "0..1" -- "0..*" Booking : manages
+
+Booking "1" -- "0..1" Payment : settledBy
+Payment "1" -- "0..*" Refund : hasRefund
+Booking "1" -- "0..1" Review : receivesReview
+Receptionist "0..1" -- "0..*" Payment : processes
+
+' =========================================================================
+' ARCHITECTURE WIRING (Strict Top-Down Dependency)
+' =========================================================================
+BookingController --> BookingService : <<Dependency Injection>>
+BookingController --> BookingMapper : uses
+PaymentController --> PaymentService : <<Dependency Injection>>
+PaymentController --> PaymentMapper : uses
+QueueController --> QueueService : <<Dependency Injection>>
+
+BookingMapper ..> BookingRequestDTO : maps from
+BookingMapper ..> BookingResponseDTO : maps to
+BookingMapper ..> Booking : creates / reads
+PaymentMapper ..> PaymentRequestDTO : maps from
+PaymentMapper ..> PaymentResponseDTO : maps to
+PaymentMapper ..> Payment : creates / reads
+
+BookingService --> BookingRepository : <<Dependency Injection>>
+BookingService --> RoomRepository : <<Dependency Injection>>
+BookingService --> TherapistRepository : <<Dependency Injection>>
+BookingService ..> BookingStatusChangedEvent : publishes
+
+PaymentService --> PaymentRepository : <<Dependency Injection>>
+PaymentService --> BookingRepository : <<Dependency Injection>>
+PaymentService --> PaymentStrategyFactory : gets strategy
+PaymentService ..> PaymentStrategy : delegates payment
+
+QueueService --> QueueItemRepository : <<Dependency Injection>>
+QueueService --> BookingRepository : <<Dependency Injection>>
+
+TherapistService --> TherapistRepository : <<Dependency Injection>>
+TherapistService --> TherapistScheduleRepository : <<Dependency Injection>>
+
+Booking --> BookingState : delegates lifecycle
+NotificationListener ..> BookingStatusChangedEvent : observes
+QueueListener ..> BookingStatusChangedEvent : observes
+QueueListener --> QueueService : triggers queue creation
+
+@enduml
