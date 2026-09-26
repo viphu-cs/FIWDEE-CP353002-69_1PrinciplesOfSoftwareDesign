@@ -1,0 +1,243 @@
+@startuml er-diagram
+title FIWDEE Massage Management System - Entity-Relationship Diagram (ERD)
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 6
+skinparam handwritten false
+skinparam classAttributeIconSize 0
+
+' Colors
+skinparam entity {
+    BackgroundColor White
+    BorderColor #2B3A42
+    ArrowColor #2B3A42
+}
+
+entity "users" as users {
+    * **id** : BIGINT <<PK>>
+    --
+    * **username** : VARCHAR(50) <<UNIQUE>>
+    * **password_hash** : VARCHAR(255)
+    * **full_name** : VARCHAR(100)
+    * **email** : VARCHAR(100) <<UNIQUE>>
+    * **phone_number** : VARCHAR(20) <<UNIQUE>>
+    * **role** : VARCHAR(20)
+    * **is_active** : BOOLEAN
+    * **created_at** : TIMESTAMP
+}
+
+entity "customers" as customers {
+    * **id** : BIGINT <<PK, FK>>
+    --
+    health_notes : TEXT
+    preferred_pressure : VARCHAR(50)
+    * **registered_date** : TIMESTAMP
+}
+
+entity "therapists" as therapists {
+    * **id** : BIGINT <<PK, FK>>
+    --
+    * **nickname** : VARCHAR(50)
+    bio : TEXT
+    * **commission_rate** : DECIMAL(5,2)
+    * **employment_status** : VARCHAR(30)
+    * **average_rating** : DECIMAL(3,2)
+    * **is_active** : BOOLEAN
+}
+
+entity "receptionists" as receptionists {
+    * **id** : BIGINT <<PK, FK>>
+    --
+    * **staff_code** : VARCHAR(30) <<UNIQUE>>
+    counter_station : VARCHAR(50)
+}
+
+entity "owners" as owners {
+    * **id** : BIGINT <<PK, FK>>
+    --
+    management_level : VARCHAR(50)
+}
+
+entity "shops" as shops {
+    * **id** : BIGINT <<PK>>
+    --
+    * **shop_name** : VARCHAR(100)
+    * **address** : VARCHAR(255)
+    * **phone_number** : VARCHAR(20)
+    description : TEXT
+    * **is_active** : BOOLEAN
+}
+
+entity "business_hours" as business_hours {
+    * **id** : BIGINT <<PK>>
+    --
+    * **shop_id** : BIGINT <<FK>>
+    * **day_of_week** : VARCHAR(10)
+    * **open_time** : TIME
+    * **close_time** : TIME
+    * **is_closed** : BOOLEAN
+}
+
+entity "services" as services {
+    * **id** : BIGINT <<PK>>
+    --
+    * **service_code** : VARCHAR(30) <<UNIQUE>>
+    * **service_name** : VARCHAR(100)
+    description : TEXT
+    * **category** : VARCHAR(50)
+    * **required_room_type** : VARCHAR(30)
+    * **is_active** : BOOLEAN
+}
+
+entity "service_duration_options" as service_duration_options {
+    * **id** : BIGINT <<PK>>
+    --
+    * **service_id** : BIGINT <<FK>>
+    * **duration_minutes** : INT
+    * **price** : DECIMAL(10,2)
+    * **is_active** : BOOLEAN
+}
+
+entity "therapist_skills" as therapist_skills {
+    * **id** : BIGINT <<PK>>
+    --
+    * **therapist_id** : BIGINT <<FK>>
+    * **service_id** : BIGINT <<FK>>
+    skill_level : VARCHAR(30)
+    * **is_certified** : BOOLEAN
+    certified_date : DATE
+}
+
+entity "rooms" as rooms {
+    * **id** : BIGINT <<PK>>
+    --
+    * **room_number** : VARCHAR(20) <<UNIQUE>>
+    * **room_type** : VARCHAR(30)
+    * **capacity** : INT
+    * **room_status** : VARCHAR(30)
+    * **cleaning_buffer_minutes** : INT
+    * **is_active** : BOOLEAN
+}
+
+entity "therapist_schedules" as therapist_schedules {
+    * **id** : BIGINT <<PK>>
+    --
+    * **therapist_id** : BIGINT <<FK>>
+    * **schedule_date** : DATE
+    * **is_day_off** : BOOLEAN
+    leave_reason : VARCHAR(255)
+    notes : TEXT
+}
+
+entity "work_shifts" as work_shifts {
+    * **id** : BIGINT <<PK>>
+    --
+    * **schedule_id** : BIGINT <<FK>>
+    * **shift_name** : VARCHAR(50)
+    * **start_time** : TIME
+    * **end_time** : TIME
+    * **shift_status** : VARCHAR(30)
+}
+
+entity "bookings" as bookings {
+    * **id** : BIGINT <<PK>>
+    --
+    * **booking_reference_code** : VARCHAR(50) <<UNIQUE>>
+    * **customer_id** : BIGINT <<FK>>
+    therapist_id : BIGINT <<FK>>
+    * **room_id** : BIGINT <<FK>>
+    * **service_id** : BIGINT <<FK>>
+    * **duration_option_id** : BIGINT <<FK>>
+    receptionist_id : BIGINT <<FK>>
+    * **start_date_time** : TIMESTAMP
+    * **end_date_time** : TIMESTAMP
+    * **total_price** : DECIMAL(10,2)
+    * **status** : VARCHAR(30)
+    * **booking_channel** : VARCHAR(50)
+    special_notes : TEXT
+    actual_start_time : TIMESTAMP
+    actual_end_time : TIMESTAMP
+    * **created_at** : TIMESTAMP
+    * **updated_at** : TIMESTAMP
+}
+
+entity "queue_items" as queue_items {
+    * **id** : BIGINT <<PK>>
+    --
+    * **booking_id** : BIGINT <<FK, UNIQUE>>
+    * **queue_number** : VARCHAR(20)
+    * **queue_date** : DATE
+    * **check_in_time** : TIMESTAMP
+    called_time : TIMESTAMP
+    * **queue_status** : VARCHAR(30)
+    * **priority_level** : INT
+}
+
+entity "payments" as payments {
+    * **id** : BIGINT <<PK>>
+    --
+    * **booking_id** : BIGINT <<FK, UNIQUE>>
+    receptionist_id : BIGINT <<FK>>
+    * **payment_reference_code** : VARCHAR(50) <<UNIQUE>>
+    receipt_number : VARCHAR(50) <<UNIQUE>>
+    * **gross_amount** : DECIMAL(10,2)
+    * **discount_amount** : DECIMAL(10,2)
+    * **net_amount** : DECIMAL(10,2)
+    * **payment_method** : VARCHAR(30)
+    * **payment_status** : VARCHAR(30)
+    paid_at : TIMESTAMP
+    transaction_note : TEXT
+}
+
+entity "refunds" as refunds {
+    * **id** : BIGINT <<PK>>
+    --
+    * **payment_id** : BIGINT <<FK>>
+    * **refund_reference_code** : VARCHAR(50) <<UNIQUE>>
+    * **refund_amount** : DECIMAL(10,2)
+    * **reason** : VARCHAR(255)
+    * **status** : VARCHAR(30)
+    refunded_at : TIMESTAMP
+    * **processed_by_staff** : VARCHAR(100)
+}
+
+entity "reviews" as reviews {
+    * **id** : BIGINT <<PK>>
+    --
+    * **booking_id** : BIGINT <<FK, UNIQUE>>
+    * **overall_rating** : INT
+    * **therapist_rating** : INT
+    * **cleanliness_rating** : INT
+    comment : TEXT
+    * **submitted_at** : TIMESTAMP
+}
+
+' Relationships
+users ||--o| customers : "specializes as (1:0..1)"
+users ||--o| therapists : "specializes as (1:0..1)"
+users ||--o| receptionists : "specializes as (1:0..1)"
+users ||--o| owners : "specializes as (1:0..1)"
+
+shops ||--|{ business_hours : "has operating hours (1:1..*)"
+
+services ||--|{ service_duration_options : "offers (1:1..*)"
+therapists ||--o{ therapist_skills : "has skill (1:0..*)"
+services ||--o{ therapist_skills : "qualified for (1:0..*)"
+
+therapists ||--o{ therapist_schedules : "has schedule (1:0..*)"
+therapist_schedules ||--o{ work_shifts : "contains shifts (1:0..*)"
+
+customers ||--o{ bookings : "places (1:0..*)"
+therapists |o--o{ bookings : "performs (0..1:0..*)"
+rooms ||--o{ bookings : "hosts (1:0..*)"
+services ||--o{ bookings : "specifies (1:0..*)"
+service_duration_options ||--o{ bookings : "selects duration (1:0..*)"
+receptionists |o--o{ bookings : "manages (0..1:0..*)"
+
+bookings ||--o| queue_items : "generates queue (1:0..1)"
+bookings ||--o| payments : "settled by (1:0..1)"
+receptionists |o--o{ payments : "processes (0..1:0..*)"
+payments ||--o{ refunds : "has refund audit (1:0..*)"
+bookings ||--o| reviews : "receives review (1:0..1)"
+
+@enduml

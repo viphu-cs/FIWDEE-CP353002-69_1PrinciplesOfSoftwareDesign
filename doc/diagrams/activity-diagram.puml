@@ -1,0 +1,426 @@
+@startuml activity-diagram-main
+title FIWDEE Massage Management - End-to-End Booking & Service Flow (Main Flow)
+skinparam shadowing false
+skinparam roundcorner 6
+skinparam ParticipantPadding 10
+skinparam BoxPadding 10
+
+|Customer|
+start
+:Browse & Select Service and Duration;
+:Select Desired Date, Time & Preferences;
+
+|System|
+:Check Service Validity (ServiceRepository.findById);
+:Check Therapist Shifts & Skills (TherapistScheduleRepository, TherapistRepository);
+:Check Room Availability & 15-min Buffer (RoomRepository.findAvailableRooms);
+
+note right
+Availability check and final reservation are executed
+under appropriate transaction / concurrency control
+to prevent double booking (UC-07 / UC-08).
+end note
+
+if (Resources Available?) then (yes)
+    :Initialize Booking with Status [PENDING];
+    if (Payment Required Upfront?) then (yes - Online Advance)
+        |Customer|
+        :Select Payment Method (PromptPay QR / Card);
+        :Submit Payment Request;
+        
+        |System|
+        :Create Payment Entity;
+        :Obtain Strategy (PaymentStrategyFactory.getStrategy);
+        :Delegate Payment (PaymentStrategy.processPayment);
+        
+        |Payment Gateway|
+        :Process Transaction with Bank / Gateway;
+        if (Payment Successful?) then (yes)
+            |System|
+            :Set Payment Status to [COMPLETED];
+            :Save Payment (PaymentRepository.save);
+            :Confirm Booking (Booking.confirm);
+            note right
+            Booking delegates to PendingState.confirm(booking)
+            which transitions state to [CONFIRMED]
+            end note
+            :Save Booking (BookingRepository.save);
+        else (no)
+            |System|
+            :Set Payment Status to [FAILED];
+            :Cancel Booking (Booking.cancel);
+            |Customer|
+            :Display Payment Failed Alert;
+            stop
+        endif
+    else (no - Walk-in / Direct Auto-Confirm)
+        |System|
+        :Confirm Booking Directly (Booking.confirm);
+        note right
+        Booking delegates to PendingState.confirm(booking)
+        which transitions state to [CONFIRMED]
+        end note
+        :Save Booking (BookingRepository.save);
+    endif
+else (no - Conflict Detected)
+    |System|
+    :Notify Resource Unavailable (409 Conflict);
+    |Customer|
+    :View Alternative Available Time Slots;
+    stop
+endif
+
+|Customer|
+:Arrive at Massage Shop;
+
+|Staff|
+:Initiate Customer Check-in (POST /api/bookings/{id}/check-in);
+
+|System|
+if (Check-in Timing Valid?) then (within window <= 30 mins before)
+    :Check In Booking (Booking.checkIn);
+    note right
+    Booking delegates to ConfirmedState.checkIn(booking)
+    which transitions state to [CHECKED_IN]
+    end note
+    :Save Booking (BookingRepository.save);
+    :Publish BookingStatusChangedEvent (CONFIRMED -> CHECKED_IN);
+    fork
+        :NotificationListener sends Alert to Assigned Therapist;
+    fork again
+        :QueueListener triggers QueueService.generateQueueItem;
+        :Create QueueItem with Status [WAITING];
+        :Save QueueItem (QueueItemRepository.save);
+    end fork
+else (late > 15 mins)
+    |Staff|
+    if (Customer No-Show?) then (yes)
+        |System|
+        :Mark Booking as [NO_SHOW] (Booking.markNoShow);
+        :Release Room & Therapist Resources;
+        stop
+    else (no - Customer Arrived Late)
+        |Staff|
+        :Adjust Service Duration / Accommodate;
+        |System|
+        :Check In Booking (Booking.checkIn);
+        :Save Booking (BookingRepository.save);
+    endif
+endif
+
+|Customer|
+:Wait in Lounge for Queue Call;
+
+|Staff|
+:Call Next Queue (POST /api/queue/call-next);
+:Guide Customer to Assigned Room;
+:Initiate Service Start (POST /api/bookings/{id}/start);
+
+|System|
+:Start Service (Booking.startService);
+note right
+Booking delegates to CheckedInState.startService(booking)
+which transitions state to [IN_SERVICE]
+and records actualStartTime = DateTime.now()
+end note
+:Fetch Room (RoomRepository.findById);
+:Set Room Status to [OCCUPIED] (Room.setRoomStatus);
+:Save Room (RoomRepository.save);
+:Save Booking (BookingRepository.save);
+
+|Staff|
+:Perform Massage Service for Scheduled Duration;
+:Service Time Concludes;
+:Submit Physical Completion (POST /api/bookings/{id}/complete-physical);
+
+|System|
+:Record Physical Completion (BookingService.recordPhysicalCompletion);
+:Set actualEndTime = DateTime.now();
+note right
+Booking status STRICTLY REMAINS [IN_SERVICE]
+until financial settlement is completed.
+end note
+:Fetch Room (RoomRepository.findById);
+:Set Room Status to [CLEANING] (Room.setRoomStatus);
+:Save Room (RoomRepository.save);
+note right: 15-minute turnover buffer begins (BR-RES-03 / cleaningBufferMinutes)
+:Save Booking (BookingRepository.save);
+
+|Staff|
+:Guide Customer to Counter for Financial Settlement;
+
+|System|
+if (Payment Already COMPLETED?) then (yes - Paid Online in Advance)
+    ' Payment is already COMPLETED
+else (no - Pay at Counter)
+    |Customer|
+    :Present Payment (Cash / QR / Card);
+    |Staff|
+    :Submit Payment Request (POST /api/payments);
+    |System|
+    :Validate Amount against Booking.totalPrice;
+    :Create Payment Entity;
+    :Obtain Strategy (PaymentStrategyFactory.getStrategy);
+    :Process Payment (PaymentStrategy.processPayment);
+    if (Payment Method) then (Cash)
+        |Staff|
+        :Receive Cash, Calculate Change & Record Cash Drawer;
+    else (QR / Card)
+        |Payment Gateway|
+        :Verify PromptPay Slip or Charge Card via EDC Terminal;
+    endif
+    |System|
+    :Set Payment Status to [COMPLETED];
+    :Set paidAt = DateTime.now() & Generate receiptNumber;
+    :Save Payment (PaymentRepository.save);
+    :Link Payment to Booking (Booking.setPayment);
+endif
+
+|System|
+:Execute Booking Completion (Booking.complete);
+note right
+InServiceState.complete(booking) verifies Invariant:
+Payment.paymentStatus == COMPLETED
+end note
+
+if (Payment Status == COMPLETED?) then (yes)
+    :Transition Booking to [COMPLETED];
+    :Save Booking (BookingRepository.save);
+    :Publish BookingStatusChangedEvent (IN_SERVICE -> COMPLETED);
+    :NotificationListener sends Thank You & Receipt to Customer;
+else (no)
+    :Throw IllegalStateException;
+    :Booking Remains [IN_SERVICE];
+    stop
+endif
+
+|Customer|
+:Receive Receipt and Conclude Service;
+
+note right
+Architectural Gap: Review Module (UC-18 Submit Review & Rating)
+is planned at domain level (Booking 1 -- 0..1 Review),
+deferred for implementation.
+end note
+
+stop
+@enduml
+
+@startuml activity-diagram-checkin-queue
+title FIWDEE Massage Management - Check-in & Queue Management Flow (UC-12, UC-13, UC-14)
+skinparam shadowing false
+skinparam roundcorner 6
+
+|Customer|
+start
+:Arrive at Shop Front Desk;
+:Provide Booking Reference Code / Phone Number;
+
+|Staff|
+:Search Booking (BookingRepository.findById / findByCustomer);
+:Submit Check-in Request (POST /api/bookings/{id}/check-in);
+
+|System|
+:Validate Current Time vs Booking.startDateTime;
+if (Arrival Time Check) then (Early > 30 mins)
+    :Reject Check-in (400 Bad Request);
+    |Staff|
+    :Inform Customer to wait until Check-in Window opens (BR-QUE-01);
+    stop
+else if (Arrival Time Check) then (Late > 15 mins)
+    |Staff|
+    if (Customer No-Show?) then (yes)
+        |Staff|
+        :Mark No-Show in System;
+        |System|
+        :Booking.markNoShow();
+        :Status becomes [NO_SHOW];
+        :Release Reserved Room and Therapist;
+        :Save Booking (BookingRepository.save);
+        stop
+    else (no - Customer Present)
+        |Staff|
+        :Agree on Adjusted Duration / Schedule;
+        |System|
+        :Booking.checkIn();
+        :Status becomes [CHECKED_IN];
+    endif
+else (Valid Window: 0 - 30 mins before)
+    |System|
+    :Booking.checkIn();
+    note right
+    Delegates to ConfirmedState.checkIn(booking)
+    -> Status becomes [CHECKED_IN]
+    end note
+endif
+
+|System|
+:Save Booking (BookingRepository.save);
+:Publish BookingStatusChangedEvent (CONFIRMED -> CHECKED_IN);
+fork
+    :NotificationListener sends Notification to Assigned Therapist;
+fork again
+    :QueueListener triggers QueueService.generateQueueItem(booking);
+    :Generate Daily Sequential Queue Number;
+    :Create QueueItem with Status [WAITING] & Priority;
+    :Save QueueItem (QueueItemRepository.save);
+end fork
+
+|Staff|
+:Print / Issue Queue Ticket to Customer;
+
+|Customer|
+:Receive Queue Ticket & Wait in Reception Area;
+
+|Staff|
+:Monitor Daily Queue Board (QueueController.getDailyQueue);
+:Call Next Queue (QueueController.callNextQueue);
+
+|System|
+:Update QueueItem Status to [CALLED];
+:Save QueueItem (QueueItemRepository.save);
+
+|Staff|
+:Escort Customer to Treatment Room;
+:Initiate Service (POST /api/bookings/{id}/start);
+
+|System|
+:Booking.startService();
+:Status becomes [IN_SERVICE];
+:Update QueueItem Status to [IN_SERVICE];
+:Update Room Status to [OCCUPIED] via RoomRepository.save(room);
+
+stop
+@enduml
+
+@startuml activity-diagram-payment
+title FIWDEE Massage Management - Payment Processing & Strategy Selection (UC-19)
+skinparam shadowing false
+skinparam roundcorner 6
+
+|Staff|
+start
+:Initiate Payment (POST /api/payments);
+
+|System|
+:Retrieve Booking (BookingRepository.findById);
+:Extract Total Price from Booking.totalPrice (Domain Truth);
+:Instantiate Payment Entity with grossAmount & netAmount;
+:Request Strategy from PaymentStrategyFactory (getStrategy(paymentMethod));
+
+if (Selected PaymentMethod) then (CASH)
+    |System|
+    :Select CashPaymentStrategy;
+    |Staff|
+    :Receive Cash from Customer;
+    :Calculate Change;
+    :Deposit in Cash Drawer;
+    |System|
+    :CashPaymentStrategy.processPayment(payment);
+    :Payment Result = SUCCESS;
+else if (Selected PaymentMethod) then (QR_PROMPTPAY)
+    |System|
+    :Select QRPaymentStrategy;
+    :Generate PromptPay QR Code (EMVCo payload);
+    |Customer|
+    :Scan QR Code via Mobile Banking App & Transfer;
+    |Payment Gateway|
+    :Verify Slip & Transaction Webhook;
+    |System|
+    :QRPaymentStrategy.processPayment(payment);
+    :Payment Result = SUCCESS;
+else (CREDIT_CARD)
+    |System|
+    :Select CardPaymentStrategy;
+    |Staff|
+    :Insert / Tap Card on EDC Terminal;
+    |Payment Gateway|
+    :Authorize and Capture Transaction;
+    |System|
+    :CardPaymentStrategy.processPayment(payment);
+    :Payment Result = SUCCESS;
+endif
+
+|System|
+if (Transaction Successful?) then (yes)
+    :Set Payment Status to [COMPLETED];
+    :Set paidAt = DateTime.now();
+    :Generate receiptNumber ("REC-" + ref);
+    :Save Payment (PaymentRepository.save);
+    :Link Payment to Booking (Booking.setPayment);
+    :Return PaymentResponseDTO with Receipt;
+    |Staff|
+    :Print Receipt / Hand over to Customer;
+    stop
+else (no)
+    :Set Payment Status to [FAILED];
+    :Save Payment (PaymentRepository.save);
+    :Throw PaymentProcessingException;
+    |Staff|
+    :Notify Customer of Payment Failure & Request Alternative Method;
+    stop
+endif
+@enduml
+
+@startuml activity-diagram-cancellation
+title FIWDEE Massage Management - Booking Cancellation & Refund Flow (UC-10, UC-20)
+skinparam shadowing false
+skinparam roundcorner 6
+
+|Customer|
+start
+:Request Booking Cancellation (Online / Phone);
+
+|Staff|
+:Submit Cancel Booking (POST /api/bookings/{id}/cancel);
+
+|System|
+:Retrieve Booking (BookingRepository.findById);
+:Verify Current State (PendingState / ConfirmedState / CheckedInState);
+
+if (Cancellation Permitted in Current State?) then (yes)
+    :Calculate Cancellation Time vs startDateTime;
+    if (Notice >= 2 hours in advance (BR-BKG-04)?) then (yes - Eligible for Full Refund)
+        :Booking.cancel();
+        note right
+        Delegates to currentState.cancel(booking)
+        -> Status becomes [CANCELLED]
+        end note
+        :Save Booking (BookingRepository.save);
+        
+        if (Payment was settled (paymentStatus == COMPLETED)?) then (yes)
+            :Initiate Refund Process (PaymentService.processRefund);
+            :Create Refund Entity with Status [COMPLETED];
+            :Set refundedAt = DateTime.now();
+            :Update Payment Status to [REFUNDED];
+            :Save Refund & Payment (PaymentRepository.save);
+            |Payment Gateway|
+            :Process Reversal / Refund to Customer Account;
+        else (no - No Payment Made)
+            ' No payment to refund
+        endif
+    else (no - Notice < 2 hours)
+        :Booking.cancel();
+        :Status becomes [CANCELLED];
+        :Save Booking (BookingRepository.save);
+        note right
+        Late cancellation: Deposit / Fee is non-refundable
+        per Business Rule BR-BKG-04
+        end note
+    endif
+    
+    |System|
+    :Release Room and Therapist Allocation;
+    :Publish BookingStatusChangedEvent (* -> CANCELLED);
+    :NotificationListener sends Cancellation Notice to Customer & Therapist;
+    |Customer|
+    :Receive Cancellation Confirmation & Refund Notice;
+    stop
+else (no - In Service / Completed)
+    |System|
+    :Throw IllegalStateException ("Cannot cancel booking in active service or completed state");
+    |Staff|
+    :Inform Customer that Cancellation is not allowed;
+    stop
+endif
+@enduml
