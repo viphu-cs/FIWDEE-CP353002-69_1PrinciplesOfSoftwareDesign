@@ -1,0 +1,172 @@
+@startuml
+title FIWDEE Massage Management & Booking System - Use Case Diagram
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam actorStyle awesome
+
+skinparam usecase {
+    BackgroundColor #EBF5FB
+    BorderColor #2980B9
+    FontColor #1A252F
+    FontSize 12
+    ArrowColor #2C3E50
+    ArrowFontSize 10
+}
+
+skinparam actor {
+    BackgroundColor #D4E6F1
+    BorderColor #1B4F72
+    FontColor #1B4F72
+    FontSize 13
+}
+
+skinparam package {
+    BackgroundColor #F8F9F9
+    BorderColor #BDC3C7
+    FontColor #2C3E50
+    FontStyle bold
+    FontSize 13
+}
+
+' ==========================================
+' ACTORS
+' ==========================================
+actor "Customer\n(ลูกค้า)" as Customer
+actor "Receptionist\n(พนักงานหน้าร้าน)" as Receptionist
+actor "Therapist\n(หมอนวด)" as Therapist
+actor "Owner\n(เจ้าของร้าน)" as Owner
+
+' ==========================================
+' SYSTEM BOUNDARY
+' ==========================================
+rectangle "FIWDEE Massage Management & Booking System" as System {
+
+    package "1. Authentication & Account Management" {
+        usecase "UC-01: Register Account" as UC_Register
+        usecase "UC-02: Authenticate / Login" as UC_Login
+        usecase "UC-03: View / Update Profile" as UC_Profile
+    }
+
+    package "2. Catalog & Shop Information" {
+        usecase "UC-04: View Shop Information" as UC_ViewShopInfo
+        usecase "UC-05: View Services & Pricing" as UC_ViewServices
+        usecase "UC-06: View Therapist Profiles" as UC_ViewTherapists
+    }
+
+    package "3. Booking & Availability Management" {
+        usecase "UC-07: Create Booking" as UC_CreateBooking
+        usecase "UC-08: Check Resource Availability" as UC_CheckAvailability
+        usecase "UC-08a: Check Room Availability" as UC_CheckRoomAvail
+        usecase "UC-08b: Check Therapist Availability" as UC_CheckTherapistAvail
+        usecase "UC-08c: Validate Booking Time & Overlap" as UC_ValidateTime
+        usecase "UC-09: View Bookings / History" as UC_ViewBookings
+        usecase "UC-10: Cancel Booking" as UC_CancelBooking
+    }
+
+    package "4. Front-Desk Queue & Check-in" {
+        usecase "UC-11: Search Customer" as UC_SearchCustomer
+        usecase "UC-12: Check-in Customer" as UC_CheckIn
+        usecase "UC-13: Manage Daily Queue" as UC_ManageQueue
+        usecase "UC-14: Update Booking Status" as UC_UpdateStatus
+    }
+
+    package "5. Service Execution" {
+        usecase "UC-15: View Customer Service Notes" as UC_ViewNotes
+        usecase "UC-16: Start Service" as UC_StartService
+        usecase "UC-17: Complete Service" as UC_CompleteService
+        usecase "UC-18: Submit Review & Rating" as UC_SubmitReview
+    }
+
+    package "6. Billing & Payment Management" {
+        usecase "UC-19: Process Payment" as UC_ProcessPayment
+        usecase "UC-19a: Validate Payment Amount" as UC_ValidatePayment
+        usecase "UC-19b: Record Payment Transaction" as UC_RecordPayment
+        usecase "UC-20: View Payment History & Receipts" as UC_ViewPayments
+        usecase "UC-21: View Therapist Earnings" as UC_ViewEarnings
+    }
+
+    package "7. Administration & Resource Configuration" {
+        usecase "UC-22: View Business Dashboard & Reports" as UC_Dashboard
+        usecase "UC-23: Manage Shop Profile & Hours" as UC_ManageShop
+        usecase "UC-24: Manage Rooms (Add/Edit/Disable)" as UC_ManageRooms
+        usecase "UC-25: Manage Services & Pricing" as UC_ManageServices
+        usecase "UC-26: Manage Therapist Profiles & Skills" as UC_ManageTherapists
+        usecase "UC-27: Manage Therapist Work Schedules" as UC_ManageSchedules
+        usecase "UC-28: Manage Staff Accounts & Roles" as UC_ManageUsers
+    }
+}
+
+' ==========================================
+' INCLUDE RELATIONSHIPS
+' ==========================================
+UC_CreateBooking ..> UC_CheckAvailability : <<include>>
+UC_CheckAvailability ..> UC_CheckRoomAvail : <<include>>
+UC_CheckAvailability ..> UC_CheckTherapistAvail : <<include>>
+UC_CheckAvailability ..> UC_ValidateTime : <<include>>
+
+UC_ProcessPayment ..> UC_ValidatePayment : <<include>>
+UC_ProcessPayment ..> UC_RecordPayment : <<include>>
+
+UC_CheckIn ..> UC_UpdateStatus : <<include>>
+UC_CancelBooking ..> UC_UpdateStatus : <<include>>
+
+' ==========================================
+' EXTEND RELATIONSHIPS
+' ==========================================
+UC_SubmitReview ..> UC_CompleteService : <<extend>>\n(After Service Completed)
+
+' ==========================================
+' ACTOR ASSOCIATIONS
+' ==========================================
+
+' --- Customer ---
+Customer --> UC_Register
+Customer --> UC_Login
+Customer --> UC_Profile
+Customer --> UC_ViewShopInfo
+Customer --> UC_ViewServices
+Customer --> UC_ViewTherapists
+Customer --> UC_CreateBooking
+Customer --> UC_ViewBookings
+Customer --> UC_CancelBooking
+Customer --> UC_SubmitReview
+Customer --> UC_ViewPayments
+
+' --- Receptionist ---
+Receptionist --> UC_Login
+Receptionist --> UC_Profile
+Receptionist --> UC_SearchCustomer
+Receptionist --> UC_Register : (Register Walk-in)
+Receptionist --> UC_CreateBooking : (Create for Customer)
+Receptionist --> UC_ViewBookings : (Daily & Front-Desk)
+Receptionist --> UC_CheckIn
+Receptionist --> UC_ManageQueue
+Receptionist --> UC_UpdateStatus
+Receptionist --> UC_ProcessPayment
+Receptionist --> UC_ViewPayments
+Receptionist --> UC_CancelBooking
+
+' --- Therapist ---
+Therapist --> UC_Login
+Therapist --> UC_Profile
+Therapist --> UC_ViewBookings : (My Bookings/Schedule)
+Therapist --> UC_ViewNotes
+Therapist --> UC_StartService
+Therapist --> UC_CompleteService
+Therapist --> UC_ViewEarnings
+
+' --- Owner ---
+Owner --> UC_Login
+Owner --> UC_Dashboard
+Owner --> UC_ManageShop
+Owner --> UC_ManageRooms
+Owner --> UC_ManageServices
+Owner --> UC_ManageTherapists
+Owner --> UC_ManageSchedules
+Owner --> UC_ManageUsers
+Owner --> UC_ViewBookings : (All Bookings & History)
+Owner --> UC_ViewPayments : (All Transactions & Revenue)
+
+@enduml

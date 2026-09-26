@@ -1,0 +1,319 @@
+@startuml
+title FIWDEE Massage Management & Booking System - Domain Model (Conceptual Class Diagram)
+skinparam classAttributeIconSize 0
+skinparam monochrome false
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName "Segoe UI", Arial, sans-serif
+skinparam defaultFontSize 12
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    ArrowColor #2C3E50
+    BorderColor #34495E
+    FontSize 12
+}
+
+skinparam package {
+    BackgroundColor #F8F9FA
+    BorderColor #BDC3C7
+    FontColor #2C3E50
+    FontStyle bold
+    FontSize 13
+}
+
+skinparam enum {
+    BackgroundColor #FEF9E7
+    BorderColor #F39C12
+    FontSize 11
+}
+
+' ==========================================
+' ENUMERATIONS (Conceptual Value Types)
+' ==========================================
+package "Domain Enumerations" {
+    enum UserRole <<enumeration>> {
+        CUSTOMER
+        RECEPTIONIST
+        THERAPIST
+        OWNER
+    }
+
+    enum BookingStatus <<enumeration>> {
+        PENDING
+        CONFIRMED
+        CHECKED_IN
+        IN_SERVICE
+        COMPLETED
+        CANCELLED
+        NO_SHOW
+    }
+
+    enum RoomType <<enumeration>> {
+        SINGLE
+        COUPLE
+        VIP
+        FOOT_MASSAGE
+    }
+
+    enum RoomStatus <<enumeration>> {
+        AVAILABLE
+        OCCUPIED
+        CLEANING
+        MAINTENANCE
+    }
+
+    enum QueueStatus <<enumeration>> {
+        WAITING
+        CALLED
+        IN_SERVICE
+        COMPLETED
+        CANCELLED
+    }
+
+    enum PaymentMethod <<enumeration>> {
+        CASH
+        QR_PROMPTPAY
+        CREDIT_CARD
+    }
+
+    enum PaymentStatus <<enumeration>> {
+        PENDING
+        COMPLETED
+        REFUNDED
+        FAILED
+    }
+
+    enum RefundStatus <<enumeration>> {
+        PENDING
+        COMPLETED
+        FAILED
+    }
+
+    enum DayOfWeek <<enumeration>> {
+        MONDAY
+        TUESDAY
+        WEDNESDAY
+        THURSDAY
+        FRIDAY
+        SATURDAY
+        SUNDAY
+    }
+}
+
+' ==========================================
+' 1. SHOP & PEOPLE
+' ==========================================
+package "1. Shop & People" {
+    class Shop <<conceptual>> {
+        + shopId : Long
+        + shopName : String
+        + address : String
+        + phoneNumber : String
+        + description : String
+        + isActive : Boolean
+    }
+
+    class BusinessHours <<conceptual>> {
+        + businessHoursId : Long
+        + dayOfWeek : DayOfWeek
+        + openTime : Time
+        + closeTime : Time
+        + isClosed : Boolean
+    }
+
+    class User <<conceptual>> {
+        + userId : Long
+        + username : String
+        + passwordHash : String
+        + fullName : String
+        + email : String
+        + phoneNumber : String
+        + role : UserRole
+        + isActive : Boolean
+        + createdAt : DateTime
+    }
+
+    class Customer <<conceptual>> {
+        + customerId : Long
+        + healthNotes : String
+        + preferredPressure : String
+        + registeredDate : DateTime
+    }
+
+    class Therapist <<conceptual>> {
+        + therapistId : Long
+        + nickname : String
+        + bio : String
+        + commissionRate : Decimal
+        + employmentStatus : String
+        + averageRating : Decimal
+        + isActive : Boolean
+    }
+
+    class Receptionist <<conceptual>> {
+        + receptionistId : Long
+        + staffCode : String
+        + counterStation : String
+    }
+
+    class Owner <<conceptual>> {
+        + ownerId : Long
+        + managementLevel : String
+    }
+
+    Shop "1" *-- "1..*" BusinessHours : hasBusinessHours >
+    User <|-- Customer : generalizes
+    User <|-- Therapist : generalizes
+    User <|-- Receptionist : generalizes
+    User <|-- Owner : generalizes
+}
+
+' ==========================================
+' 2. SERVICE CATALOG & SKILLS
+' ==========================================
+package "2. Service Catalog & Qualifications" {
+    class Service <<conceptual>> {
+        + serviceId : Long
+        + serviceCode : String
+        + serviceName : String
+        + description : String
+        + category : String
+        + requiredRoomType : RoomType
+        + isActive : Boolean
+    }
+
+    class ServiceDurationOption <<conceptual>> {
+        + durationOptionId : Long
+        + durationMinutes : Integer
+        + price : Decimal
+        + isActive : Boolean
+    }
+
+    class TherapistSkill <<conceptual>> {
+        + skillId : Long
+        + skillLevel : String
+        + isCertified : Boolean
+        + certifiedDate : Date
+    }
+
+    Service "1" *-- "1..*" ServiceDurationOption : offers >
+    Therapist "1" -- "0..*" TherapistSkill : hasSkill >
+    Service "1" -- "0..*" TherapistSkill : qualifiedFor <
+}
+
+' ==========================================
+' 3. RESOURCES & SCHEDULING
+' ==========================================
+package "3. Resources & Scheduling" {
+    class Room <<conceptual>> {
+        + roomId : Long
+        + roomNumber : String
+        + roomType : RoomType
+        + capacity : Integer
+        + roomStatus : RoomStatus
+        + cleaningBufferMinutes : Integer
+        + isActive : Boolean
+    }
+
+    class TherapistSchedule <<conceptual>> {
+        + scheduleId : Long
+        + scheduleDate : Date
+        + isDayOff : Boolean
+        + leaveReason : String
+        + notes : String
+    }
+
+    class WorkShift <<conceptual>> {
+        + shiftId : Long
+        + shiftName : String
+        + startTime : Time
+        + endTime : Time
+        + shiftStatus : String
+    }
+
+    Therapist "1" -- "0..*" TherapistSchedule : hasSchedule >
+    TherapistSchedule "1" *-- "0..*" WorkShift : containsShift >
+}
+
+' ==========================================
+' 4. BOOKING & FRONT-DESK QUEUE
+' ==========================================
+package "4. Booking & Daily Queue" {
+    class Booking <<conceptual>> {
+        + bookingId : Long
+        + bookingReferenceCode : String
+        + startDateTime : DateTime
+        + endDateTime : DateTime
+        + totalPrice : Decimal
+        + status : BookingStatus
+        + bookingChannel : String
+        + specialNotes : String
+        + actualStartTime : DateTime
+        + actualEndTime : DateTime
+        + createdAt : DateTime
+        + updatedAt : DateTime
+    }
+
+    class QueueItem <<conceptual>> {
+        + queueId : Long
+        + queueNumber : String
+        + queueDate : Date
+        + checkInTime : DateTime
+        + calledTime : DateTime
+        + queueStatus : QueueStatus
+        + priorityLevel : Integer
+    }
+
+    Customer "1" -- "0..*" Booking : places >
+    Therapist "0..1" -- "0..*" Booking : performs <
+    Room "1" -- "0..*" Booking : hosts <
+    Service "1" -- "0..*" Booking : specifies <
+    Booking "0..*" -- "1" ServiceDurationOption : selectsDuration >
+    Booking "1" -- "0..1" QueueItem : generatesQueueItem >
+    Receptionist "0..1" -- "0..*" Booking : manages >
+}
+
+' ==========================================
+' 5. AFTER SERVICE (PAYMENT, REFUND & REVIEW)
+' ==========================================
+package "5. Settlement & Feedback" {
+    class Payment <<conceptual>> {
+        + paymentId : Long
+        + paymentReferenceCode : String
+        + receiptNumber : String
+        + grossAmount : Decimal
+        + discountAmount : Decimal
+        + netAmount : Decimal
+        + paymentMethod : PaymentMethod
+        + paymentStatus : PaymentStatus
+        + paidAt : DateTime
+        + transactionNote : String
+    }
+
+    class Refund <<conceptual>> {
+        + refundId : Long
+        + refundReferenceCode : String
+        + refundAmount : Decimal
+        + reason : String
+        + status : RefundStatus
+        + refundedAt : DateTime
+        + processedByStaff : String
+    }
+
+    class Review <<conceptual>> {
+        + reviewId : Long
+        + overallRating : Integer
+        + therapistRating : Integer
+        + cleanlinessRating : Integer
+        + comment : String
+        + submittedAt : DateTime
+    }
+
+    Booking "1" -- "0..1" Payment : settledBy >
+    Payment "1" -- "0..*" Refund : hasRefund >
+    Booking "1" -- "0..1" Review : receivesReview >
+    Receptionist "0..1" -- "0..*" Payment : processes >
+}
+
+@enduml
