@@ -1,0 +1,487 @@
+@startuml scenario-1-create-booking
+title Scenario 1: Create Booking & Check Resource Availability (UC-07, UC-08)
+autonumber
+skinparam shadowing false
+skinparam roundcorner 6
+skinparam ParticipantPadding 10
+skinparam BoxPadding 10
+
+actor "Customer / Receptionist" as Actor
+box "Presentation Layer" #F4F6F7
+    participant "BookingController" as Controller <<Controller>>
+    participant "BookingMapper" as Mapper <<Mapper>>
+    participant "BookingRequestDTO" as ReqDTO <<DTO>>
+    participant "BookingResponseDTO" as ResDTO <<DTO>>
+end box
+
+box "Application Layer" #EBF5FB
+    participant "BookingService" as Service <<Service>>
+end box
+
+box "Domain Layer" #FEF9E7
+    participant "newBooking: Booking" as BookingEntity <<Entity>>
+    participant "PendingState" as PendingState <<State>>
+    participant "ConfirmedState" as ConfirmedState <<State>>
+end box
+
+box "Infrastructure / Persistence" #EAFAF1
+    participant "ServiceRepository" as SrvRepo <<Repository>>
+    participant "RoomRepository" as RoomRepo <<Repository>>
+    participant "TherapistRepository" as ThRepo <<Repository>>
+    participant "TherapistScheduleRepository" as SchRepo <<Repository>>
+    participant "BookingRepository" as BkRepo <<Repository>>
+end box
+
+Actor -> Controller : 1. POST /api/bookings (BookingRequestDTO)
+activate Controller
+
+Controller -> Mapper : 2. toEntity(requestDTO)
+activate Mapper
+Mapper -> ReqDTO : 3. extract customerId, serviceId, durationId, therapistId, roomId, startDateTime
+ReqDTO --> Mapper : data values
+create BookingEntity
+Mapper -> BookingEntity : 4. new Booking(startDateTime, specialNotes, channel)
+Mapper --> Controller : return newBooking
+deactivate Mapper
+
+Controller -> Service : 5. createBooking(newBooking)
+activate Service
+
+note over Service, SrvRepo : <<include>> UC-08 Check Resource Availability
+
+Service -> SrvRepo : 6. findById(serviceId)
+activate SrvRepo
+SrvRepo --> Service : Optional<Service> (includes DurationOption & requiredRoomType)
+deactivate SrvRepo
+
+Service -> RoomRepo : 7. findAvailableRooms(requiredRoomType, startDateTime, endDateTime)
+activate RoomRepo
+RoomRepo --> Service : List<Room> (Active rooms matching type)
+deactivate RoomRepo
+
+Service -> ThRepo : 8. findActiveTherapists()
+activate ThRepo
+ThRepo --> Service : List<Therapist> (Active therapists with matching skills)
+deactivate ThRepo
+
+Service -> SchRepo : 9. findByTherapistAndScheduleDate(therapist, scheduleDate)
+activate SchRepo
+SchRepo --> Service : Optional<TherapistSchedule> (Verify work shift & isDayOff == false)
+deactivate SchRepo
+
+Service -> BkRepo : 10. findActiveBookingsByRoomAndPeriod(roomId, startDateTime, endDateTime + 15 mins)
+activate BkRepo
+note right: Includes 15-min Room Turnover Buffer (BR-RES-03 / cleaningBufferMinutes)
+BkRepo --> Service : List<Booking> (Active room bookings)
+deactivate BkRepo
+
+Service -> BkRepo : 11. findActiveBookingsByTherapistAndPeriod(therapistId, startDateTime, endDateTime)
+activate BkRepo
+BkRepo --> Service : List<Booking> (Active therapist bookings)
+deactivate BkRepo
+
+note over Service, BkRepo
+Final availability check must be atomic or protected
+by pessimistic/optimistic concurrency control
+to prevent double booking (UC-07 / UC-08).
+end note
+
+alt #FFEBEE Resource Conflict Detected (Overlapping active booking / Double booking conflict)
+    Service --> Controller : throw ResourceConflictException("Selected room or therapist is no longer available")
+    Controller --> Actor : 409 Conflict (Error message & Available alternative slots)
+else #E8F8F5 Resource Available (No Conflict)
+    alt #EBF5FB Instant Confirmation (Walk-in / Auto-confirmed Channel)
+        Service -> BookingEntity : 12a. confirm()
+        activate BookingEntity
+        BookingEntity -> PendingState : 13. confirm(booking)
+        activate PendingState
+        create ConfirmedState
+        PendingState -> ConfirmedState : 14. new ConfirmedState()
+        PendingState -> BookingEntity : 15. transitionTo(new ConfirmedState())
+        BookingEntity -> BookingEntity : status = BookingStatus.CONFIRMED
+        PendingState --> BookingEntity : state updated
+        deactivate PendingState
+        BookingEntity --> Service : booking confirmed
+        deactivate BookingEntity
+    else #FFF8E1 Requires Staff / Deposit Confirmation (Advance Online Booking)
+        note over Service, BookingEntity : Initial status remains PENDING (Waiting for deposit/staff confirmation)
+    end
+
+    Service -> BookingEntity : 16. setTotalPrice(durationOption.getPrice())
+    Service -> BkRepo : 17. save(newBooking)
+    activate BkRepo
+    BkRepo --> Service : savedBooking (with bookingId & bookingReferenceCode)
+    deactivate BkRepo
+
+    Service --> Controller : 18. return savedBooking
+    deactivate Service
+
+    Controller -> Mapper : 19. toResponseDTO(savedBooking)
+    activate Mapper
+    create ResDTO
+    Mapper -> ResDTO : new BookingResponseDTO(bookingId, referenceCode, customerName, serviceName, totalPrice, status)
+    Mapper --> Controller : return responseDTO
+    deactivate Mapper
+
+    Controller --> Actor : 20. 201 Created (BookingResponseDTO + ReferenceCode)
+end
+
+deactivate Controller
+@enduml
+
+@startuml scenario-2-checkin-queue
+title Scenario 2: Check-in Customer & Front-Desk Queue Generation (UC-12, UC-13, UC-14)
+autonumber
+skinparam shadowing false
+skinparam roundcorner 6
+skinparam ParticipantPadding 10
+skinparam BoxPadding 10
+
+actor "Receptionist" as Receptionist
+box "Presentation Layer" #F4F6F7
+    participant "BookingController" as Controller <<Controller>>
+    participant "BookingMapper" as Mapper <<Mapper>>
+    participant "BookingResponseDTO" as ResDTO <<DTO>>
+end box
+
+box "Application Layer" #EBF5FB
+    participant "BookingService" as Service <<Service>>
+    participant "ApplicationEventPublisher" as EventPublisher <<Event Bus>>
+    participant "QueueService" as QService <<Service>>
+    participant "NotificationListener" as NotiObserver <<Observer>>
+    participant "QueueListener" as QueueObserver <<Observer>>
+end box
+
+box "Domain Layer" #FEF9E7
+    participant "booking: Booking" as BookingEntity <<Entity>>
+    participant "currentState: ConfirmedState" as ConfirmedState <<State>>
+    participant "newState: CheckedInState" as CheckedInState <<State>>
+    participant "BookingStatusChangedEvent" as StatusEvent <<Event>>
+    participant "queueItem: QueueItem" as QueueEntity <<Entity>>
+end box
+
+box "Infrastructure / Persistence" #EAFAF1
+    participant "BookingRepository" as BkRepo <<Repository>>
+    participant "QueueItemRepository" as QRepo <<Repository>>
+end box
+
+Receptionist -> Controller : 1. POST /api/bookings/{id}/check-in
+activate Controller
+
+Controller -> Service : 2. checkInBooking(bookingId)
+activate Service
+
+Service -> BkRepo : 3. findById(bookingId)
+activate BkRepo
+BkRepo --> Service : Optional<Booking>
+deactivate BkRepo
+
+alt #FFEBEE Early Arrival > 30 minutes before start time (BR-QUE-01)
+    Service --> Controller : throw IllegalStateException("Cannot check-in earlier than 30 minutes before start time")
+    Controller --> Receptionist : 400 Bad Request (Check-in rejected, wait until check-in window opens)
+else #FFF8E1 Customer Late > 15 minutes past start time (BR-BKG-05)
+    note over Service, Receptionist : Receptionist decides whether to accommodate with adjusted time or mark NO_SHOW
+    opt Receptionist marks No-Show
+        Service -> BookingEntity : markNoShow()
+        Service -> BkRepo : save(booking)
+        Service --> Controller : booking marked NO_SHOW
+        Controller --> Receptionist : 200 OK (Booking marked NO_SHOW, resources released)
+    end
+else #E8F8F5 Valid Check-in Window (within 30 mins before start time)
+    Service -> BookingEntity : 4. checkIn()
+    activate BookingEntity
+    
+    note over BookingEntity, ConfirmedState : <<State Pattern>> Delegation
+    BookingEntity -> ConfirmedState : 5. checkIn(booking)
+    activate ConfirmedState
+    
+    create CheckedInState
+    ConfirmedState -> CheckedInState : 6. new CheckedInState()
+    ConfirmedState -> BookingEntity : 7. transitionTo(new CheckedInState())
+    BookingEntity -> BookingEntity : status = BookingStatus.CHECKED_IN
+    ConfirmedState --> BookingEntity : transition complete
+    deactivate ConfirmedState
+    
+    BookingEntity --> Service : return updated booking
+    deactivate BookingEntity
+
+    Service -> BkRepo : 8. save(booking)
+    activate BkRepo
+    BkRepo --> Service : savedBooking
+    deactivate BkRepo
+
+    note over Service, EventPublisher : <<Observer Pattern>> Publish State Change Event
+    create StatusEvent
+    Service -> StatusEvent : 9. new BookingStatusChangedEvent(this, bookingId, CONFIRMED, CHECKED_IN)
+    Service -> EventPublisher : 10. publishEvent(statusEvent)
+    activate EventPublisher
+
+    par #EBF5FB Asynchronous Notification
+        EventPublisher -> NotiObserver : 11a. onBookingStatusChanged(statusEvent)
+        activate NotiObserver
+        NotiObserver -> NotiObserver : sendTherapistNotification(bookingId, "Customer arrived and ready")
+        NotiObserver --> EventPublisher : done
+        deactivate NotiObserver
+    else #FEF9E7 Asynchronous Queue Generation
+        EventPublisher -> QueueObserver : 11b. onBookingStatusChanged(statusEvent)
+        activate QueueObserver
+        
+        QueueObserver -> QService : 12. generateQueueItem(booking)
+        activate QService
+        create QueueEntity
+        QService -> QueueEntity : 13. new QueueItem(queueNumber, todayDate, checkInTime, WAITING, priority)
+        QService -> QRepo : 14. save(queueItem)
+        activate QRepo
+        QRepo --> QService : savedQueueItem
+        deactivate QRepo
+        QService --> QueueObserver : queueItem created
+        deactivate QService
+        QueueObserver --> EventPublisher : done
+        deactivate QueueObserver
+    end
+    EventPublisher --> Service : all observers notified
+    deactivate EventPublisher
+
+    Service --> Controller : 15. return savedBooking
+    deactivate Service
+
+    Controller -> Mapper : 16. toResponseDTO(savedBooking)
+    activate Mapper
+    create ResDTO
+    Mapper -> ResDTO : new BookingResponseDTO(...)
+    Mapper --> Controller : return responseDTO
+    deactivate Mapper
+
+    Controller --> Receptionist : 17. 200 OK (BookingResponseDTO + Queue Issued)
+end
+
+deactivate Controller
+@enduml
+
+@startuml scenario-3-service-payment-complete
+title Scenario 3: Service Execution -> Payment Processing -> Complete Booking -> Optional Review (UC-16, 17, 19, 18)
+autonumber
+skinparam shadowing false
+skinparam roundcorner 6
+skinparam ParticipantPadding 10
+skinparam BoxPadding 10
+
+actor "Therapist" as Therapist
+actor "Receptionist" as Receptionist
+actor "Customer" as Customer
+
+box "Presentation Layer" #F4F6F7
+    participant "BookingController" as BkController <<Controller>>
+    participant "PaymentController" as PayController <<Controller>>
+    participant "PaymentMapper" as PayMapper <<Mapper>>
+    participant "PaymentRequestDTO" as PayReqDTO <<DTO>>
+    participant "PaymentResponseDTO" as PayResDTO <<DTO>>
+end box
+
+box "Application Layer" #EBF5FB
+    participant "BookingService" as BkService <<Service>>
+    participant "PaymentService" as PayService <<Service>>
+    participant "PaymentStrategyFactory" as StrategyFactory <<Factory>>
+    participant "PaymentStrategy" as Strategy <<Strategy>>
+    participant "ApplicationEventPublisher" as EventPublisher <<Event Bus>>
+    participant "NotificationListener" as NotiObserver <<Observer>>
+end box
+
+box "Domain Layer" #FEF9E7
+    participant "booking: Booking" as BookingEntity <<Entity>>
+    participant "room: Room" as RoomEntity <<Entity>>
+    participant "CheckedInState" as CheckedInState <<State>>
+    participant "InServiceState" as InServiceState <<State>>
+    participant "CompletedState" as CompletedState <<State>>
+    participant "payment: Payment" as PaymentEntity <<Entity>>
+    participant "BookingStatusChangedEvent" as StatusEvent <<Event>>
+end box
+
+box "Infrastructure / Persistence" #EAFAF1
+    participant "BookingRepository" as BkRepo <<Repository>>
+    participant "RoomRepository" as RoomRepo <<Repository>>
+    participant "PaymentRepository" as PayRepo <<Repository>>
+end box
+
+== Phase A: Start Service (UC-16) ==
+Therapist -> BkController : 1. POST /api/bookings/{id}/start
+activate BkController
+BkController -> BkService : 2. startService(bookingId)
+activate BkService
+BkService -> BkRepo : 3. findById(bookingId)
+activate BkRepo
+BkRepo --> BkService : Optional<Booking>
+deactivate BkRepo
+
+BkService -> BookingEntity : 4. startService()
+activate BookingEntity
+BookingEntity -> CheckedInState : 5. startService(booking)
+activate CheckedInState
+create InServiceState
+CheckedInState -> InServiceState : 6. new InServiceState()
+CheckedInState -> BookingEntity : 7. transitionTo(new InServiceState())
+BookingEntity -> BookingEntity : status = BookingStatus.IN_SERVICE
+BookingEntity -> BookingEntity : setActualStartTime(DateTime.now())
+CheckedInState --> BookingEntity : transition complete
+deactivate CheckedInState
+BookingEntity --> BkService : in service
+deactivate BookingEntity
+
+BkService -> RoomRepo : 8. findById(roomId)
+activate RoomRepo
+RoomRepo --> BkService : Optional<Room>
+deactivate RoomRepo
+BkService -> RoomEntity : 9. setRoomStatus(RoomStatus.OCCUPIED)
+BkService -> RoomRepo : 10. save(room)
+activate RoomRepo
+RoomRepo --> BkService : savedRoom
+deactivate RoomRepo
+
+BkService -> BkRepo : 11. save(booking)
+BkService --> BkController : return booking
+deactivate BkService
+BkController --> Therapist : 200 OK (Timer started, room marked OCCUPIED)
+deactivate BkController
+
+== Phase B: Complete Physical Service (UC-17) ==
+note over Therapist, RoomEntity : Massage finishes. Physical service complete, but Booking remains IN_SERVICE until payment
+Therapist -> BkController : 12. POST /api/bookings/{id}/complete-physical
+activate BkController
+BkController -> BkService : 13. recordPhysicalCompletion(bookingId)
+activate BkService
+BkService -> BkRepo : 14. findById(bookingId)
+activate BkRepo
+BkRepo --> BkService : Optional<Booking>
+deactivate BkRepo
+
+BkService -> BookingEntity : 15. setActualEndTime(DateTime.now())
+
+BkService -> RoomRepo : 16. findById(roomId)
+activate RoomRepo
+RoomRepo --> BkService : Optional<Room>
+deactivate RoomRepo
+BkService -> RoomEntity : 17. setRoomStatus(RoomStatus.CLEANING)
+BkService -> RoomRepo : 18. save(room)
+activate RoomRepo
+RoomRepo --> BkService : savedRoom (15-min turnover buffer begins)
+deactivate RoomRepo
+
+BkService -> BkRepo : 19. save(booking)
+BkService --> BkController : physical service completed
+deactivate BkService
+BkController --> Therapist : 200 OK (Room marked CLEANING, ready for payment)
+deactivate BkController
+
+== Phase C: Process Payment (UC-19, UC-19a, UC-19b) ==
+Receptionist -> PayController : 20. POST /api/payments (PaymentRequestDTO: bookingId, paymentMethod, transactionNote)
+activate PayController
+
+PayController -> PayService : 21. processPayment(bookingId, paymentMethod, transactionNote)
+activate PayService
+
+PayService -> BkRepo : 22. findById(bookingId)
+activate BkRepo
+BkRepo --> PayService : Optional<Booking>
+deactivate BkRepo
+
+note over PayService : <<UC-19a>> Validate Payment Amount from Booking.totalPrice (Domain Truth)
+create PaymentEntity
+PayService -> PaymentEntity : 23. new Payment(grossAmount = booking.totalPrice, netAmount = booking.totalPrice, method)
+
+note over PayService, Strategy : <<Strategy & Factory Pattern>> (Decoupled from Presentation DTO)
+PayService -> StrategyFactory : 24. getStrategy(paymentMethod)
+activate StrategyFactory
+StrategyFactory --> PayService : return PaymentStrategy (Cash / QR / Card)
+deactivate StrategyFactory
+
+alt #E8F8F5 Method: CASH
+    PayService -> Strategy : 25a. processPayment(payment)
+    activate Strategy
+    Strategy -> Strategy : calculate change & record cash drawer receipt
+    Strategy --> PayService : true (Payment Success)
+    deactivate Strategy
+else #EBF5FB Method: QR_PROMPTPAY
+    PayService -> Strategy : 25b. processPayment(payment)
+    activate Strategy
+    Strategy -> Strategy : generatePromptPayQR(netAmount) & verify slip
+    Strategy --> PayService : true (Payment Success)
+    deactivate Strategy
+else #FEF9E7 Method: CREDIT_CARD
+    PayService -> Strategy : 25c. processPayment(payment)
+    activate Strategy
+    Strategy -> Strategy : chargeCreditCard(EDC terminal / gateway)
+    Strategy --> PayService : true (Payment Success)
+    deactivate Strategy
+end
+
+PayService -> PaymentEntity : 26. setPaymentStatus(PaymentStatus.COMPLETED)
+PayService -> PaymentEntity : 27. setPaidAt(DateTime.now()), setReceiptNumber("REC-" + ref)
+PayService -> PayRepo : 28. save(payment)
+activate PayRepo
+PayRepo --> PayService : savedPayment
+deactivate PayRepo
+
+PayService -> BookingEntity : 29. setPayment(savedPayment)
+
+== Phase D: Complete Booking Lifecycle (UC-17 Settlement / Invariant Check) ==
+note over PayService, CompletedState : <<Domain Rule>> Complete Booking ONLY AFTER PaymentStatus == COMPLETED
+PayService -> BookingEntity : 30. complete()
+activate BookingEntity
+BookingEntity -> InServiceState : 31. complete(booking)
+activate InServiceState
+
+alt #FFEBEE Payment is NOT COMPLETED
+    InServiceState --> BookingEntity : throw IllegalStateException("Cannot complete booking: Payment must be COMPLETED first.")
+    BookingEntity --> PayService : reject state transition (Booking remains IN_SERVICE)
+else #E8F8F5 Payment == COMPLETED
+    create CompletedState
+    InServiceState -> CompletedState : 32. new CompletedState()
+    InServiceState -> BookingEntity : 33. transitionTo(new CompletedState())
+    BookingEntity -> BookingEntity : status = BookingStatus.COMPLETED
+    InServiceState --> BookingEntity : transition complete
+    deactivate InServiceState
+    BookingEntity --> PayService : return completed booking
+    deactivate BookingEntity
+
+    PayService -> BkRepo : 34. save(booking)
+    activate BkRepo
+    BkRepo --> PayService : savedBooking
+    deactivate BkRepo
+
+    note over PayService, EventPublisher : <<Observer Pattern>> Publish COMPLETED Event
+    create StatusEvent
+    PayService -> StatusEvent : 35. new BookingStatusChangedEvent(this, bookingId, IN_SERVICE, COMPLETED)
+    PayService -> EventPublisher : 36. publishEvent(statusEvent)
+    activate EventPublisher
+    EventPublisher -> NotiObserver : 37. onBookingStatusChanged(statusEvent)
+    activate NotiObserver
+    NotiObserver -> NotiObserver : sendCustomerNotification(bookingId, "Thank you! View receipt & Review service")
+    NotiObserver --> EventPublisher : done
+    deactivate NotiObserver
+    EventPublisher --> PayService : event handled
+    deactivate EventPublisher
+end
+
+PayService --> PayController : 38. return savedPayment
+deactivate PayService
+
+PayController -> PayMapper : 39. toResponseDTO(savedPayment)
+activate PayMapper
+create PayResDTO
+PayMapper -> PayResDTO : new PaymentResponseDTO(...)
+PayMapper --> PayController : return responseDTO
+deactivate PayMapper
+
+PayController --> Receptionist : 40. 200 OK (PaymentResponseDTO + Receipt Issued)
+deactivate PayController
+
+== Phase E: Submit Review & Rating (UC-18 <<extend>> UC-17) ==
+opt #FEF9E7 Customer chooses to submit review (Optional Extension after COMPLETED)
+    note over Customer, BookingEntity
+    Architectural Gap: Review Module (ReviewController / ReviewService / ReviewRepository)
+    is planned at domain level (Booking 1 -- 0..1 Review), deferred for implementation.
+    No non-existent presentation/service classes are invoked.
+    end note
+end
+
+@enduml

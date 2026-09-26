@@ -20,6 +20,7 @@ package "presentation" <<Layer: Presentation>> {
         + confirmBooking(bookingId: Long): ResponseEntity<BookingResponseDTO>
         + checkInBooking(bookingId: Long): ResponseEntity<BookingResponseDTO>
         + startService(bookingId: Long): ResponseEntity<BookingResponseDTO>
+        + completePhysicalService(bookingId: Long): ResponseEntity<BookingResponseDTO>
         + completeBooking(bookingId: Long): ResponseEntity<BookingResponseDTO>
         + cancelBooking(bookingId: Long): ResponseEntity<Void>
         + getBookingById(bookingId: Long): ResponseEntity<BookingResponseDTO>
@@ -111,12 +112,15 @@ package "application" <<Layer: Application>> {
         - bookingRepository: BookingRepository
         - roomRepository: RoomRepository
         - therapistRepository: TherapistRepository
+        - serviceRepository: ServiceRepository
+        - scheduleRepository: TherapistScheduleRepository
         - eventPublisher: ApplicationEventPublisher
-        + BookingService(br: BookingRepository, rr: RoomRepository, tr: TherapistRepository, ep: ApplicationEventPublisher)
+        + BookingService(br: BookingRepository, rr: RoomRepository, tr: TherapistRepository, sr: ServiceRepository, tsr: TherapistScheduleRepository, ep: ApplicationEventPublisher)
         + createBooking(booking: Booking): Booking
         + confirmBooking(bookingId: Long): Booking
         + checkInBooking(bookingId: Long): Booking
         + startService(bookingId: Long): Booking
+        + recordPhysicalCompletion(bookingId: Long): Booking
         + completeBooking(bookingId: Long): Booking
         + cancelBooking(bookingId: Long): void
         + markNoShow(bookingId: Long): void
@@ -127,7 +131,8 @@ package "application" <<Layer: Application>> {
         - paymentRepository: PaymentRepository
         - bookingRepository: BookingRepository
         - strategyFactory: PaymentStrategyFactory
-        + PaymentService(pr: PaymentRepository, br: BookingRepository, sf: PaymentStrategyFactory)
+        - eventPublisher: ApplicationEventPublisher
+        + PaymentService(pr: PaymentRepository, br: BookingRepository, sf: PaymentStrategyFactory, ep: ApplicationEventPublisher)
         + processPayment(bookingId: Long, method: PaymentMethod, note: String): Payment
         + processRefund(paymentId: Long, amount: Decimal, reason: String, staffName: String): Refund
         + getPaymentById(paymentId: Long): Payment
@@ -244,6 +249,7 @@ package "domain" <<Layer: Domain>> {
         + roomStatus: RoomStatus
         + cleaningBufferMinutes: Integer
         + isActive: Boolean
+        + setRoomStatus(status: RoomStatus): void
     }
 
     class TherapistSchedule {
@@ -276,6 +282,7 @@ package "domain" <<Layer: Domain>> {
         + createdAt: DateTime
         + updatedAt: DateTime
         - currentState: BookingState
+        - payment: Payment
         + transitionTo(state: BookingState): void
         + confirm(): void
         + checkIn(): void
@@ -283,6 +290,11 @@ package "domain" <<Layer: Domain>> {
         + complete(): void
         + cancel(): void
         + markNoShow(): void
+        + setPayment(payment: Payment): void
+        + getPayment(): Payment
+        + setTotalPrice(price: Decimal): void
+        + setActualStartTime(time: DateTime): void
+        + setActualEndTime(time: DateTime): void
     }
 
     class QueueItem {
@@ -306,6 +318,9 @@ package "domain" <<Layer: Domain>> {
         + paymentStatus: PaymentStatus
         + paidAt: DateTime
         + transactionNote: String
+        + setPaymentStatus(status: PaymentStatus): void
+        + setPaidAt(time: DateTime): void
+        + setReceiptNumber(number: String): void
     }
 
     class Refund {
@@ -417,6 +432,7 @@ package "infrastructure" <<Layer: Persistence>> {
     interface RoomRepository <<Repository>> {
         + findById(id: Long): Optional<Room>
         + findAvailableRooms(type: RoomType, start: DateTime, end: DateTime): List<Room>
+        + save(room: Room): Room
     }
 
     interface TherapistRepository <<Repository>> {
@@ -548,6 +564,7 @@ package "pattern.observer" <<GoF: Observer Pattern>> {
     class NotificationListener <<Observer>> {
         + onBookingStatusChanged(event: BookingStatusChangedEvent): void
         - sendCustomerNotification(event: BookingStatusChangedEvent): void
+        - sendTherapistNotification(event: BookingStatusChangedEvent): void
     }
 
     class QueueListener <<Observer>> {
@@ -605,12 +622,15 @@ PaymentMapper ..> Payment : creates / reads
 BookingService --> BookingRepository : <<Dependency Injection>>
 BookingService --> RoomRepository : <<Dependency Injection>>
 BookingService --> TherapistRepository : <<Dependency Injection>>
+BookingService --> ServiceRepository : <<Dependency Injection>>
+BookingService --> TherapistScheduleRepository : <<Dependency Injection>>
 BookingService ..> BookingStatusChangedEvent : publishes
 
 PaymentService --> PaymentRepository : <<Dependency Injection>>
 PaymentService --> BookingRepository : <<Dependency Injection>>
 PaymentService --> PaymentStrategyFactory : gets strategy
 PaymentService ..> PaymentStrategy : delegates payment
+PaymentService ..> BookingStatusChangedEvent : publishes
 
 QueueService --> QueueItemRepository : <<Dependency Injection>>
 QueueService --> BookingRepository : <<Dependency Injection>>
@@ -619,6 +639,7 @@ TherapistService --> TherapistRepository : <<Dependency Injection>>
 TherapistService --> TherapistScheduleRepository : <<Dependency Injection>>
 
 Booking --> BookingState : delegates lifecycle
+Booking "1" -- "0..1" Payment : holds reference
 NotificationListener ..> BookingStatusChangedEvent : observes
 QueueListener ..> BookingStatusChangedEvent : observes
 QueueListener --> QueueService : triggers queue creation

@@ -47,6 +47,7 @@ classDiagram
             +confirmBooking(Long bookingId) ResponseEntity~BookingResponseDTO~
             +checkInBooking(Long bookingId) ResponseEntity~BookingResponseDTO~
             +startService(Long bookingId) ResponseEntity~BookingResponseDTO~
+            +completePhysicalService(Long bookingId) ResponseEntity~BookingResponseDTO~
             +completeBooking(Long bookingId) ResponseEntity~BookingResponseDTO~
             +cancelBooking(Long bookingId) ResponseEntity~Void~
             +getBookingById(Long bookingId) ResponseEntity~BookingResponseDTO~
@@ -148,12 +149,15 @@ classDiagram
             -BookingRepository bookingRepository
             -RoomRepository roomRepository
             -TherapistRepository therapistRepository
+            -ServiceRepository serviceRepository
+            -TherapistScheduleRepository scheduleRepository
             -ApplicationEventPublisher eventPublisher
-            +BookingService(BookingRepository br, RoomRepository rr, TherapistRepository tr, ApplicationEventPublisher ep)
+            +BookingService(BookingRepository br, RoomRepository rr, TherapistRepository tr, ServiceRepository sr, TherapistScheduleRepository tsr, ApplicationEventPublisher ep)
             +createBooking(Booking booking) Booking
             +confirmBooking(Long bookingId) Booking
             +checkInBooking(Long bookingId) Booking
             +startService(Long bookingId) Booking
+            +recordPhysicalCompletion(Long bookingId) Booking
             +completeBooking(Long bookingId) Booking
             +cancelBooking(Long bookingId) void
             +markNoShow(Long bookingId) void
@@ -165,7 +169,8 @@ classDiagram
             -PaymentRepository paymentRepository
             -BookingRepository bookingRepository
             -PaymentStrategyFactory strategyFactory
-            +PaymentService(PaymentRepository pr, BookingRepository br, PaymentStrategyFactory sf)
+            -ApplicationEventPublisher eventPublisher
+            +PaymentService(PaymentRepository pr, BookingRepository br, PaymentStrategyFactory sf, ApplicationEventPublisher ep)
             +processPayment(Long bookingId, PaymentMethod method, String note) Payment
             +processRefund(Long paymentId, Decimal amount, String reason, String staffName) Refund
             +getPaymentById(Long paymentId) Payment
@@ -314,6 +319,7 @@ classDiagram
             <<Observer / Listener>>
             +onBookingStatusChanged(BookingStatusChangedEvent event) void
             -sendCustomerNotification(BookingStatusChangedEvent event) void
+            -sendTherapistNotification(BookingStatusChangedEvent event) void
         }
 
         class QueueListener {
@@ -417,6 +423,7 @@ classDiagram
             +RoomStatus roomStatus
             +Integer cleaningBufferMinutes
             +Boolean isActive
+            +setRoomStatus(RoomStatus status) void
         }
 
         class TherapistSchedule {
@@ -449,6 +456,7 @@ classDiagram
             +DateTime createdAt
             +DateTime updatedAt
             -BookingState currentState
+            -Payment payment
             +transitionTo(BookingState state) void
             +confirm() void
             +checkIn() void
@@ -456,6 +464,11 @@ classDiagram
             +complete() void
             +cancel() void
             +markNoShow() void
+            +setPayment(Payment payment) void
+            +getPayment() Payment
+            +setTotalPrice(Decimal price) void
+            +setActualStartTime(DateTime time) void
+            +setActualEndTime(DateTime time) void
         }
 
         class QueueItem {
@@ -479,6 +492,9 @@ classDiagram
             +PaymentStatus paymentStatus
             +DateTime paidAt
             +String transactionNote
+            +setPaymentStatus(PaymentStatus status) void
+            +setPaidAt(DateTime time) void
+            +setReceiptNumber(String number) void
         }
 
         class Refund {
@@ -606,6 +622,7 @@ classDiagram
             <<Repository Pattern>>
             +findById(Long id) Optional~Room~
             +findAvailableRooms(RoomType type, DateTime start, DateTime end) List~Room~
+            +save(Room room) Room
         }
 
         class TherapistRepository {
@@ -697,12 +714,15 @@ classDiagram
     BookingService --> BookingRepository : <<Dependency Injection>>
     BookingService --> RoomRepository : <<Dependency Injection>>
     BookingService --> TherapistRepository : <<Dependency Injection>>
+    BookingService --> ServiceRepository : <<Dependency Injection>>
+    BookingService --> TherapistScheduleRepository : <<Dependency Injection>>
     BookingService ..> BookingStatusChangedEvent : publishes event
 
     PaymentService --> PaymentRepository : <<Dependency Injection>>
     PaymentService --> BookingRepository : <<Dependency Injection>>
     PaymentService --> PaymentStrategyFactory : gets strategy
     PaymentService ..> PaymentStrategy : delegates payment
+    PaymentService ..> BookingStatusChangedEvent : publishes event
 
     QueueService --> QueueItemRepository : <<Dependency Injection>>
     QueueService --> BookingRepository : <<Dependency Injection>>
