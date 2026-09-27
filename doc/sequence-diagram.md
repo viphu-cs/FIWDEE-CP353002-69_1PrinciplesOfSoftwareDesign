@@ -110,8 +110,8 @@ sequenceDiagram
             deactivate PendingState
             Booking-->>Service: booking confirmed
             deactivate Booking
-        else Requires Staff / Deposit Confirmation (Advance Online Booking)
-            Note over Service, Booking: Initial status remains PENDING (Waiting for deposit/staff confirmation)
+        else Online Advance Booking (Pending Payment)
+            Note over Service, Booking: Initial status remains PENDING (Waiting for online full payment or counter confirmation)
         end
 
         Service->>Booking: setTotalPrice(durationOption.getPrice())
@@ -258,6 +258,7 @@ sequenceDiagram
     participant PayRepo as PaymentRepository
     participant EventPublisher as ApplicationEventPublisher
     participant NotiObserver as NotificationListener
+    participant QueueObserver as QueueListener
 
     %% Phase A
     Note over Therapist, BkController: == Phase A: Start Service (UC-16) ==
@@ -380,7 +381,11 @@ sequenceDiagram
         PayService->>BkRepo: save(booking)
         PayService->>EventPublisher: publishEvent(BookingStatusChangedEvent(IN_SERVICE -> COMPLETED))
         activate EventPublisher
-        EventPublisher->>NotiObserver: onBookingStatusChanged(event)
+        par Customer Notification
+            EventPublisher->>NotiObserver: onBookingStatusChanged(event)
+        and Queue Completion
+            EventPublisher->>QueueObserver: onBookingStatusChanged(event)
+        end
         deactivate EventPublisher
     end
 
@@ -414,7 +419,7 @@ sequenceDiagram
    * ก่อนการบันทึกการจอง `BookingService` ทำการตรวจสอบ Overlap ซ้ำอีกครั้งภายใต้ Concurrency Control (Optimistic / Pessimistic Locking) เพื่อป้องกัน Double Booking
 5. **การจัดการสถานะเริ่มต้น (PENDING vs CONFIRMED):**
    * **Instant Confirmation (Walk-in / Auto-confirmed Channel):** `BookingService` เรียก `booking.confirm()` ซึ่ง Aggregate Root ส่งต่อคำสั่งไปยัง `PendingState.confirm(booking)` เพื่อเปลี่ยน State เป็น `ConfirmedState` (`BookingStatus.CONFIRMED`)
-   * **Requires Staff / Deposit Confirmation (Advance Online Booking):** คงสถานะเริ่มต้นไว้ที่ `BookingStatus.PENDING` รอการยืนยันมัดจำหรือการอนุมัติจากเจ้าหน้าที่
+   * **Online Advance Booking (Pending Payment):** คงสถานะเริ่มต้นไว้ที่ `BookingStatus.PENDING` รอการชำระเงินเต็มจำนวนผ่านระบบออนไลน์ หรือรอการยืนยันชำระเงินหน้าร้านจากเจ้าหน้าที่
 6. **Alternative / Exception Handling:** หากพบช่วงเวลาชนกัน ระบบโยน `ResourceConflictException` และส่งรหัส HTTP `409 Conflict` หากไม่มีข้อขัดแย้ง ระบบบันทึก `BookingRepository.save(newBooking)` และส่งคืน `BookingResponseDTO`
 
 ---

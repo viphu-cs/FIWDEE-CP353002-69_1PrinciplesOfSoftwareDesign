@@ -17,7 +17,7 @@
 ### 1.2 ขอบเขตฟังก์ชันของระบบ (System Scope)
 ระบบครอบคลุมฟังก์ชันการทำงานหลักดังต่อไปนี้:
 1. **การจองบริการนวด (Booking Management):** จองออนไลน์ล่วงหน้า และจองหน้าร้าน/ทางโทรศัพท์ ตรวจสอบเวลาว่างแบบเรียลไทม์
-2. **การจัดการทรัพยากรห้องนวด (Room Management):** จัดการสถานะห้องนวด (Active / Maintenance / Inactive) และจัดสรรห้องให้สอดคล้องกับประเภทบริการ
+2. **การจัดการทรัพยากรห้องนวด (Room Management):** จัดการสถานะห้องนวด (`RoomStatus`: `AVAILABLE`, `OCCUPIED`, `CLEANING`, `MAINTENANCE`) และสถานะเปิดใช้งาน (`isActive`) พร้อมจัดสรรห้องให้สอดคล้องกับประเภทบริการ
 3. **การจัดการหมอนวดและตารางงาน (Therapist & Schedule Management):** จัดการโปรไฟล์ ทักษะความเชี่ยวชาญ (Skills/Services) กะการทำงาน (Work Shifts) และวันลา
 4. **การจัดการคิวและลูกค้าหน้าร้าน (Queue & Front-Desk Management):** การ Check-in, เรียกคิว, จัดการคิวแทรก, และการโอนย้ายคิว
 5. **การดำเนินงานระหว่างให้บริการ (In-Service Lifecycle):** การบันทึกอาการ/ข้อควรระวังของลูกค้า, การเริ่มบริการ (Start Service), และการจบบริการ (Complete Service)
@@ -183,7 +183,7 @@ graph LR
         end
 
         subgraph "7. Administration & Configuration"
-            UC_Dash["UC-22: View Dashboard & Reports"]
+            UC_Dash["UC-22: View Business Dashboard & Reports"]
             UC_MShop["UC-23: Manage Shop Profile & Hours"]
             UC_MRoom["UC-24: Manage Rooms (Add/Edit/Disable)"]
             UC_MSrv["UC-25: Manage Services & Pricing"]
@@ -248,6 +248,10 @@ graph LR
 
     %% Owner Connections
     Owner --- UC_Log
+    Owner --- UC_Prof
+    Owner --- UC_Cancel
+    Owner --- UC_UpStatus
+    Owner --- UC_Pay
     Owner --- UC_Dash
     Owner --- UC_MShop
     Owner --- UC_MRoom
@@ -290,7 +294,7 @@ graph LR
 stateDiagram-v2
     [*] --> PENDING: Create Booking (Awaiting Confirmation)
     [*] --> CONFIRMED: Create Booking (Instant Confirmation)
-    PENDING --> CONFIRMED: Confirm Booking (Deposit Paid / Staff Confirmed)
+    PENDING --> CONFIRMED: Confirm Booking (Full Payment Settled / Staff Confirmed)
     PENDING --> CANCELLED: Customer/Staff Cancels or Timeout
 
     CONFIRMED --> CHECKED_IN: Customer Arrives & Receptionist Checks-in (UC-12)
@@ -311,7 +315,7 @@ stateDiagram-v2
 
 | สถานะ (Status) | คำอธิบายความหมายทางธุรกิจ | สถานะถัดไปที่เป็นไปได้ | ผู้มีสิทธิ์เปลี่ยนสถานะ (Authorized Actors) | เงื่อนไขทางธุรกิจ (Business Rules) |
 | :--- | :--- | :--- | :--- | :--- |
-| **`PENDING`** | การจองถูกสร้างขึ้นแล้วและทรัพยากร (ห้อง/หมอนวด) ถูกล็อก (Reserved/Locked) เพื่อรอการยืนยันหรือมัดจำ | `CONFIRMED`, `CANCELLED` | Customer, Receptionist, Owner, System | • **เปลี่ยนเป็น `CONFIRMED`:** เมื่อลูกค้าชำระเงินมัดจำล่วงหน้าสำเร็จ หรือ พนักงาน (Receptionist/Owner) ตรวจสอบและกดยืนยันการจองในระบบ<br>• **เปลี่ยนเป็น `CANCELLED`:** เมื่อลูกค้า/พนักงานกดยกเลิก หรือหมดเวลาชำระมัดจำ (Timeout)<br>• ถือเป็น Active Booking สำหรับตรวจสอบ Resource Conflict |
+| **`PENDING`** | การจองถูกสร้างขึ้นแล้วและทรัพยากร (ห้อง/หมอนวด) ถูกล็อก (Reserved/Locked) เพื่อรอการยืนยันหรือชำระเงิน | `CONFIRMED`, `CANCELLED` | Customer, Receptionist, Owner, System | • **เปลี่ยนเป็น `CONFIRMED`:** เมื่อลูกค้าชำระเงินเต็มจำนวนผ่านระบบออนไลน์สำเร็จ หรือ พนักงาน (Receptionist/Owner) ตรวจสอบและกดยืนยันการจองในระบบ<br>• **เปลี่ยนเป็น `CANCELLED`:** เมื่อลูกค้า/พนักงานกดยกเลิก หรือหมดเวลาชำระเงิน (Timeout)<br>• ถือเป็น Active Booking สำหรับตรวจสอบ Resource Conflict |
 | **`CONFIRMED`** | การจองได้รับการยืนยัน จัดสรรห้องและหมอนวดในระบบแล้ว | `CHECKED_IN`, `CANCELLED`, `NO_SHOW` | Receptionist, Customer (Cancel only), Owner | ลูกค้ายกเลิกได้ล่วงหน้าอย่างน้อย 2 ชั่วโมงก่อนเวลาเริ่ม |
 | **`CHECKED_IN`** | ลูกค้ามาถึงหน้าร้านแล้ว กำลังรอเรียกเข้าห้องนวดตามคิว | `IN_SERVICE`, `CANCELLED` | Receptionist, Therapist, Owner | หมอนวดหรือพนักงานกดเริ่มบริการเมื่อพร้อม |
 | **`IN_SERVICE`** | ลูกค้ากำลังรับบริการนวดอยู่ในห้องนวด | `COMPLETED` | Therapist, Receptionist, Owner | ห้องนวดและหมอนวดอยู่ในสถานะ Busy |
@@ -362,7 +366,7 @@ stateDiagram-v2
 6. ระบบนำผู้ใช้เข้าสู่ระบบพร้อมใช้งาน
 
 **Alternative Flows:**
-* **A1. Receptionist ลงทะเบียนให้ลูกค้า Walk-in แบบเร่งด่วน:** Receptionist กรอกเพียงชื่อและเบอร์โทรศัพท์ -> ระบบสร้างบัญชี Customer ทันทีเพื่อนำไปสร้าง Booking ต่อได้
+* **A1. Receptionist ลงทะเบียนให้ลูกค้า Walk-in แบบเร่งด่วน (Guest Customer):** ลูกค้า Walk-in ไม่จำเป็นต้องสมัครสมาชิก Receptionist กรอกเพียงชื่อ-นามสกุล และเบอร์โทรศัพท์ -> ระบบสร้างข้อมูล Guest Customer ทันทีโดยไม่ต้องกำหนด Username, Email, หรือ Password เพื่อนำไปสร้าง Booking ต่อได้ทันที
 
 **Exception Flows:**
 * **E1. ข้อมูลลงทะเบียนซ้ำ:** หากเบอร์โทรศัพท์หรืออีเมลมีอยู่ในระบบแล้ว ระบบแจ้งเตือนข้อผิดพลาดและแนะนำให้เข้าสู่ระบบหรือกู้คืนรหัสผ่าน
@@ -426,7 +430,7 @@ stateDiagram-v2
 9. ระบบทำการตรวจสอบ Resource Conflict ซ้ำในขั้นตอนสุดท้าย (Locking Check)
 10. ระบบจัดสรรห้องนวดที่เหมาะสมกับประเภทบริการและว่างในช่วงเวลาดังกล่าว
 11. Actor ตรวจสอบข้อมูลสรุปการจอง (บริการ, วันเวลา, หมอนวด, ห้อง, ราคารวม) และกดยืนยันการจอง
-12. ระบบสร้างข้อมูล Booking บันทึกลงฐานข้อมูล และกำหนดสถานะเริ่มต้นเป็น `CONFIRMED` (หรือ `PENDING` โดยที่ทรัพยากรห้องและหมอนวดถูกล็อก/Reserved ไว้แล้วเพื่อรอการยืนยันหรือชำระมัดจำ)
+12. ระบบสร้างข้อมูล Booking บันทึกลงฐานข้อมูล โดยหากลูกค้าเลือกชำระเงินออนไลน์ทันที ระบบจะรับชำระเงินเต็มจำนวนและกำหนดสถานะเป็น `CONFIRMED` หรือหากเลือกชำระหน้าร้าน ระบบจะกำหนดสถานะเป็น `CONFIRMED` (กรณี Walk-in/รับบริการทันที) หรือ `PENDING` (กรณีรอการยืนยันหรือรอชำระเงิน) โดยที่ทรัพยากรห้องและหมอนวดถูกล็อก/Reserved ไว้ทันที
 13. ระบบแสดงหน้าจอยืนยันการจองพร้อมรหัส Booking Reference Code และส่ง Notification แจ้งเตือน
 
 **Alternative Flows:**
@@ -500,7 +504,7 @@ stateDiagram-v2
 8. ระบบส่งการแจ้งเตือนยืนยันการยกเลิกไปยังลูกค้าและหมอนวดที่เกี่ยวข้อง
 
 **Alternative Flows:**
-* **A1. ยกเลิกโดยมีเงินมัดจำ/ชำระเงินล่วงหน้า:** หากมีนโยบายคืนเงิน ระบบจะส่งข้อมูลไปยังกระบวนการ Refund ตามเงื่อนไข
+* **A1. ยกเลิกรายการที่ชำระเงินล่วงหน้าเต็มจำนวน:** หากยกเลิกล่วงหน้าตามเกณฑ์ที่กำหนด (>= 2 ชั่วโมง ตาม BR-BKG-04) ระบบจะส่งข้อมูลไปยังกระบวนการ Refund เพื่อคืนเงินเต็มจำนวนตามนโยบายร้าน
 
 **Exception Flows:**
 * **E1. ลูกค้ายกเลิกกระชั้นชิดเกินกำหนด (Late Cancellation):** หากเหลือน้อยกว่า 2 ชั่วโมง ระบบจะไม่อนุญาตให้ Customer กดยกเลิกเองผ่านระบบ และแนะนำให้ติดต่อร้านทางโทรศัพท์
@@ -578,8 +582,8 @@ stateDiagram-v2
 **Description & Scope of Responsibility:**
 `UC-14` เป็น **Supporting Use Case** สำหรับตรวจสอบและบันทึก Booking Status Transition ที่ถูกเรียกจาก Use Case หลัก
 Actor **ไม่สามารถเลือกเปลี่ยน Booking Status เป็นค่าใดก็ได้อย่างอิสระ** แต่สามารถเปลี่ยนได้เฉพาะ State Transition ที่ได้รับอนุญาตตาม Business Rules และ Use Case ที่เกี่ยวข้องเท่านั้น:
-* `PENDING` $\rightarrow$ `CONFIRMED` (เมื่อลูกค้ายืนยันการจอง/ชำระมัดจำ หรือพนักงานกดยืนยัน)
-* `PENDING` $\rightarrow$ `CANCELLED` (เมื่อลูกค้ายกเลิก หรือหมดเวลาชำระมัดจำ Timeout)
+* `PENDING` $\rightarrow$ `CONFIRMED` (เมื่อลูกค้ายืนยันการจอง/ชำระเงินเต็มจำนวนออนไลน์ หรือพนักงานกดยืนยัน)
+* `PENDING` $\rightarrow$ `CANCELLED` (เมื่อลูกค้ายกเลิก หรือหมดเวลาชำระเงินออนไลน์ Timeout)
 * `CONFIRMED` $\rightarrow$ `CHECKED_IN` (เมื่อลูกค้ามาถึงร้านและ Receptionist ทำการ Check-in ผ่าน `UC-12`)
 * `CONFIRMED` $\rightarrow$ `CANCELLED` (เมื่อยกเลิกการจองล่วงหน้าตามเงื่อนไขผ่าน `UC-10`)
 * `CONFIRMED` $\rightarrow$ `NO_SHOW` (เมื่อลูกค้าไม่มาตามนัดหมายเกิน 15 นาที)
@@ -649,16 +653,16 @@ Actor **ไม่สามารถเลือกเปลี่ยน Booking 
 
 ### UC-19: Process Payment (การรับชำระเงินและออกใบเสร็จ)
 
-**Primary Actor:** Receptionist  
-**Supporting Actor:** Customer, Owner  
-**Goal:** บันทึกการชำระเงิน ตรวจสอบยอดเงิน และออกใบเสร็จรับเงินให้แก่ลูกค้า  
+**Primary Actor:** Receptionist, Customer (กรณีชำระออนไลน์)  
+**Supporting Actor:** Owner  
+**Goal:** บันทึกการชำระเงิน ตรวจสอบยอดเงิน และออกใบเสร็จรับเงินให้แก่ลูกค้า (ชำระเต็มจำนวนครั้งเดียว ไม่มีมัดจำ)  
 **Preconditions:**
-* Booking ต้องมีสถานะเป็น `IN_SERVICE`
-* การให้บริการเสร็จสิ้นทางกายภาพ (Physical Service Completed)
+* กรณีชำระหน้าร้าน: Booking ต้องมีสถานะเป็น `IN_SERVICE` (การให้บริการเสร็จสิ้นทางกายภาพ) หรือ `CHECKED_IN`
+* กรณีชำระออนไลน์: ดำเนินการชำระเต็มจำนวนขณะสร้างการจอง (`UC-07`) เพื่อเปลี่ยนสถานะเป็น `CONFIRMED`
 * มียอดค่าบริการที่ต้องชำระ  
-**Trigger:** ลูกค้าและพนักงานมาที่เคาน์เตอร์เพื่อชำระเงินหลังจบบริการนวด  
+**Trigger:** ลูกค้าและพนักงานมาที่เคาน์เตอร์เพื่อชำระเงินหลังจบบริการนวด หรือลูกค้ายืนยันชำระเงินออนไลน์  
 
-**Main Success Flow:**
+**Main Success Flow (ชำระเงินหน้าร้าน):**
 1. Receptionist เลือกรายการ Booking ของลูกค้าที่ให้บริการเสร็จสิ้นแล้ว
 2. ระบบคำนวณยอดเงินรวม (ค่าบริการนวด + บริการเสริม - ส่วนลด/โปรโมชัน) ผ่าน `UC-19a Validate Payment Amount`
 3. Receptionist เลือกช่องทางการชำระเงินที่ลูกค้าต้องการ:
@@ -667,13 +671,14 @@ Actor **ไม่สามารถเลือกเปลี่ยน Booking 
    * บัตรเครดิต/เดบิต (Credit/Debit Card)
 4. ลูกค้าทำการชำระเงิน และ Receptionist ตรวจสอบความถูกต้องของข้อมูลการชำระเงิน
 5. Receptionist กดยืนยันการรับเงิน และระบบเรียกใช้ `UC-19b Record Payment Transaction` บันทึกหมายเลขธุรกรรม, ช่องทาง, ยอดเงิน, วันเวลา, และพนักงานผู้รับเงิน
-6. ระบบบันทึก Payment Transaction สำเร็จ (`paymentStatus = COMPLETED`)
+6. ระบบบันทึก Payment Transaction สำเร็จ (`paymentStatus = COMPLETED`) โดยผูกกับ Booking แบบ 1:1
 7. ระบบเปลี่ยนสถานะ Booking เป็น `COMPLETED` อย่างสมบูรณ์
 8. ระบบเปิดสิทธิ์ให้ Customer สามารถส่งรีวิวประเมินความพึงพอใจได้ผ่าน `UC-18 Submit Review & Rating`
 9. ระบบพิมพ์ใบเสร็จรับเงิน หรือส่ง e-Receipt ไปยังอีเมล/SMS ของลูกค้า
 
 **Alternative Flows:**
 * **A1. การใช้คูปองส่วนลดหรือโปรโมชัน:** Receptionist ระบุโค้ดส่วนลด -> ระบบตรวจสอบเงื่อนไขและหักลบยอดเงินอัตโนมัติก่อนชำระ
+* **A2. รายการจองที่ชำระเงินออนไลน์ล่วงหน้าเรียบร้อยแล้ว:** หากลูกค้าชำระเงินเต็มจำนวนผ่านระบบออนไลน์ตั้งแต่ตอนจอง (`Payment.paymentStatus = COMPLETED`) เมื่อการบริการทางกายภาพเสร็จสิ้น ระบบจะตรวจสอบพบว่ายอดชำระสมบูรณ์แล้ว จึงสามารถเปลี่ยนสถานะ Booking เป็น `COMPLETED` ได้ทันทีโดยไม่ต้องเรียกเก็บเงินซ้ำที่เคาน์เตอร์
 
 **Postconditions:**
 * มีเรคคอร์ด Payment Transaction บันทึกในระบบอย่างสมบูรณ์ (`paymentStatus = COMPLETED`)
@@ -745,7 +750,7 @@ Actor **ไม่สามารถเลือกเปลี่ยน Booking 
 
 **Main Success Flow:**
 1. Owner เลือกสร้างบริการใหม่ หรือแก้ไขบริการเดิม
-2. Owner ระบุข้อมูล: ชื่อบริการ (ไทย/อังกฤษ), คำอธิบาย, ตัวเลือกระยะเวลา (เช่น 60, 90, 120 นาที), ราคาของแต่ละระยะเวลา, เวลา Buffer ที่ต้องใช้ทำความสะอาดห้อง, ประเภทห้องที่จำเป็นต้องใช้
+2. Owner ระบุข้อมูล: ชื่อบริการ (ไทย/อังกฤษ), คำอธิบาย, ตัวเลือกระยะเวลา (เช่น 60, 90, 120 นาที), ราคาของแต่ละระยะเวลา, ประเภทห้องที่จำเป็นต้องใช้ (เวลา Buffer ทำความสะอาดถูกจัดการที่ระดับห้องนวด Room ตาม BR-RES-03)
 3. Owner บันทึกข้อมูล
 4. ระบบบันทึก Service Catalog ใหม่ลงระบบ และแสดงผลในหน้าการจองของลูกค้าและหน้าร้านทันที
 
@@ -860,7 +865,7 @@ graph TD
 * **BR-QUE-03 (Service State Progression):** ลำดับสถานะต้องเป็นไปตามขั้นตอนทางธุรกิจ: `CONFIRMED` $\rightarrow$ `CHECKED_IN` $\rightarrow$ `IN_SERVICE` $\rightarrow$ `COMPLETED` เท่านั้น ห้ามข้ามขั้นตอน
 
 ### 8.4 กฎด้านการเงินและการชำระเงิน (Payment & Financial Rules)
-* **BR-PAY-01 (Exact Amount Settling):** ยอดชำระเงินต้องตรงกับราคาของบริการบวกบริการเสริมและหักส่วนลดอย่างถูกต้อง
+* **BR-PAY-01 (Single Full Settlement):** การชำระเงินในระบบใช้โมเดลชำระเต็มจำนวนครั้งเดียว (Full Payment Settlement) ไม่รองรับการแบ่งจ่ายหรือจ่ายมัดจำ โดยลูกค้าสามารถเลือกชำระเงินเต็มจำนวนล่วงหน้าผ่านระบบออนไลน์ หรือชำระเต็มจำนวนหน้าร้านเมื่อเข้ารับบริการ ยอดชำระเงินต้องตรงกับราคาของบริการบวกบริการเสริมและหักส่วนลดอย่างถูกต้อง
 * **BR-PAY-02 (Immutable Payment Records):** เมื่อบันทึกการชำระเงินสำเร็จ (`Payment Transaction`) แล้ว จะไม่สามารถแก้ไขหรือลบข้อมูลได้ (Audit Trail Integrity) หากมีการคืนเงินต้องสร้างเรคคอร์ด Refund แยกต่างหาก
 * **BR-PAY-03 (Commission Calculation):** ส่วนแบ่งค่าคอมมิชชันของหมอนวดจะถูกคำนวณอัตโนมัติเมื่อ Booking เปลี่ยนสถานะเป็น `COMPLETED` และมีการชำระเงินเรียบร้อยแล้ว
 

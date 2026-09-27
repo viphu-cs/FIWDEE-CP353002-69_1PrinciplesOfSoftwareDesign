@@ -135,30 +135,25 @@ package "1. Shop & People" {
     }
 
     class Customer <<conceptual>> {
-        + customerId : Long
         + healthNotes : String
         + preferredPressure : String
         + registeredDate : DateTime
     }
 
     class Therapist <<conceptual>> {
-        + therapistId : Long
         + nickname : String
         + bio : String
         + commissionRate : Decimal
         + employmentStatus : String
         + averageRating : Decimal
-        + isActive : Boolean
     }
 
     class Receptionist <<conceptual>> {
-        + receptionistId : Long
         + staffCode : String
         + counterStation : String
     }
 
     class Owner <<conceptual>> {
-        + ownerId : Long
         + managementLevel : String
     }
 

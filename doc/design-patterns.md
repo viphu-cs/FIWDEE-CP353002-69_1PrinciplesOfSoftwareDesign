@@ -442,7 +442,10 @@ classDiagram
         -BookingRepository bookingRepository
         -RoomRepository roomRepository
         -TherapistRepository therapistRepository
-        +BookingService(BookingRepository br, RoomRepository rr, TherapistRepository tr)
+        -ServiceRepository serviceRepository
+        -TherapistScheduleRepository scheduleRepository
+        -ApplicationEventPublisher eventPublisher
+        +BookingService(BookingRepository br, RoomRepository rr, TherapistRepository tr, ServiceRepository sr, TherapistScheduleRepository tsr, ApplicationEventPublisher ep)
     }
 
     class BookingRepository {
@@ -457,10 +460,25 @@ classDiagram
         <<interface>>
     }
 
+    class ServiceRepository {
+        <<interface>>
+    }
+
+    class TherapistScheduleRepository {
+        <<interface>>
+    }
+
+    class ApplicationEventPublisher {
+        <<interface>>
+    }
+
     BookingController --> BookingService : <<injected via constructor>>
     BookingService --> BookingRepository : <<injected via constructor>>
     BookingService --> RoomRepository : <<injected via constructor>>
     BookingService --> TherapistRepository : <<injected via constructor>>
+    BookingService --> ServiceRepository : <<injected via constructor>>
+    BookingService --> TherapistScheduleRepository : <<injected via constructor>>
+    BookingService --> ApplicationEventPublisher : <<injected via constructor>>
 ```
 
 ### How it is applied in FIWDEE
@@ -481,8 +499,8 @@ $$\text{PENDING} \longrightarrow \text{CONFIRMED} \longrightarrow \text{CHECKED\
 พร้อมสถานะปลายทางเพิ่มเติมคือ `CANCELLED` (ยกเลิกการจอง) และ `NO_SHOW` (ลูกค้าไม่มาตามนัด)
 
 ในแต่ละสถานะมีข้อกำหนดและข้อจำกัดในการเปลี่ยนสถานะ (State Transition Rules) ที่แตกต่างกันอย่างสิ้นเชิง:
-* การกดยกเลิก (`cancel()`) และการบันทึกไม่มาตามนัด (`markNoShow()`) กระทำได้เฉพาะในสถานะ `PENDING` และ `CONFIRMED`
-* เมื่อลูกค้า Check-in (`CHECKED_IN`) หรือเริ่มนวดแล้ว (`IN_SERVICE`) **ไม่อนุญาต** ให้บันทึก `markNoShow()` หรือยกเลิกการจอง
+* การกดยกเลิก (`cancel()`) กระทำได้ในสถานะ `PENDING`, `CONFIRMED` และ `CHECKED_IN` ส่วนการบันทึกไม่มาตามนัด (`markNoShow()`) กระทำได้เฉพาะในสถานะ `CONFIRMED`
+* เมื่อเริ่มนวดแล้ว (`IN_SERVICE`) **ไม่อนุญาต** ให้บันทึก `markNoShow()` หรือยกเลิกการจอง
 * **กฎสำคัญทางธุรกิจ (Domain Invariant):** การเปลี่ยนสถานะเป็น `COMPLETED` จะกระทำได้ใน `InServiceState` ก็ต่อเมื่อ **การชำระเงินได้รับการบันทึกว่าสำเร็จแล้ว (`Payment.paymentStatus == PaymentStatus.COMPLETED`)**
 * สถานะ `COMPLETED`, `CANCELLED`, และ `NO_SHOW` เป็น Terminal States ที่ไม่อนุญาตให้เปลี่ยนสถานะใดๆ ต่อไปได้อีก
 
@@ -549,7 +567,6 @@ classDiagram
         <<Concrete State>>
         +confirm(Booking booking) void
         +cancel(Booking booking) void
-        +markNoShow(Booking booking) void
         +getStatus() BookingStatus
     }
 
@@ -618,7 +635,7 @@ classDiagram
 `Design-level / Planned`
 
 ### Problem
-ใน Use Case `UC-15: Process Payment` ระบบร้านนวด FIWDEE รองรับวิธีการชำระเงิน 3 รูปแบบตามที่ระบุไว้ใน `domain-model.md` และ `use-case.md`:
+ใน Use Case `UC-19: Process Payment` ระบบร้านนวด FIWDEE รองรับวิธีการชำระเงิน 3 รูปแบบตามที่ระบุไว้ใน `domain-model.md` และ `use-case.md`:
 1. **เงินสด (`CASH`):** รับเงินสด คำนวณเงินทอน บันทึกจำนวนเงิน และออกใบเสร็จ
 2. **QR PromptPay (`QR_PROMPTPAY`):** สร้าง Dynamic PromptPay QR Code ตามยอดเงินสุทธิ และตรวจสอบ Slip Verification
 3. **บัตรเครดิต (`CREDIT_CARD`):** ประมวลผลผ่านเครื่องรูดบัตร EDC / Payment Gateway และบันทึกหมายเลข Transaction Reference

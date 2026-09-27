@@ -227,7 +227,6 @@ classDiagram
             <<Concrete State>>
             +confirm(Booking booking) void
             +cancel(Booking booking) void
-            +markNoShow(Booking booking) void
             +getStatus() BookingStatus
         }
 
@@ -364,30 +363,25 @@ classDiagram
         }
 
         class Customer {
-            +Long customerId
             +String healthNotes
             +String preferredPressure
             +DateTime registeredDate
         }
 
         class Therapist {
-            +Long therapistId
             +String nickname
             +String bio
             +Decimal commissionRate
             +String employmentStatus
             +Decimal averageRating
-            +Boolean isActive
         }
 
         class Receptionist {
-            +Long receptionistId
             +String staffCode
             +String counterStation
         }
 
         class Owner {
-            +Long ownerId
             +String managementLevel
         }
 
@@ -453,6 +447,7 @@ classDiagram
             +String specialNotes
             +DateTime actualStartTime
             +DateTime actualEndTime
+            +Long version
             +DateTime createdAt
             +DateTime updatedAt
             -BookingState currentState

@@ -190,30 +190,25 @@ package "domain" <<Layer: Domain>> {
     }
 
     class Customer extends User {
-        + customerId: Long
         + healthNotes: String
         + preferredPressure: String
         + registeredDate: DateTime
     }
 
     class Therapist extends User {
-        + therapistId: Long
         + nickname: String
         + bio: String
         + commissionRate: Decimal
         + employmentStatus: String
         + averageRating: Decimal
-        + isActive: Boolean
     }
 
     class Receptionist extends User {
-        + receptionistId: Long
         + staffCode: String
         + counterStation: String
     }
 
     class Owner extends User {
-        + ownerId: Long
         + managementLevel: String
     }
 
@@ -279,6 +274,7 @@ package "domain" <<Layer: Domain>> {
         + specialNotes: String
         + actualStartTime: DateTime
         + actualEndTime: DateTime
+        + version: Long
         + createdAt: DateTime
         + updatedAt: DateTime
         - currentState: BookingState
@@ -487,7 +483,6 @@ package "pattern.state" <<GoF: State Pattern>> {
     class PendingState extends AbstractBookingState {
         + confirm(booking: Booking): void
         + cancel(booking: Booking): void
-        + markNoShow(booking: Booking): void
         + getStatus(): BookingStatus
     }
 

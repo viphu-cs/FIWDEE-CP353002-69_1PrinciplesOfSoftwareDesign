@@ -46,7 +46,7 @@ rectangle "FIWDEE Massage Management & Booking System" as System {
     package "1. Authentication & Account Management" {
         usecase "UC-01: Register Account" as UC_Register
         usecase "UC-02: Authenticate / Login" as UC_Login
-        usecase "UC-03: View / Update Profile" as UC_Profile
+        usecase "UC-03: View / Edit Profile" as UC_Profile
     }
 
     package "2. Catalog & Shop Information" {
@@ -61,7 +61,7 @@ rectangle "FIWDEE Massage Management & Booking System" as System {
         usecase "UC-08a: Check Room Availability" as UC_CheckRoomAvail
         usecase "UC-08b: Check Therapist Availability" as UC_CheckTherapistAvail
         usecase "UC-08c: Validate Booking Time & Overlap" as UC_ValidateTime
-        usecase "UC-09: View Bookings / History" as UC_ViewBookings
+        usecase "UC-09: View Bookings & Schedule" as UC_ViewBookings
         usecase "UC-10: Cancel Booking" as UC_CancelBooking
     }
 
@@ -83,12 +83,12 @@ rectangle "FIWDEE Massage Management & Booking System" as System {
         usecase "UC-19: Process Payment" as UC_ProcessPayment
         usecase "UC-19a: Validate Payment Amount" as UC_ValidatePayment
         usecase "UC-19b: Record Payment Transaction" as UC_RecordPayment
-        usecase "UC-20: View Payment History & Receipts" as UC_ViewPayments
+        usecase "UC-20: View Payment History / Receipts" as UC_ViewPayments
         usecase "UC-21: View Therapist Earnings" as UC_ViewEarnings
     }
 
     package "7. Administration & Resource Configuration" {
-        usecase "UC-22: View Business Dashboard & Reports" as UC_Dashboard
+        usecase "UC-22: View Business Dashboard & Performance Reports" as UC_Dashboard
         usecase "UC-23: Manage Shop Profile & Hours" as UC_ManageShop
         usecase "UC-24: Manage Rooms (Add/Edit/Disable)" as UC_ManageRooms
         usecase "UC-25: Manage Services & Pricing" as UC_ManageServices
@@ -129,6 +129,7 @@ Customer --> UC_ViewShopInfo
 Customer --> UC_ViewServices
 Customer --> UC_ViewTherapists
 Customer --> UC_CreateBooking
+Customer --> UC_ProcessPayment : (Online Payment)
 Customer --> UC_ViewBookings
 Customer --> UC_CancelBooking
 Customer --> UC_SubmitReview
@@ -159,6 +160,7 @@ Therapist --> UC_ViewEarnings
 
 ' --- Owner ---
 Owner --> UC_Login
+Owner --> UC_Profile
 Owner --> UC_Dashboard
 Owner --> UC_ManageShop
 Owner --> UC_ManageRooms
@@ -167,6 +169,9 @@ Owner --> UC_ManageTherapists
 Owner --> UC_ManageSchedules
 Owner --> UC_ManageUsers
 Owner --> UC_ViewBookings : (All Bookings & History)
+Owner --> UC_CancelBooking
+Owner --> UC_UpdateStatus
+Owner --> UC_ProcessPayment
 Owner --> UC_ViewPayments : (All Transactions & Revenue)
 
 @enduml

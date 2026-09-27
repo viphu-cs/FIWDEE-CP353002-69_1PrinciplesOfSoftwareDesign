@@ -314,7 +314,7 @@ if (Selected PaymentMethod) then (CASH)
     |Staff|
     :Receive Cash from Customer;
     :Calculate Change;
-    :Deposit in Cash Drawer;
+    :Store Cash in Cash Drawer;
     |System|
     :CashPaymentStrategy.processPayment(payment);
     :Payment Result = SUCCESS;
@@ -404,7 +404,7 @@ if (Cancellation Permitted in Current State?) then (yes)
         :Status becomes [CANCELLED];
         :Save Booking (BookingRepository.save);
         note right
-        Late cancellation: Deposit / Fee is non-refundable
+        Late cancellation: Advance payment is non-refundable
         per Business Rule BR-BKG-04
         end note
     endif
