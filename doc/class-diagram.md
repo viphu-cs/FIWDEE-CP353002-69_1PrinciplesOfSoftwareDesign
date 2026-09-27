@@ -35,9 +35,10 @@ classDiagram
     direction TB
 
     %% =========================================================================
-    %% PRESENTATION LAYER (<<Layered Architecture>>, <<MVC>>, <<DTO + Mapper>>)
     %% =========================================================================
-    namespace presentation {
+    %% CONTROLLER & DTO & MAPPER (<<REST API Layer>>, <<MVC>>, <<DTO + Mapper>>)
+    %% =========================================================================
+    namespace controller_api {
         class BookingController {
             <<Controller>>
             -BookingService bookingService
@@ -69,7 +70,9 @@ classDiagram
             +getDailyQueue() ResponseEntity~List~QueueItemResponseDTO~~
             +callNextQueue() ResponseEntity~QueueItemResponseDTO~
         }
+    }
 
+    namespace dto {
         class BookingRequestDTO {
             <<DTO>>
             +Long customerId
@@ -126,7 +129,9 @@ classDiagram
             +Integer priorityLevel
             +String customerName
         }
+    }
 
+    namespace mapper {
         class BookingMapper {
             <<Mapper>>
             +toEntity(BookingRequestDTO dto) Booking
@@ -141,9 +146,9 @@ classDiagram
     }
 
     %% =========================================================================
-    %% APPLICATION / SERVICE LAYER (<<Service Layer>>, <<Dependency Injection>>)
+    %% SERVICE LAYER (<<Service Layer>>, <<Dependency Injection>>)
     %% =========================================================================
-    namespace application {
+    namespace service {
         class BookingService {
             <<Service>>
             -BookingRepository bookingRepository
@@ -591,9 +596,9 @@ classDiagram
     }
 
     %% =========================================================================
-    %% PERSISTENCE / INFRASTRUCTURE LAYER (<<Repository Pattern>>)
+    %% REPOSITORY LAYER (<<Repository Pattern>>)
     %% =========================================================================
-    namespace infrastructure {
+    namespace repository {
         class BookingRepository {
             <<interface>>
             <<Repository Pattern>>
@@ -884,27 +889,38 @@ public class InServiceState extends AbstractBookingState {
 src/main/java/com/fiwdee/
 ├── FiwdeeApplication.java
 │
-├── presentation/
-│   ├── controller/
-│   │   ├── BookingController.java
-│   │   ├── PaymentController.java
-│   │   └── QueueController.java
-│   ├── dto/
-│   │   ├── BookingRequestDTO.java
-│   │   ├── BookingResponseDTO.java
-│   │   ├── PaymentRequestDTO.java
-│   │   ├── PaymentResponseDTO.java
-│   │   └── QueueItemResponseDTO.java
-│   └── mapper/
-│       ├── BookingMapper.java
-│       └── PaymentMapper.java
+├── config/
+│   ├── SecurityConfig.java
+│   ├── WebConfig.java                        # CORS Configuration สำหรับ React Frontend
+│   ├── JpaConfig.java
+│   └── OpenApiConfig.java
 │
-├── application/
-│   └── service/
-│       ├── BookingService.java
-│       ├── PaymentService.java
-│       ├── QueueService.java
-│       └── TherapistService.java
+├── controller/
+│   └── api/                                  # REST API Controllers (@RestController สำหรับ React)
+│       ├── BookingController.java
+│       ├── PaymentController.java
+│       └── QueueController.java
+│
+├── service/
+│   ├── BookingService.java
+│   ├── PaymentService.java
+│   ├── QueueService.java
+│   ├── TherapistService.java
+│   └── impl/
+│       ├── BookingServiceImpl.java
+│       ├── PaymentServiceImpl.java
+│       ├── QueueServiceImpl.java
+│       └── TherapistServiceImpl.java
+│
+├── repository/
+│   ├── BookingRepository.java
+│   ├── PaymentRepository.java
+│   ├── RoomRepository.java
+│   ├── TherapistRepository.java
+│   ├── ServiceRepository.java
+│   ├── QueueItemRepository.java
+│   ├── CustomerRepository.java
+│   └── TherapistScheduleRepository.java
 │
 ├── domain/
 │   ├── entity/
@@ -937,6 +953,19 @@ src/main/java/com/fiwdee/
 │       ├── RefundStatus.java
 │       └── DayOfWeek.java
 │
+├── dto/
+│   ├── request/
+│   │   ├── BookingRequestDTO.java
+│   │   └── PaymentRequestDTO.java
+│   └── response/
+│       ├── BookingResponseDTO.java
+│       ├── PaymentResponseDTO.java
+│       └── QueueItemResponseDTO.java
+│
+├── mapper/
+│   ├── BookingMapper.java
+│   └── PaymentMapper.java
+│
 ├── pattern/
 │   ├── state/
 │   │   ├── BookingState.java
@@ -961,14 +990,13 @@ src/main/java/com/fiwdee/
 │       ├── NotificationListener.java
 │       └── QueueListener.java
 │
-└── infrastructure/
-    └── repository/
-        ├── BookingRepository.java
-        ├── PaymentRepository.java
-        ├── RoomRepository.java
-        ├── TherapistRepository.java
-        ├── ServiceRepository.java
-        ├── QueueItemRepository.java
-        ├── CustomerRepository.java
-        └── TherapistScheduleRepository.java
+├── exception/
+│   ├── GlobalExceptionHandler.java
+│   ├── ResourceNotFoundException.java
+│   ├── BadRequestException.java
+│   └── InvalidStateTransitionException.java
+│
+└── common/
+    ├── AppConstants.java
+    └── DateTimeUtil.java
 ```

@@ -16,15 +16,15 @@
 
 | Pattern | ปัญหาที่แก้ | ไฟล์/คลาสที่ใช้ | Class Diagram ประกอบ |
 | :--- | :--- | :--- | :--- |
-| **Layered Architecture** | ระบบร้านนวดมี Business Rules ซับซ้อน (เช่น ตรวจสอบความพร้อมห้อง/หมอนวด, เวลาทำความสะอาดห้อง 15 นาที, คำนวณราคา) หากไม่แยกชั้นการทำงาน โค้ดจะปะปนกัน (Spaghetti Code) จึงต้องแยก Presentation, Application, Domain และ Infrastructure ออกจากกันอย่างเด็ดขาดตามแนวทาง Strict Top-Down Dependency โดย Application Layer ไม่ขึ้นกับ Presentation DTO | **Design-level / Planned:**<br>• `presentation/controller/BookingController.java`<br>• `application/service/BookingService.java`<br>• `domain/entity/Booking.java`<br>• `infrastructure/repository/BookingRepository.java` | <code>BookingController</code><br>&emsp;&darr; <i>calls</i><br><code>BookingService</code><br>&emsp;&darr; <i>calls</i><br><code>BookingRepository</code><br>&emsp;&darr; <i>persists / retrieves</i><br><code>Booking (Domain Entity)</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.1](#51-layered-architecture) |
-| **MVC** | ในระบบ REST API ต้องแยกความรับผิดชอบด้านการรับส่ง HTTP Request/Response ออกจาก Domain Business Model เพื่อไม่ให้ Controller ต้องจัดการโครงสร้าง Entity ภายในโดยตรง และแยกส่วนแสดงผลหน้าบ้านไปยัง Frontend Client (React/Vue/Mobile) โดยไม่มีการสร้าง View Class ปลอมบน Server | **Design-level / Planned:**<br>• `presentation/controller/BookingController.java`<br>• `domain/entity/Booking.java`<br>• `presentation/dto/BookingResponseDTO.java`<br>• Frontend Client (API Consumer) | <code>Frontend (View)</code><br>&emsp;&darr; <i>1. HTTP Request</i><br><code>BookingController</code><br>&emsp;&darr; <i>2. uses via Mapper</i><br><code>Booking (Model)</code> &rarr; <code>BookingResponseDTO</code><br>&emsp;&darr; <i>3. HTTP JSON Response</i><br><code>Frontend (View)</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.2](#52-mvc-model-view-controller) |
-| **Repository Pattern** | Business Logic ไม่ควรผูกติดกับรายละเอียดและการเข้าถึงฐานข้อมูลโดยตรง เช่น การค้นหาห้องว่างที่ปลอดการจองสถานะ Active (`findActiveBookingsByRoomAndPeriod`) หรือการค้นหาประวัติการชำระเงิน จึงแยก Data Access Logic ออกจาก Service ด้วย Repository Interfaces ที่ครอบคลุม Spring Data JPA | **Design-level / Planned:**<br>• `infrastructure/repository/BookingRepository.java`<br>• `infrastructure/repository/PaymentRepository.java`<br>• `infrastructure/repository/RoomRepository.java`<br>• `infrastructure/repository/TherapistRepository.java`<br>• `application/service/BookingService.java` | <code>BookingService</code><br>&emsp;&darr; <i>calls data access</i><br><code>BookingRepository «interface»</code><br>&emsp;&darr; <i>manages persistence</i><br><code>Booking (Domain Entity)</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.3](#53-repository-pattern) |
-| **Service Layer Pattern** | หาก Controller เป็นผู้ตรวจสอบเงื่อนไขการจอง, จัดการ Resource Locking ของห้อง/หมอนวด, คำนวณส่วนลด, และจัดการ Transaction (`@Transactional`) จะทำให้ Business Logic กระจัดกระจาย จึงรวบรวม Business Logic ทั้งหมดไว้ใน Service Layer ซึ่งทำงานบน Domain Entities เป็นศูนย์กลางการประมวลผล | **Design-level / Planned:**<br>• `application/service/BookingService.java`<br>• `application/service/PaymentService.java`<br>• `application/service/QueueService.java`<br>• `application/service/TherapistService.java`<br>• `presentation/controller/BookingController.java` | <code>BookingController</code><br>&emsp;&darr; <i>delegates operation</i><br><code>BookingService</code><br>&emsp;&darr; <i>orchestrates</i><br><code>BookingRepository</code> + <code>RoomRepository</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.4](#54-service-layer-pattern) |
-| **DTO Pattern + Mapper** | ไม่ควรส่ง JPA Entity ออกเป็น API Contract โดยตรง เพราะจะทำให้ข้อมูลสำคัญรั่วไหล (เช่น `passwordHash` ใน `User`, `commissionRate` ใน `Therapist`) และเกิดปัญหา Infinite Recursion จาก Bi-directional JPA จึงใช้ Request/Response DTO ร่วมกับ Mapper ในการแปลงข้อมูลที่ Presentation Boundary | **Design-level / Planned:**<br>• `presentation/dto/BookingRequestDTO.java`<br>• `presentation/dto/BookingResponseDTO.java`<br>• `presentation/dto/PaymentRequestDTO.java`<br>• `presentation/dto/PaymentResponseDTO.java`<br>• `presentation/mapper/BookingMapper.java`<br>• `presentation/mapper/PaymentMapper.java`<br>• `domain/entity/Booking.java` | <code>BookingController</code> &rarr; <code>BookingRequestDTO</code><br>&emsp;&darr; <i>maps</i><br><code>BookingMapper</code> &harr; <code>Booking (Entity)</code><br>&emsp;&darr; <i>creates</i><br><code>BookingResponseDTO</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.5](#55-dto-pattern--mapper) |
-| **Dependency Injection** | Controller และ Service ไม่ควรสร้าง Instance ของ Repository หรือ Service อื่นด้วยคำสั่ง `new` เอง เพราะทำให้เกิด Tight Coupling และไม่สามารถทำ Unit Test ด้วย Mockito ได้ จึงใช้ Constructor Injection ของ Spring Framework ในการฉีด Dependency เข้ามาทั้งหมด | **Design-level / Planned:**<br>• `presentation/controller/BookingController.java`<br>• `application/service/BookingService.java`<br>• `application/service/PaymentService.java`<br>• `infrastructure/repository/BookingRepository.java` | <code>BookingController(BookingService)</code><br>&emsp;&darr; <i>constructor injection</i><br><code>BookingService(BookingRepository, ...)</code><br>&emsp;&darr; <i>constructor injection</i><br><code>BookingRepository</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.6](#56-dependency-injection) |
+| **Layered Architecture** | ระบบร้านนวดมี Business Rules ซับซ้อน (เช่น ตรวจสอบความพร้อมห้อง/หมอนวด, เวลาทำความสะอาดห้อง 15 นาที, คำนวณราคา) หากไม่แยกชั้นการทำงาน โค้ดจะปะปนกัน (Spaghetti Code) จึงต้องแยก Controller, Service, Domain และ Repository ออกจากกันอย่างเด็ดขาดตามแนวทาง Strict Top-Down Dependency โดย Service Layer ไม่ขึ้นกับ Presentation DTO | **Design-level / Planned:**<br>• `controller/api/BookingController.java`<br>• `service/BookingService.java`<br>• `domain/entity/Booking.java`<br>• `repository/BookingRepository.java` | <code>BookingController</code><br>&emsp;&darr; <i>calls</i><br><code>BookingService</code><br>&emsp;&darr; <i>calls</i><br><code>BookingRepository</code><br>&emsp;&darr; <i>persists / retrieves</i><br><code>Booking (Domain Entity)</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.1](#51-layered-architecture) |
+| **MVC** | ในระบบ REST API ต้องแยกความรับผิดชอบด้านการรับส่ง HTTP Request/Response ออกจาก Domain Business Model เพื่อไม่ให้ Controller ต้องจัดการโครงสร้าง Entity ภายในโดยตรง และแยกส่วนแสดงผลหน้าบ้านไปยัง Frontend Client (React SPA) โดยไม่มีการสร้าง View Class ปลอมบน Server | **Design-level / Planned:**<br>• `controller/api/BookingController.java`<br>• `domain/entity/Booking.java`<br>• `dto/response/BookingResponseDTO.java`<br>• Frontend Client (React Consumer) | <code>Frontend (React)</code><br>&emsp;&darr; <i>1. HTTP Request</i><br><code>BookingController</code><br>&emsp;&darr; <i>2. uses via Mapper</i><br><code>Booking (Model)</code> &rarr; <code>BookingResponseDTO</code><br>&emsp;&darr; <i>3. HTTP JSON Response</i><br><code>Frontend (React)</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.2](#52-mvc-model-view-controller) |
+| **Repository Pattern** | Business Logic ไม่ควรผูกติดกับรายละเอียดและการเข้าถึงฐานข้อมูลโดยตรง เช่น การค้นหาห้องว่างที่ปลอดการจองสถานะ Active (`findActiveBookingsByRoomAndPeriod`) หรือการค้นหาประวัติการชำระเงิน จึงแยก Data Access Logic ออกจาก Service ด้วย Repository Interfaces ที่ครอบคลุม Spring Data JPA | **Design-level / Planned:**<br>• `repository/BookingRepository.java`<br>• `repository/PaymentRepository.java`<br>• `repository/RoomRepository.java`<br>• `repository/TherapistRepository.java`<br>• `service/BookingService.java` | <code>BookingService</code><br>&emsp;&darr; <i>calls data access</i><br><code>BookingRepository «interface»</code><br>&emsp;&darr; <i>manages persistence</i><br><code>Booking (Domain Entity)</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.3](#53-repository-pattern) |
+| **Service Layer Pattern** | หาก Controller เป็นผู้ตรวจสอบเงื่อนไขการจอง, จัดการ Resource Locking ของห้อง/หมอนวด, คำนวณส่วนลด, และจัดการ Transaction (`@Transactional`) จะทำให้ Business Logic กระจัดกระจาย จึงรวบรวม Business Logic ทั้งหมดไว้ใน Service Layer ซึ่งทำงานบน Domain Entities เป็นศูนย์กลางการประมวลผล | **Design-level / Planned:**<br>• `service/BookingService.java`<br>• `service/PaymentService.java`<br>• `service/QueueService.java`<br>• `service/TherapistService.java`<br>• `controller/api/BookingController.java` | <code>BookingController</code><br>&emsp;&darr; <i>delegates operation</i><br><code>BookingService</code><br>&emsp;&darr; <i>orchestrates</i><br><code>BookingRepository</code> + <code>RoomRepository</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.4](#54-service-layer-pattern) |
+| **DTO Pattern + Mapper** | ไม่ควรส่ง JPA Entity ออกเป็น API Contract โดยตรง เพราะจะทำให้ข้อมูลสำคัญรั่วไหล (เช่น `passwordHash` ใน `User`, `commissionRate` ใน `Therapist`) และเกิดปัญหา Infinite Recursion จาก Bi-directional JPA จึงใช้ Request/Response DTO ร่วมกับ Mapper ในการแปลงข้อมูลที่ Presentation Boundary | **Design-level / Planned:**<br>• `dto/request/BookingRequestDTO.java`<br>• `dto/response/BookingResponseDTO.java`<br>• `dto/request/PaymentRequestDTO.java`<br>• `dto/response/PaymentResponseDTO.java`<br>• `mapper/BookingMapper.java`<br>• `mapper/PaymentMapper.java`<br>• `domain/entity/Booking.java` | <code>BookingController</code> &rarr; <code>BookingRequestDTO</code><br>&emsp;&darr; <i>maps</i><br><code>BookingMapper</code> &harr; <code>Booking (Entity)</code><br>&emsp;&darr; <i>creates</i><br><code>BookingResponseDTO</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.5](#55-dto-pattern--mapper) |
+| **Dependency Injection** | Controller และ Service ไม่ควรสร้าง Instance ของ Repository หรือ Service อื่นด้วยคำสั่ง `new` เอง เพราะทำให้เกิด Tight Coupling และไม่สามารถทำ Unit Test ด้วย Mockito ได้ จึงใช้ Constructor Injection ของ Spring Framework ในการฉีด Dependency เข้ามาทั้งหมด | **Design-level / Planned:**<br>• `controller/api/BookingController.java`<br>• `service/BookingService.java`<br>• `service/PaymentService.java`<br>• `repository/BookingRepository.java` | <code>BookingController(BookingService)</code><br>&emsp;&darr; <i>constructor injection</i><br><code>BookingService(BookingRepository, ...)</code><br>&emsp;&darr; <i>constructor injection</i><br><code>BookingRepository</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.6](#56-dependency-injection) |
 | **State Pattern** | วงจรชีวิตของ Booking มี 7 สถานะ (`PENDING`, `CONFIRMED`, `CHECKED_IN`, `IN_SERVICE`, `COMPLETED`, `CANCELLED`, `NO_SHOW`) ออกแบบผ่าน `AbstractBookingState` เพื่อให้สอดคล้องกับ Liskov Substitution Principle (LSP) และบังคับใช้กฎธุรกิจว่าการเปลี่ยนเป็น `COMPLETED` ใน `InServiceState` ต้องตรวจสอบว่า Payment มีสถานะ `COMPLETED` ก่อนเสมอ | **Design-level / Planned:**<br>• `pattern/state/BookingState.java`<br>• `pattern/state/AbstractBookingState.java`<br>• `pattern/state/PendingState.java`<br>• `pattern/state/ConfirmedState.java`<br>• `pattern/state/CheckedInState.java`<br>• `pattern/state/InServiceState.java`<br>• `pattern/state/CompletedState.java`<br>• `pattern/state/CancelledState.java`<br>• `pattern/state/NoShowState.java`<br>• `domain/entity/Booking.java` | <code>Booking</code> &rarr; <code>BookingState «interface»</code><br>&emsp;&uarr; <i>implements</i><br><code>AbstractBookingState «abstract»</code><br>&emsp;&uarr; <i>extends</i><br><code>PendingState</code>, <code>ConfirmedState</code>,<br><code>CheckedInState</code>, <code>InServiceState</code>,<br><code>CompletedState</code>, <code>CancelledState</code>, <code>NoShowState</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.7](#57-state-pattern) |
-| **Strategy Pattern** | การชำระเงินของร้านรองรับ 3 รูปแบบ (`CASH`, `QR_PROMPTPAY`, `CREDIT_CARD`) ซึ่งมี Algorithm แตกต่างกัน จึงแยก Strategy Classes โดยให้ `PaymentStrategy` รับเฉพาะ Domain Entity `Payment` ไม่ผูกติดกับ Presentation DTO ร่วมกับ `PaymentStrategyFactory` ในการเลือก Strategy ณ Runtime | **Design-level / Planned:**<br>• `pattern/strategy/PaymentStrategy.java`<br>• `pattern/strategy/CashPaymentStrategy.java`<br>• `pattern/strategy/QRPaymentStrategy.java`<br>• `pattern/strategy/CardPaymentStrategy.java`<br>• `pattern/strategy/PaymentStrategyFactory.java`<br>• `application/service/PaymentService.java`<br>• `domain/entity/Payment.java` | <code>PaymentService</code> &rarr; <code>PaymentStrategyFactory</code><br>&emsp;&darr; <i>gets strategy</i><br><code>PaymentStrategy «interface»</code><br>&emsp;&uarr; <i>realizes</i><br><code>CashPaymentStrategy</code>, <code>QRPaymentStrategy</code>,<br><code>CardPaymentStrategy</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.8](#58-strategy-pattern) |
-| **Observer Pattern** | เมื่อ Booking เปลี่ยนสถานะ มีหลายคอมโพเนนต์ต้องตอบสนอง (เช่น ส่ง SMS/Email แจ้งเตือนลูกค้า หรือสร้างบัตรคิวหน้าร้านเมื่อ Check-in) หาก `BookingService` เรียกตรงไปยังทุกระบบจะเกิด Tight Coupling จึงใช้ Event Publishing (`BookingStatusChangedEvent`) แยกการทำงานแบบ Event-driven | **Design-level / Planned:**<br>• `pattern/observer/BookingStatusChangedEvent.java`<br>• `pattern/observer/NotificationListener.java`<br>• `pattern/observer/QueueListener.java`<br>• `application/service/BookingService.java`<br>• `application/service/QueueService.java` | <code>BookingService</code><br>&emsp;&darr; <i>publishes</i><br><code>BookingStatusChangedEvent</code><br>&emsp;&darr; <i>observes & reacts</i><br><code>NotificationListener</code> & <code>QueueListener</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.9](#59-observer-pattern) |
+| **Strategy Pattern** | การชำระเงินของร้านรองรับ 3 รูปแบบ (`CASH`, `QR_PROMPTPAY`, `CREDIT_CARD`) ซึ่งมี Algorithm แตกต่างกัน จึงแยก Strategy Classes โดยให้ `PaymentStrategy` รับเฉพาะ Domain Entity `Payment` ไม่ผูกติดกับ Presentation DTO ร่วมกับ `PaymentStrategyFactory` ในการเลือก Strategy ณ Runtime | **Design-level / Planned:**<br>• `pattern/strategy/PaymentStrategy.java`<br>• `pattern/strategy/CashPaymentStrategy.java`<br>• `pattern/strategy/QRPaymentStrategy.java`<br>• `pattern/strategy/CardPaymentStrategy.java`<br>• `pattern/strategy/PaymentStrategyFactory.java`<br>• `service/PaymentService.java`<br>• `domain/entity/Payment.java` | <code>PaymentService</code> &rarr; <code>PaymentStrategyFactory</code><br>&emsp;&darr; <i>gets strategy</i><br><code>PaymentStrategy «interface»</code><br>&emsp;&uarr; <i>realizes</i><br><code>CashPaymentStrategy</code>, <code>QRPaymentStrategy</code>,<br><code>CardPaymentStrategy</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.8](#58-strategy-pattern) |
+| **Observer Pattern** | เมื่อ Booking เปลี่ยนสถานะ มีหลายคอมโพเนนต์ต้องตอบสนอง (เช่น ส่ง SMS/Email แจ้งเตือนลูกค้า หรือสร้างบัตรคิวหน้าร้านเมื่อ Check-in) หาก `BookingService` เรียกตรงไปยังทุกระบบจะเกิด Tight Coupling จึงใช้ Event Publishing (`BookingStatusChangedEvent`) แยกการทำงานแบบ Event-driven | **Design-level / Planned:**<br>• `pattern/observer/BookingStatusChangedEvent.java`<br>• `pattern/observer/NotificationListener.java`<br>• `pattern/observer/QueueListener.java`<br>• `service/BookingService.java`<br>• `service/QueueService.java` | <code>BookingService</code><br>&emsp;&darr; <i>publishes</i><br><code>BookingStatusChangedEvent</code><br>&emsp;&darr; <i>observes & reacts</i><br><code>NotificationListener</code> & <code>QueueListener</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.9](#59-observer-pattern) |
 
 ---
 
@@ -40,10 +40,10 @@
 3. ไม่สามารถทำ Unit Testing แบบแยกส่วนได้อย่างมีประสิทธิภาพ
 
 ### Classes / Files
-* **Presentation Layer:** `src/main/java/com/fiwdee/presentation/controller/BookingController.java`
-* **Application / Service Layer:** `src/main/java/com/fiwdee/application/service/BookingService.java`
+* **Controller Layer:** `src/main/java/com/fiwdee/controller/api/BookingController.java`
+* **Service Layer:** `src/main/java/com/fiwdee/service/BookingService.java`
 * **Domain Layer:** `src/main/java/com/fiwdee/domain/entity/Booking.java`
-* **Infrastructure / Persistence Layer:** `src/main/java/com/fiwdee/infrastructure/repository/BookingRepository.java`
+* **Repository Layer:** `src/main/java/com/fiwdee/repository/BookingRepository.java`
 
 ### Class Diagram
 
@@ -53,7 +53,7 @@ classDiagram
     direction TB
 
     class BookingController {
-        <<Presentation Layer>>
+        <<Controller Layer>>
         -BookingService bookingService
         -BookingMapper bookingMapper
         +createBooking(BookingRequestDTO request) ResponseEntity~BookingResponseDTO~
@@ -62,7 +62,7 @@ classDiagram
     }
 
     class BookingService {
-        <<Application Layer>>
+        <<Service Layer>>
         -BookingRepository bookingRepository
         +createBooking(Booking booking) Booking
         +confirmBooking(Long bookingId) Booking
@@ -70,7 +70,7 @@ classDiagram
     }
 
     class BookingRepository {
-        <<Infrastructure Layer (Interface)>>
+        <<Repository Layer (Interface)>>
         +findById(Long id) Optional~Booking~
         +save(Booking booking) Booking
         +findActiveBookingsByRoomAndPeriod(Long roomId, DateTime start, DateTime end) List~Booking~
@@ -92,10 +92,10 @@ classDiagram
 
 ### How it is applied in FIWDEE
 ระบบ FIWDEE กำหนดการแบ่งชั้นสถาปัตยกรรมออกเป็น 4 ชั้นหลัก โดยบังคับใช้ทิศทางการพึ่งพาจากบนลงล่าง (**Strict Top-Down Dependency**) อย่างเคร่งครัด:
-1. **Presentation Layer (`presentation`):** รับ HTTP Requests, ตรวจสอบความถูกต้องของ Input Payload (Validation), ใช้ Mapper แปลง Request DTO $\rightarrow$ Domain Entity, เรียก Service Layer และส่ง HTTP Response กลับไปยัง Client
-2. **Application Layer (`application`):** รวบรวม Business Logic หลักของระบบ, กำหนดขอบเขต Transaction Boundary (`@Transactional`), ตรวจสอบเงื่อนไขทางธุรกิจข้าม Entities, และประสานงานระหว่างส่วนประกอบต่างๆ โดย **Application Layer จะไม่ขึ้นกับ Presentation DTO**
+1. **Controller Layer (`controller/api`):** รับ HTTP Requests, ตรวจสอบความถูกต้องของ Input Payload (Validation), ใช้ Mapper แปลง Request DTO $\rightarrow$ Domain Entity, เรียก Service Layer และส่ง HTTP Response กลับไปยัง Client (React)
+2. **Service Layer (`service` & `service/impl`):** รวบรวม Business Logic หลักของระบบ, กำหนดขอบเขต Transaction Boundary (`@Transactional`), ตรวจสอบเงื่อนไขทางธุรกิจข้าม Entities, และประสานงานระหว่างส่วนประกอบต่างๆ โดย **Service Layer จะไม่ขึ้นกับ Presentation DTO**
 3. **Domain Layer (`domain`):** จัดเก็บ Domain Entities ทั้ง 18 คลาส (เช่น `Booking`, `Room`, `Therapist`, `Customer`, `Payment`), Business Rules ระดับ Entity, และ Enums ทั้ง 9 ชนิด โดยไม่มีความผูกพันกับ Framework ภายนอก
-4. **Infrastructure Layer (`infrastructure`):** จัดการเรื่อง Data Persistence, การติดต่อกับฐานข้อมูลผ่าน Repository Interfaces และ JPA Queries ทำให้การเปลี่ยนแปลงระบบจัดเก็บข้อมูลไม่กระทบต่อ Business Logic ใน Domain หรือ Service Layer
+4. **Repository Layer (`repository`):** จัดการเรื่อง Data Persistence, การติดต่อกับฐานข้อมูลผ่าน Repository Interfaces และ JPA Queries ทำให้การเปลี่ยนแปลงระบบจัดเก็บข้อมูลไม่กระทบต่อ Business Logic ใน Domain หรือ Service Layer
 
 ---
 
@@ -108,9 +108,9 @@ classDiagram
 ในระบบ FIWDEE การสื่อสารระหว่างผู้ใช้งาน (ลูกค้าที่จองผ่านเว็บ, พนักงานต้อนรับ Receptionist หน้าร้าน, เจ้าของร้าน Owner) กับระบบหลังบ้าน ต้องมีการจัดการข้อมูลนำเข้าและส่งออกอย่างเป็นระบบ หาก Controller ทำหน้าที่ประมวลผล Business Rules เอง หรือให้ Client ส่งข้อมูลเข้ามาแก้ไข JPA Entity ใน Database โดยตรง จะทำให้เกิดช่องโหว่ด้านความปลอดภัย (Security Vulnerabilities) และเกิดความสับสนระหว่างข้อมูลการแสดงผลกับข้อมูลทางธุรกิจ
 
 ### Classes / Files
-* **Controller:** `src/main/java/com/fiwdee/presentation/controller/BookingController.java`, `src/main/java/com/fiwdee/presentation/controller/PaymentController.java`
-* **Model:** `src/main/java/com/fiwdee/domain/entity/Booking.java`, `src/main/java/com/fiwdee/presentation/dto/BookingResponseDTO.java`
-* **View:** Frontend Client Application (React / Vue Web App, Mobile Application สำหรับพนักงานและลูกค้า)
+* **Controller:** `src/main/java/com/fiwdee/controller/api/BookingController.java`, `src/main/java/com/fiwdee/controller/api/PaymentController.java`
+* **Model:** `src/main/java/com/fiwdee/domain/entity/Booking.java`, `src/main/java/com/fiwdee/dto/response/BookingResponseDTO.java`
+* **View:** Frontend Client Application (React Single Page Application สำหรับลูกค้าและพนักงาน)
 
 ### Class Diagram
 
@@ -178,12 +178,12 @@ classDiagram
 หาก Service Layer ต้องเขียนโค้ด SQL หรือใช้งาน JPA `EntityManager` / native query โดยตรงฝังอยู่ใน Business Methods จะทำให้ Service Layer ผูกติดแน่นกับระบบฐานข้อมูล (High Coupling), ทำให้เกิดโค้ดซ้ำซ้อน และยากต่อการทำ Unit Test โดยไม่ต่อฐานข้อมูลจริง
 
 ### Classes / Files
-* `src/main/java/com/fiwdee/infrastructure/repository/BookingRepository.java`
-* `src/main/java/com/fiwdee/infrastructure/repository/PaymentRepository.java`
-* `src/main/java/com/fiwdee/infrastructure/repository/RoomRepository.java`
-* `src/main/java/com/fiwdee/infrastructure/repository/TherapistRepository.java`
-* `src/main/java/com/fiwdee/infrastructure/repository/CustomerRepository.java`
-* `src/main/java/com/fiwdee/application/service/BookingService.java`
+* `src/main/java/com/fiwdee/repository/BookingRepository.java`
+* `src/main/java/com/fiwdee/repository/PaymentRepository.java`
+* `src/main/java/com/fiwdee/repository/RoomRepository.java`
+* `src/main/java/com/fiwdee/repository/TherapistRepository.java`
+* `src/main/java/com/fiwdee/repository/CustomerRepository.java`
+* `src/main/java/com/fiwdee/service/BookingService.java`
 * `src/main/java/com/fiwdee/domain/entity/Booking.java`
 
 ### Class Diagram
@@ -244,12 +244,12 @@ classDiagram
 หากให้ Controller เป็นผู้ประมวลผล Logic เหล่านี้ จะทำให้เกิดความซ้ำซ้อนระหว่าง Online Controller และ Walk-in Controller, ขาด Transaction Boundary และทำให้ยากต่อการดูแลรักษา
 
 ### Classes / Files
-* `src/main/java/com/fiwdee/application/service/BookingService.java`
-* `src/main/java/com/fiwdee/application/service/PaymentService.java`
-* `src/main/java/com/fiwdee/application/service/QueueService.java`
-* `src/main/java/com/fiwdee/application/service/TherapistService.java`
-* `src/main/java/com/fiwdee/presentation/controller/BookingController.java`
-* `src/main/java/com/fiwdee/infrastructure/repository/BookingRepository.java`
+* `src/main/java/com/fiwdee/service/BookingService.java`
+* `src/main/java/com/fiwdee/service/PaymentService.java`
+* `src/main/java/com/fiwdee/service/QueueService.java`
+* `src/main/java/com/fiwdee/service/TherapistService.java`
+* `src/main/java/com/fiwdee/controller/api/BookingController.java`
+* `src/main/java/com/fiwdee/repository/BookingRepository.java`
 
 ### Class Diagram
 
@@ -259,7 +259,7 @@ classDiagram
     direction TB
 
     class BookingController {
-        <<Presentation Layer>>
+        <<Controller Layer>>
         -BookingService bookingService
         -BookingMapper bookingMapper
         +createBooking(BookingRequestDTO request) ResponseEntity~BookingResponseDTO~
@@ -320,9 +320,9 @@ classDiagram
 3. **Database Schema Coupling:** หากโครงสร้างฐานข้อมูลภายในมีการปรับเปลี่ยน จะส่งผลให้ API Contract ที่เชื่อมต่อกับ Mobile App หรือ Frontend Web พังทันที
 
 ### Classes / Files
-* **Request DTOs:** `src/main/java/com/fiwdee/presentation/dto/BookingRequestDTO.java`, `src/main/java/com/fiwdee/presentation/dto/PaymentRequestDTO.java`
-* **Response DTOs:** `src/main/java/com/fiwdee/presentation/dto/BookingResponseDTO.java`, `src/main/java/com/fiwdee/presentation/dto/PaymentResponseDTO.java`, `src/main/java/com/fiwdee/presentation/dto/QueueItemResponseDTO.java`
-* **Mappers:** `src/main/java/com/fiwdee/presentation/mapper/BookingMapper.java`, `src/main/java/com/fiwdee/presentation/mapper/PaymentMapper.java`
+* **Request DTOs:** `src/main/java/com/fiwdee/dto/request/BookingRequestDTO.java`, `src/main/java/com/fiwdee/dto/request/PaymentRequestDTO.java`
+* **Response DTOs:** `src/main/java/com/fiwdee/dto/response/BookingResponseDTO.java`, `src/main/java/com/fiwdee/dto/response/PaymentResponseDTO.java`, `src/main/java/com/fiwdee/dto/response/QueueItemResponseDTO.java`
+* **Mappers:** `src/main/java/com/fiwdee/mapper/BookingMapper.java`, `src/main/java/com/fiwdee/mapper/PaymentMapper.java`
 * **Domain Entities:** `src/main/java/com/fiwdee/domain/entity/Booking.java`, `src/main/java/com/fiwdee/domain/entity/Payment.java`
 
 ### Class Diagram
@@ -416,12 +416,12 @@ public class BookingController {
 3. การใช้ Field Injection (`@Autowired` ที่ตัวแปรโดยตรง) ทำให้ไม่สามารถสร้าง Object นอก Spring Container ได้
 
 ### Classes / Files
-* `src/main/java/com/fiwdee/presentation/controller/BookingController.java`
-* `src/main/java/com/fiwdee/application/service/BookingService.java`
-* `src/main/java/com/fiwdee/application/service/PaymentService.java`
-* `src/main/java/com/fiwdee/infrastructure/repository/BookingRepository.java`
-* `src/main/java/com/fiwdee/infrastructure/repository/RoomRepository.java`
-* `src/main/java/com/fiwdee/infrastructure/repository/TherapistRepository.java`
+* `src/main/java/com/fiwdee/controller/api/BookingController.java`
+* `src/main/java/com/fiwdee/service/BookingService.java`
+* `src/main/java/com/fiwdee/service/PaymentService.java`
+* `src/main/java/com/fiwdee/repository/BookingRepository.java`
+* `src/main/java/com/fiwdee/repository/RoomRepository.java`
+* `src/main/java/com/fiwdee/repository/TherapistRepository.java`
 
 ### Class Diagram
 
@@ -649,7 +649,7 @@ classDiagram
   * `src/main/java/com/fiwdee/pattern/strategy/QRPaymentStrategy.java`
   * `src/main/java/com/fiwdee/pattern/strategy/CardPaymentStrategy.java`
 * **Strategy Factory (GoF Factory Pattern):** `src/main/java/com/fiwdee/pattern/strategy/PaymentStrategyFactory.java`
-* **Service:** `src/main/java/com/fiwdee/application/service/PaymentService.java`
+* **Service:** `src/main/java/com/fiwdee/service/PaymentService.java`
 * **Domain Entity & Enum:** `src/main/java/com/fiwdee/domain/entity/Payment.java`, `src/main/java/com/fiwdee/domain/enums/PaymentMethod.java`
 
 ### Class Diagram
@@ -734,7 +734,7 @@ classDiagram
 * **Listeners / Observers:**
   * `src/main/java/com/fiwdee/pattern/observer/NotificationListener.java`
   * `src/main/java/com/fiwdee/pattern/observer/QueueListener.java`
-* **Publisher & Service:** `src/main/java/com/fiwdee/application/service/BookingService.java`, `src/main/java/com/fiwdee/application/service/QueueService.java`
+* **Publisher & Service:** `src/main/java/com/fiwdee/service/BookingService.java`, `src/main/java/com/fiwdee/service/QueueService.java`
 
 ### Class Diagram
 

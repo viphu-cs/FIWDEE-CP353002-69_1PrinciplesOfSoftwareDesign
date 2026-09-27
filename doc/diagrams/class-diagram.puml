@@ -9,9 +9,9 @@ skinparam nodesep 40
 skinparam ranksep 45
 
 ' =========================================================================
-' 1. PRESENTATION LAYER
+' 1. CONTROLLER & DTO & MAPPER
 ' =========================================================================
-package "presentation" <<Layer: Presentation>> {
+package "controller.api" <<Controllers>> {
     class BookingController <<Controller>> {
         - bookingService: BookingService
         - bookingMapper: BookingMapper
@@ -40,7 +40,9 @@ package "presentation" <<Layer: Presentation>> {
         + getDailyQueue(): ResponseEntity<List<QueueItemResponseDTO>>
         + callNextQueue(): ResponseEntity<QueueItemResponseDTO>
     }
+}
 
+package "dto" <<DTO>> {
     class BookingRequestDTO <<DTO>> {
         + customerId: Long
         + serviceId: Long
@@ -92,7 +94,9 @@ package "presentation" <<Layer: Presentation>> {
         + priorityLevel: Integer
         + customerName: String
     }
+}
 
+package "mapper" <<Mapper>> {
     class BookingMapper <<Mapper>> {
         + toEntity(dto: BookingRequestDTO): Booking
         + toResponseDTO(entity: Booking): BookingResponseDTO
@@ -105,9 +109,9 @@ package "presentation" <<Layer: Presentation>> {
 }
 
 ' =========================================================================
-' 2. APPLICATION / SERVICE LAYER
+' 2. SERVICE LAYER
 ' =========================================================================
-package "application" <<Layer: Application>> {
+package "service" <<Layer: Service>> {
     class BookingService <<Service>> {
         - bookingRepository: BookingRepository
         - roomRepository: RoomRepository
@@ -408,9 +412,9 @@ package "domain" <<Layer: Domain>> {
 }
 
 ' =========================================================================
-' 4. PERSISTENCE / INFRASTRUCTURE LAYER
+' 4. REPOSITORY LAYER
 ' =========================================================================
-package "infrastructure" <<Layer: Persistence>> {
+package "repository" <<Layer: Repository>> {
     interface BookingRepository <<Repository>> {
         + findById(id: Long): Optional<Booking>
         + save(booking: Booking): Booking
