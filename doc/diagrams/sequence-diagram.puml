@@ -103,8 +103,8 @@ else #E8F8F5 Resource Available (No Conflict)
         deactivate PendingState
         BookingEntity --> Service : booking confirmed
         deactivate BookingEntity
-    else #FFF8E1 Requires Staff / Deposit Confirmation (Advance Online Booking)
-        note over Service, BookingEntity : Initial status remains PENDING (Waiting for deposit/staff confirmation)
+    else #FFF8E1 Online Advance Booking (Pending Payment)
+        note over Service, BookingEntity : Initial status remains PENDING (Waiting for online full payment or counter confirmation)
     end
 
     Service -> BookingEntity : 16. setTotalPrice(durationOption.getPrice())
@@ -285,6 +285,7 @@ box "Application Layer" #EBF5FB
     participant "PaymentStrategy" as Strategy <<Strategy>>
     participant "ApplicationEventPublisher" as EventPublisher <<Event Bus>>
     participant "NotificationListener" as NotiObserver <<Observer>>
+    participant "QueueListener" as QueueObserver <<Observer>>
 end box
 
 box "Domain Layer" #FEF9E7
@@ -453,12 +454,20 @@ else #E8F8F5 Payment == COMPLETED
     PayService -> StatusEvent : 35. new BookingStatusChangedEvent(this, bookingId, IN_SERVICE, COMPLETED)
     PayService -> EventPublisher : 36. publishEvent(statusEvent)
     activate EventPublisher
-    EventPublisher -> NotiObserver : 37. onBookingStatusChanged(statusEvent)
-    activate NotiObserver
-    NotiObserver -> NotiObserver : sendCustomerNotification(bookingId, "Thank you! View receipt & Review service")
-    NotiObserver --> EventPublisher : done
-    deactivate NotiObserver
-    EventPublisher --> PayService : event handled
+    par #EBF5FB Asynchronous Customer Notification
+        EventPublisher -> NotiObserver : 37a. onBookingStatusChanged(statusEvent)
+        activate NotiObserver
+        NotiObserver -> NotiObserver : sendCustomerNotification(bookingId, "Thank you! View receipt & Review service")
+        NotiObserver --> EventPublisher : done
+        deactivate NotiObserver
+    else #FEF9E7 Asynchronous Queue Completion
+        EventPublisher -> QueueObserver : 37b. onBookingStatusChanged(statusEvent)
+        activate QueueObserver
+        QueueObserver -> QueueObserver : onBookingStatusChanged(IN_SERVICE -> COMPLETED)
+        QueueObserver --> EventPublisher : done
+        deactivate QueueObserver
+    end
+    EventPublisher --> PayService : all observers notified
     deactivate EventPublisher
 end
 

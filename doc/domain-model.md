@@ -57,30 +57,25 @@ classDiagram
     }
 
     class Customer {
-        +Long customerId
         +String healthNotes
         +String preferredPressure
         +DateTime registeredDate
     }
 
     class Therapist {
-        +Long therapistId
         +String nickname
         +String bio
         +Decimal commissionRate
         +String employmentStatus
         +Decimal averageRating
-        +Boolean isActive
     }
 
     class Receptionist {
-        +Long receptionistId
         +String staffCode
         +String counterStation
     }
 
     class Owner {
-        +Long ownerId
         +String managementLevel
     }
 
@@ -253,11 +248,11 @@ classDiagram
 
 | ชื่อคลาส (Class Name) | บทบาทเชิงมโนทัศน์ (Domain Concept & Role) | คุณลักษณะสำคัญ (Key Conceptual Attributes) |
 | :--- | :--- | :--- |
-| **`User`** | ตัวแทนบัญชีผู้ใช้งานพื้นฐานส่วนกลางของระบบ จัดเก็บข้อมูลการพิสูจน์ตัวตนและการติดต่อ | `userId`, `username`, `passwordHash`, `fullName`, `email`, `phoneNumber`, `role`, `isActive`, `createdAt` |
-| **`Customer`** | ผู้รับบริการนวด (Subtype ของ `User`) จัดเก็บประวัติสุขภาพและข้อควรระวังเฉพาะบุคคล | `customerId`, `healthNotes` (เช่น ข้อควรระวัง สตรีมีครรภ์ หรือบริเวณที่ต้องการเน้น), `preferredPressure`, `registeredDate` |
-| **`Therapist`** | ผู้ให้บริการนวด (Subtype ของ `User`) จัดเก็บข้อมูลส่วนแบ่งรายได้ สถานะความพร้อม และคะแนนความพึงพอใจ | `therapistId`, `nickname`, `bio`, `commissionRate`, `employmentStatus`, `averageRating`, `isActive` |
-| **`Receptionist`** | พนักงานต้อนรับหน้าร้าน (Subtype ของ `User`) ผู้ดูแลคิว การเช็คอิน และการรับชำระเงิน | `receptionistId`, `staffCode`, `counterStation` |
-| **`Owner`** | เจ้าของร้าน/ผู้บริหารระบบ (Subtype ของ `User`) ผู้มีสิทธิ์สูงสุดในการกำหนดนโยบายร้านและดูภาพรวมการเงิน | `ownerId`, `managementLevel` |
+| **`User`** | ตัวแทนบัญชีผู้ใช้งานพื้นฐานส่วนกลางของระบบ จัดเก็บข้อมูลการพิสูจน์ตัวตนและการติดต่อ (สำหรับลูกค้า Walk-in แบบ Guest: `username`, `passwordHash`, `email` สามารถเป็นค่าว่างได้ โดยต้องการเพียง `fullName` และ `phoneNumber`) | `userId`, `username`, `passwordHash`, `fullName`, `email`, `phoneNumber`, `role`, `isActive`, `createdAt` |
+| **`Customer`** | ผู้รับบริการนวด (Subtype ของ `User` สืบทอด `userId`) จัดเก็บประวัติสุขภาพและข้อควรระวังเฉพาะบุคคล | `healthNotes` (เช่น ข้อควรระวัง สตรีมีครรภ์ หรือบริเวณที่ต้องการเน้น), `preferredPressure`, `registeredDate` |
+| **`Therapist`** | ผู้ให้บริการนวด (Subtype ของ `User` สืบทอด `userId` และ `isActive`) จัดเก็บข้อมูลส่วนแบ่งรายได้และคะแนนความพึงพอใจ | `nickname`, `bio`, `commissionRate`, `employmentStatus`, `averageRating` |
+| **`Receptionist`** | พนักงานต้อนรับหน้าร้าน (Subtype ของ `User` สืบทอด `userId`) ผู้ดูแลคิว การเช็คอิน และการรับชำระเงิน | `staffCode`, `counterStation` |
+| **`Owner`** | เจ้าของร้าน/ผู้บริหารระบบ (Subtype ของ `User` สืบทอด `userId`) ผู้มีสิทธิ์สูงสุดในการกำหนดนโยบายร้านและดูภาพรวมการเงิน | `managementLevel` |
 
 ---
 
@@ -326,12 +321,12 @@ User (Base Class / Common Account)
 ├── Therapist (ผู้ให้บริการนวด / ค่าคอมมิชชัน)
 └── Owner (เจ้าของร้าน / สิทธิ์บริหารสูงสุด)
 ```
-* **คำอธิบาย:** `User` เป็นคลาสพื้นฐานจัดเก็บข้อมูลระบุตัวตนกลาง (`userId`, `username`, `passwordHash`, `fullName`, `email`, `phoneNumber`, `role`, `isActive`) โดยมีบทบาทเฉพาะตาม `UserRole` แยกเป็น Subclasses เพื่อจัดเก็บคุณลักษณะ (attributes) เฉพาะทางของแต่ละบทบาท
+* **คำอธิบาย:** `User` เป็นคลาสพื้นฐานจัดเก็บข้อมูลระบุตัวตนกลาง (`userId`, `username`, `passwordHash`, `fullName`, `email`, `phoneNumber`, `role`, `isActive`) โดยมีบทบาทเฉพาะตาม `UserRole` แยกเป็น Subclasses เพื่อจัดเก็บคุณลักษณะ (attributes) เฉพาะทางของแต่ละบทบาท (ทุก Subclass สืบทอด `userId` เป็น Primary Identifier โดยไม่มีการประกาศ identifier ซ้ำซ้อน)
 
 ### 5.2 Association & Multiplicity Matrix (ตารางความสัมพันธ์เชิงเชื่อมโยง)
 
 | คลาสต้นทาง (Source) | Multiplicity | ชื่อความสัมพันธ์ (Association Name) | Multiplicity | คลาสปลายทาง (Target) | คำอธิบายความหมายทางธุรกิจ (Business Semantic & Rationale) |
-| :--- | :---: | :---: | :---: | :---: | :--- |
+| :--- | :--- | :--- | :--- | :--- | :--- |
 | **`Shop`** | `1` | `hasBusinessHours` (Composition) | `1..*` | **`BusinessHours`** | ร้านมีตารางเวลาเปิด-ปิดทำการ 1 ชุดขึ้นไปครอบคลุมวันในสัปดาห์ |
 | **`Customer`** | `1` | `places` | `0..*` | **`Booking`** | ลูกค้า 1 คน สามารถสร้างการจองได้หลายรายการ (0 ถึง หลายครั้ง) โดยแต่ละ Booking ต้องเป็นของลูกค้า 1 คนเสมอ |
 | **`Therapist`** | `0..1` | `performs` | `0..*` | **`Booking`** | หมอนวด 1 คน ให้บริการได้หลาย Booking โดย Booking หนึ่งจะมีหมอนวดที่ได้รับมอบหมายได้ 0 ถึง 1 คน (0 ในกรณีระบบรอจัดสรรอัตโนมัติ) |
@@ -366,7 +361,7 @@ User (Base Class / Common Account)
    * `Room` และ `Therapist` ถูกจำลองเป็น Dynamic Entities ในระบบ ไม่มีการจำกัดจำนวนคงที่ (No Hardcoded 6 Rooms / 6 Therapists)
 5. **ความสัมพันธ์ของวงจรชีวิตการจอง (Booking Lifecycle Progression):**
    * การจองดำเนินไปตามสถานะ: `PENDING` $\rightarrow$ `CONFIRMED` $\rightarrow$ `CHECKED_IN` $\rightarrow$ `IN_SERVICE` $\rightarrow$ `COMPLETED` (โดยมี `CANCELLED` / `NO_SHOW` เป็น Terminal States)
-   * ขั้นตอนการชำระเงิน (`UC-19 Process Payment`) เกิดขึ้นขณะ Booking มีสถานะ `IN_SERVICE` (เมื่อการบริการเสร็จสิ้นทางกายภาพ) และเมื่อชำระเงินสำเร็จ `Payment.paymentStatus` จะเป็น `COMPLETED` ระบบจึงเปลี่ยนสถานะ Booking เป็น `COMPLETED` และปลดล็อคสิทธิ์การส่งรีวิว (`UC-18`)
+   * ขั้นตอนการชำระเงิน (`UC-19 Process Payment`) สามารถเกิดขึ้นได้ 2 กรณี: ชำระออนไลน์ล่วงหน้าตอนจอง (เปลี่ยนจาก `PENDING` เป็น `CONFIRMED`) หรือชำระหน้าร้านขณะ Booking มีสถานะ `IN_SERVICE` (เมื่อการบริการเสร็จสิ้นทางกายภาพ) เมื่อชำระเงินสำเร็จ `Payment.paymentStatus` จะเป็น `COMPLETED` ระบบจึงเปลี่ยนสถานะ Booking เป็น `COMPLETED` และปลดล็อคสิทธิ์การส่งรีวิว (`UC-18`)
 6. **เงื่อนไขการส่งรีวิว (Review Prerequisite):**
    * `Review` มีความสัมพันธ์ `0..1` กับ `Booking` และจะเกิดขึ้นได้เฉพาะเมื่อ Booking มีสถานะเป็น `COMPLETED` แล้วเท่านั้น
 7. **ความคงสภาพของบันทึกการชำระเงินและการคืนเงิน (Payment & Refund Audit Integrity):**
@@ -375,6 +370,10 @@ User (Base Class / Common Account)
    * รายได้และส่วนแบ่งค่าคอมมิชชันของหมอนวด (`Therapist Earnings`) คำนวณแบบ Dynamic จากรายการ Booking ที่เสร็จสิ้นและชำระเงินแล้ว (`Booking.status = COMPLETED`, `Payment.paymentStatus = COMPLETED`) คูณกับ `Therapist.commissionRate` โดยไม่มีความจำเป็นต้องสร้าง Entity จัดเก็บผลลัพธ์แยกต่างหาก
 9. **ภาพรวมและการออกรายงานเชิงบริหาร (Derived Dashboard & Reports):**
    * รายงานสถิติ ยอดขาย อัตราการใช้งานห้อง (`Room Utilization`) และคะแนนประเมินใน `UC-22` ถูกประมวลผลสรุป (Aggregated View) จาก `Booking`, `Payment`, `Refund`, `Room`, `Therapist`, และ `Review` โดยไม่สร้าง Entity พิเศษขึ้นมาจำลอง
+10. **การชำระเงินเต็มจำนวนครั้งเดียว (Single Full Settlement Model):**
+    * การชำระเงินในระบบเกิดขึ้นครั้งเดียวเต็มจำนวน (Full Payment Settlement) ไม่รองรับการแบ่งจ่ายหรือการจ่ายมัดจำ (No Deposit) โดยลูกค้าสามารถเลือกชำระเงินออนไลน์ล่วงหน้าเพื่อยืนยันการจอง หรือเลือกชำระเงินเต็มจำนวนหน้าร้านเมื่อเข้ารับบริการ แต่ละ Booking สัมพันธ์กับ Payment ได้สูงสุด 1 รายการ (`1` to `0..1` `settledBy`)
+11. **การรองรับลูกค้า Walk-in แบบ Guest (Unregistered Guest Walk-in Support):**
+    * ลูกค้าที่เข้ามาใช้บริการแบบ Walk-in หน้าร้านไม่จำเป็นต้องสมัครบัญชีผู้ใช้ล่วงหน้า โดยพนักงานต้อนรับสามารถสร้างเรคคอร์ดลูกค้าแบบ Guest ซึ่งระบุเพียงชื่อ-นามสกุล (`fullName`) และเบอร์โทรศัพท์ (`phoneNumber`) ส่วน `username`, `email`, `passwordHash` สามารถเว้นว่างได้
 
 ---
 
@@ -386,13 +385,13 @@ User (Base Class / Common Account)
 | :--- | :--- |
 | **UC-01: Register Account** | `User`, `Customer`, `UserRole` |
 | **UC-02: Authenticate / Login** | `User`, `UserRole` |
-| **UC-03: View / Update Profile** | `User`, `Customer`, `Therapist`, `Receptionist`, `Owner` |
+| **UC-03: View / Edit Profile** | `User`, `Customer`, `Therapist`, `Receptionist`, `Owner` |
 | **UC-04: View Shop Information** | `Shop`, `BusinessHours`, `DayOfWeek` |
 | **UC-05: View Services & Pricing** | `Service`, `ServiceDurationOption`, `RoomType` |
 | **UC-06: View Therapist Profiles** | `Therapist`, `TherapistSkill`, `Service` |
 | **UC-07: Create Booking** | `Customer`, `Booking`, `Service`, `ServiceDurationOption`, `Room`, `Therapist`, `BookingStatus` |
 | **UC-08: Check Resource Availability** | `Shop`, `BusinessHours`, `Room`, `Therapist`, `TherapistSchedule`, `WorkShift`, `Booking`, `TherapistSkill` |
-| **UC-09: View Bookings / History** | `Booking`, `Customer`, `Therapist`, `Room`, `Service` |
+| **UC-09: View Bookings & Schedule** | `Booking`, `Customer`, `Therapist`, `Room`, `Service` |
 | **UC-10: Cancel Booking** | `Booking`, `Refund`, `Payment`, `BookingStatus` |
 | **UC-11: Search Customer** | `Customer`, `User`, `Booking` |
 | **UC-12: Check-in Customer** | `Booking`, `QueueItem`, `Receptionist`, `BookingStatus`, `QueueStatus` |
@@ -403,9 +402,9 @@ User (Base Class / Common Account)
 | **UC-17: Complete Service** | `Booking`, `Therapist`, `Room`, `BookingStatus`, `RoomStatus` |
 | **UC-18: Submit Review & Rating** | `Review`, `Booking`, `Customer`, `Therapist` |
 | **UC-19: Process Payment** | `Payment`, `Booking`, `Receptionist`, `PaymentMethod`, `PaymentStatus` |
-| **UC-20: View Payment History & Receipts**| `Payment`, `Refund`, `Booking`, `Customer`, `Receptionist` |
+| **UC-20: View Payment History / Receipts**| `Payment`, `Refund`, `Booking`, `Customer`, `Receptionist` |
 | **UC-21: View Therapist Earnings** | `Therapist`, `Booking`, `Payment` *(Derived via `Therapist.commissionRate`)* |
-| **UC-22: View Business Dashboard & Reports**| `Booking`, `Payment`, `Refund`, `Therapist`, `Room`, `Review` *(Derived Aggregation)* |
+| **UC-22: View Business Dashboard & Performance Reports**| `Booking`, `Payment`, `Refund`, `Therapist`, `Room`, `Review` *(Derived Aggregation)* |
 | **UC-23: Manage Shop Profile & Hours** | `Shop`, `BusinessHours`, `DayOfWeek`, `Owner` |
 | **UC-24: Manage Rooms (Add/Edit/Disable)** | `Room`, `RoomType`, `RoomStatus`, `Owner` |
 | **UC-25: Manage Services & Pricing** | `Service`, `ServiceDurationOption`, `RoomType`, `Owner` |

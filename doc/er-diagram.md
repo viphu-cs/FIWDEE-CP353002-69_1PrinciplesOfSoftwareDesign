@@ -78,10 +78,10 @@ erDiagram
 
     USERS {
         bigint id PK
-        varchar username UK
+        varchar username
         varchar password_hash
         varchar full_name
-        varchar email UK
+        varchar email
         varchar phone_number UK
         varchar role
         boolean is_active
@@ -206,6 +206,7 @@ erDiagram
         text special_notes
         timestamp actual_start_time
         timestamp actual_end_time
+        bigint version
         timestamp created_at
         timestamp updated_at
     }
@@ -295,11 +296,11 @@ erDiagram
 | Column Name | Data Type | Key | Nullable | Constraints / Defaults | Description |
 | :--- | :--- | :---: | :---: | :--- | :--- |
 | `id` | `BIGINT` | **PK** | NO | `AUTO_INCREMENT / IDENTITY` | รหัสผู้ใช้งาน (Primary Key) |
-| `username` | `VARCHAR(50)` | | NO | `UNIQUE` | ชื่อบัญชีผู้ใช้สำหรับ Login |
-| `password_hash` | `VARCHAR(255)` | | NO | | รหัสผ่านที่ผ่านการแฮชด้วย BCrypt/Argon2 |
+| `username` | `VARCHAR(50)` | | YES | `UNIQUE (เมื่อไม่เป็น NULL)` | ชื่อบัญชีผู้ใช้สำหรับ Login (Nullable สำหรับลูกค้า Walk-in แบบ Guest) |
+| `password_hash` | `VARCHAR(255)` | | YES | | รหัสผ่านที่ผ่านการแฮชด้วย BCrypt/Argon2 (Nullable สำหรับลูกค้า Walk-in แบบ Guest) |
 | `full_name` | `VARCHAR(100)` | | NO | | ชื่อ-นามสกุลจริง |
-| `email` | `VARCHAR(100)` | | NO | `UNIQUE` | อีเมลสำหรับการติดต่อและการแจ้งเตือน |
-| `phone_number` | `VARCHAR(20)` | | NO | `UNIQUE` | หมายเลขโทรศัพท์ (ใช้ค้นหา/Check-in) |
+| `email` | `VARCHAR(100)` | | YES | `UNIQUE (เมื่อไม่เป็น NULL)` | อีเมลสำหรับการติดต่อและการแจ้งเตือน (Nullable สำหรับลูกค้า Walk-in แบบ Guest) |
+| `phone_number` | `VARCHAR(20)` | | NO | `UNIQUE` | หมายเลขโทรศัพท์ (ใช้ค้นหา/ระบุตัวตน/Check-in) |
 | `role` | `VARCHAR(20)` | | NO | `CHECK (role IN ('CUSTOMER', 'RECEPTIONIST', 'THERAPIST', 'OWNER'))` | บทบาทผู้ใช้งานตาม `UserRole` Enum |
 | `is_active` | `BOOLEAN` | | NO | `DEFAULT TRUE` | สถานะการเปิดใช้งานบัญชี |
 | `created_at` | `TIMESTAMP` | | NO | `DEFAULT CURRENT_TIMESTAMP` | วันเวลาที่สร้างบัญชี |
@@ -496,6 +497,7 @@ erDiagram
 | `special_notes` | `TEXT` | | YES | | ความต้องการพิเศษหรือข้อควรระวัง |
 | `actual_start_time` | `TIMESTAMP` | | YES | | เวลาเริ่มให้บริการจริง (บันทึกเมื่อ IN_SERVICE) |
 | `actual_end_time` | `TIMESTAMP` | | YES | | เวลาสิ้นสุดบริการจริง (บันทึกเมื่อจบกายภาพ) |
+| `version` | `BIGINT` | | NO | `DEFAULT 0` | หมายเลขเวอร์ชันสำหรับ Optimistic Concurrency Control (`@Version`) |
 | `created_at` | `TIMESTAMP` | | NO | `DEFAULT CURRENT_TIMESTAMP` | วันเวลาที่สร้างการจอง |
 | `updated_at` | `TIMESTAMP` | | NO | `DEFAULT CURRENT_TIMESTAMP` | วันเวลาที่อัปเดตข้อมูลล่าสุด |
 
@@ -775,7 +777,7 @@ ON bookings(therapist_id, start_date_time, end_date_time, status);
 | **10. Review Module (UC-18)** | **`GAP`** | ตาราง `reviews` ถูกออกแบบรองรับในระดับฐานข้อมูลตาม Domain Model (`Booking 1 -- 0..1 Review`) แต่ระบุสถานะเป็น **Architectural GAP** เนื่องจากใน Class Diagram ยังไม่มี Presentation/Service/Repository |
 | **11. Class Diagram $\leftrightarrow$ Database** | **`PASS`** | Attributes และ Data Types ของ JPA Entities ใน `class-diagram.md` ตรงกับ Columns และ Types ใน Database Schema แบบ 1:1 |
 | **12. Sequence Diagram $\leftrightarrow$ Operations** | **`PASS`** | คำสั่ง Data Access ใน Sequence Diagram (`findById`, `save`, `findActiveBookingsByRoomAndPeriod`) แมปกับ Schema ได้อย่างสมบูรณ์ |
-| **13. Activity Diagram $\leftrightarrow$ Operations** | **`PARTIAL`** | **PARTIAL** — Activity Diagram ระบุ Transaction / Concurrency Control เพื่อป้องกัน Double Booking ในระดับ Business Workflow แล้ว แต่รายละเอียด Implementation เช่น Optimistic Locking (`@Version`) หรือ Pessimistic Locking ยังไม่ได้แสดงใน Activity Diagram และควรเป็นรายละเอียดในระดับ Architecture / Implementation |
+| **13. Activity Diagram $\leftrightarrow$ Operations** | **`PASS`** | Activity Diagram ระบุ Transaction / Concurrency Control สอดคล้องกับการใช้งาน Optimistic Locking (`version BIGINT`) ในตาราง `bookings` อย่างสมบูรณ์ |
 
 ---
 
