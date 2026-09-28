@@ -1,27 +1,46 @@
-# ---------- Build stage ----------
-FROM eclipse-temurin:17-jdk AS build
+# Multi-stage build for Spring Boot Backend
+
+# ===================================================================
+# Stage 1: Build stage using Temurin JDK 17
+# ===================================================================
+FROM eclipse-temurin:17-jdk-alpine AS builder
+
 WORKDIR /app
 
-# Copy Maven wrapper + pom first so dependencies are cached between builds
-COPY mvnw ./
-COPY .mvn .mvn
-COPY pom.xml ./
-RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
+# Copy Maven wrapper and POM first for better layer caching
+COPY .mvn/ .mvn/
+COPY mvnw pom.xml ./
 
-# Copy source and build the boot jar (skip tests in image build)
-COPY src src
-RUN ./mvnw package -DskipTests -B
+# Normalize line endings for Windows checkouts and grant execute permission
+RUN sed -i 's/\r$//' mvnw && chmod +x mvnw
 
-# ---------- Runtime stage ----------
-FROM eclipse-temurin:17-jre AS runtime
+# Download dependencies (cached layer)
+RUN ./mvnw dependency:go-offline -B || true
+
+# Copy source code and build application jar
+COPY src/ ./src/
+RUN ./mvnw clean package -DskipTests -B
+
+# ===================================================================
+# Stage 2: Minimal Runtime stage using Temurin JRE 17
+# ===================================================================
+FROM eclipse-temurin:17-jre-alpine AS runner
+
 WORKDIR /app
 
-# Run as a non-root user
-RUN useradd --system --create-home spring
-USER spring
+# Create non-root user for security
+RUN addgroup -S spring && adduser -S spring -G spring
 
-COPY --from=build /app/target/*.jar app.jar
+# Copy compiled JAR from builder stage
+COPY --from=builder /app/target/*.jar app.jar
+
+# Change ownership to non-root user
+RUN chown -R spring:spring /app
+
+USER spring:spring
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

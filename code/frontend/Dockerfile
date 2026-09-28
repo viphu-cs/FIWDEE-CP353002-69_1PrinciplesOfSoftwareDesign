@@ -1,36 +1,38 @@
-# ---------- Build stage ----------
-FROM node:22-alpine AS build
+# Multi-stage build for React + Vite Frontend
+
+# ===================================================================
+# Stage 1: Build stage using Node 20
+# ===================================================================
+FROM node:20-alpine AS builder
+
 WORKDIR /app
 
-# Install dependencies first so this layer is cached between builds
-COPY package.json package-lock.json ./
+# Copy dependency definitions
+COPY package*.json ./
+
+# Install dependencies (clean install)
 RUN npm ci
 
-# Copy source and build the production bundle
+# Copy frontend source files
 COPY . .
+
+# Build production assets
 RUN npm run build
 
-# ---------- Runtime stage ----------
-FROM nginx:alpine AS runtime
+# ===================================================================
+# Stage 2: Serve stage using Nginx Alpine
+# ===================================================================
+FROM nginx:1.27-alpine AS runner
 
-COPY --from=build /app/dist /usr/share/nginx/html
+# Remove default nginx welcome page
+RUN rm -rf /usr/share/nginx/html/*
 
-# SPA fallback: unknown paths serve index.html (client-side routing safe)
-RUN printf 'server {\n\
-    listen 80;\n\
-    server_name _;\n\
-    root /usr/share/nginx/html;\n\
-    index index.html;\n\
-\n\
-    location / {\n\
-        try_files $uri $uri/ /index.html;\n\
-    }\n\
-\n\
-    # Vite emits hashed filenames under /assets/ - cache them hard\n\
-    location /assets/ {\n\
-        expires 30d;\n\
-        add_header Cache-Control "public, immutable";\n\
-    }\n\
-}\n' > /etc/nginx/conf.d/default.conf
+# Copy build artifacts from builder stage
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy custom Nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
