@@ -10,7 +10,7 @@ const links = [
   { label: 'เกี่ยวกับเรา' },
 ]
 
-export default function Navbar() {
+export default function Navbar({ ready = true }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
 
@@ -25,8 +25,9 @@ export default function Navbar() {
   return (
     <motion.header
       initial={{ y: -72, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      // 🎬 เริ่ม slide เข้ามาหลังม่าน preloader ยกออกเท่านั้น
+      animate={ready ? { y: 0, opacity: 1 } : { y: -72, opacity: 0 }}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: ready ? 0.15 : 0 }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled ? 'bg-surface/95 shadow-md backdrop-blur-xl' : 'bg-surface/80 backdrop-blur-xl'
       }`}

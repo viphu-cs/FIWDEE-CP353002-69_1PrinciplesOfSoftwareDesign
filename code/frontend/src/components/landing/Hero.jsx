@@ -11,7 +11,7 @@ const item = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.75, ease: [0.22, 1, 0.36, 1] } },
 }
 
-export default function Hero() {
+export default function Hero({ ready = true }) {
   const { scrollY } = useScroll()
   // 🎬 Parallax: เลื่อนลง 600px ข้อความค่อย ๆ ลอยขึ้นและจางหาย (transform+opacity เท่านั้น)
   const textY = useTransform(scrollY, [0, 600], [0, -70])
@@ -20,10 +20,10 @@ export default function Hero() {
   return (
     <section className="relative w-full overflow-hidden -mt-20">
       <div className="relative w-full h-[88vh] min-h-[640px] max-h-[880px]">
-        {/* 🎬 ภาพพื้นหลัง: zoom ช้า ๆ ตอนโหลดหน้า (scale 1.12 → 1) */}
+        {/* 🎬 ภาพพื้นหลัง: zoom ช้า ๆ หลังม่าน preloader ยกออก */}
         <motion.div
           initial={{ scale: 1.12 }}
-          animate={{ scale: 1 }}
+          animate={ready ? { scale: 1 } : { scale: 1.12 }}
           transition={{ duration: 1.8, ease: [0.22, 1, 0.36, 1] }}
           className="absolute inset-0 w-full h-full bg-cover bg-center"
           style={{ backgroundImage: `url("${images.hero}")` }}
@@ -33,8 +33,12 @@ export default function Hero() {
         <div className="absolute inset-0 flex items-end">
           <div className="max-w-6xl mx-auto w-full px-6 pb-space-2xl">
             <motion.div style={{ y: textY, opacity: textOpacity }} className="max-w-2xl">
-              {/* 🎬 Staggered entrance: eyebrow → heading → ปุ่ม ไล่เข้ามาทีละชิ้น */}
-              <motion.div variants={container} initial="hidden" animate="visible">
+              {/* 🎬 Staggered entrance: eyebrow → heading → ปุ่ม ไล่เข้ามาทีละชิ้น (เริ่มหลัง preloader) */}
+              <motion.div
+                variants={container}
+                initial="hidden"
+                animate={ready ? 'visible' : 'hidden'}
+              >
                 <motion.p
                   variants={item}
                   className="font-label-lg text-label-lg uppercase text-charcoal-muted tracking-widest mb-space-sm"
