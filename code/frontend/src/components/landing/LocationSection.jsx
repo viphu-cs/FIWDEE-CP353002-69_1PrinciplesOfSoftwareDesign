@@ -1,3 +1,4 @@
+import FadeIn from '../motion/FadeIn.jsx'
 import { images, shop } from '../../data/mock.js'
 
 export default function LocationSection() {
@@ -5,7 +6,7 @@ export default function LocationSection() {
     <section className="w-full py-space-2xl bg-surface-container-low" id="location">
       <div className="max-w-6xl mx-auto px-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-center">
-          <div className="lg:col-span-5 space-y-space-md">
+          <FadeIn variant="left" amount={0.3} className="lg:col-span-5 space-y-space-md">
             <p className="font-label-md text-label-md uppercase text-terracotta-muted tracking-widest">
               LOCATION
             </p>
@@ -18,14 +19,19 @@ export default function LocationSection() {
               </p>
               <p className="font-label-lg text-label-lg text-primary tracking-wide">เปิดบริการทุกวัน</p>
             </div>
-          </div>
+          </FadeIn>
 
-          <div className="lg:col-span-7">
+          {/* 🎬 แผนที่ zoom-reveal + hover เงา/ขอบเบา ๆ */}
+          <FadeIn variant="scale" delay={0.15} amount={0.3} className="lg:col-span-7">
             <div
-              className="w-full h-80 rounded-xl overflow-hidden shadow-sm bg-sand-warm flex items-center justify-center p-space-xl"
-              style={{ backgroundImage: `url("${images.map}")`, backgroundSize: 'cover', backgroundPosition: 'center center' }}
+              className="card-lift w-full h-80 rounded-xl overflow-hidden shadow-sm bg-sand-warm flex items-center justify-center p-space-xl"
+              style={{
+                backgroundImage: `url("${images.map}")`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center center',
+              }}
             >
-              <div className="bg-surface/90 backdrop-blur-md px-6 py-4 rounded-lg shadow-sm text-center">
+              <div className="bg-surface/90 backdrop-blur-md px-6 py-4 rounded-lg shadow-sm text-center transition-transform duration-300 ease-out hover:-translate-y-1">
                 <p className="font-headline-sm text-headline-sm text-primary mb-1">
                   {shop.name} {shop.city}
                 </p>
@@ -34,7 +40,7 @@ export default function LocationSection() {
                 </p>
               </div>
             </div>
-          </div>
+          </FadeIn>
         </div>
       </div>
     </section>
