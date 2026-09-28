@@ -1,19 +1,36 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
 import { shop } from '../../data/mock.js'
 
+// TODO: รอหน้าใหม่ (/therapists, /services, /about, /booking) — ตอนนี้ปุ่ม nav ยังไม่ไปที่ไหน
 const links = [
-  { label: 'หน้าแรก', href: '#top', active: true },
-  { label: 'หมอนวด', href: '#therapists', active: false },
-  { label: 'บริการ', href: '#services', active: false },
-  // TODO: เมื่อมีหน้าเกี่ยวกับเรา แล้วเปลี่ยนเป็น route จริง
-  { label: 'เกี่ยวกับเรา', href: '#location', active: false },
+  { label: 'หน้าแรก', active: true },
+  { label: 'หมอนวด' },
+  { label: 'บริการ' },
+  { label: 'เกี่ยวกับเรา' },
 ]
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+
+  // 🎬 เปลี่ยนพื้นหลัง/เงาของ navbar เมื่อเลื่อนลง (listener แบบ passive ไม่บล็อก scroll)
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-surface/80 backdrop-blur-xl transition-all duration-300">
+    <motion.header
+      initial={{ y: -72, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled ? 'bg-surface/95 shadow-md backdrop-blur-xl' : 'bg-surface/80 backdrop-blur-xl'
+      }`}
+    >
       <div className="h-20 max-w-6xl mx-auto px-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <a
@@ -32,27 +49,30 @@ export default function Navbar() {
 
         <nav className="hidden md:flex items-center gap-space-xl">
           {links.map((link) => (
-            <a
+            <button
               key={link.label}
-              href={link.href}
+              type="button"
+              title="เร็ว ๆ นี้"
               aria-current={link.active ? 'page' : undefined}
-              className={`uppercase transition-colors duration-200 text-label-lg font-label-lg ${
+              className={`link-underline uppercase transition-colors duration-200 text-label-lg font-label-lg cursor-pointer ${
                 link.active ? 'text-primary font-medium' : 'text-on-surface-variant hover:text-on-surface'
               }`}
             >
               {link.label}
-            </a>
+            </button>
           ))}
         </nav>
 
         <div className="flex items-center gap-space-md">
           {/* TODO: เชื่อมกับหน้า /booking เมื่อทำหน้าจองคิว */}
-          <a
-            className="inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-primary-container text-warm-ivory font-label-lg text-label-lg uppercase hover:bg-teak-deep transition-colors duration-200"
-            href="#therapists"
+          {/* 🎬 hover ยกตัว + เงา, กดยุบเบา ๆ — เป็น pure CSS (.btn-lift) ไม่ใช้ JS */}
+          <button
+            type="button"
+            title="เร็ว ๆ นี้"
+            className="btn-lift inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-primary-container text-warm-ivory font-label-lg text-label-lg uppercase hover:bg-teak-deep cursor-pointer"
           >
             จองคิว
-          </a>
+          </button>
           <div className="hidden sm:flex w-8 h-8 rounded-full bg-primary items-center justify-center">
             <svg
               className="text-on-primary"
@@ -67,7 +87,7 @@ export default function Navbar() {
           </div>
           <button
             type="button"
-            className="md:hidden w-8 h-8 grid place-items-center text-primary"
+            className="md:hidden w-8 h-8 grid place-items-center text-primary cursor-pointer transition-transform duration-200 active:scale-90"
             aria-label="เปิด/ปิดเมนู"
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((open) => !open)}
@@ -77,22 +97,34 @@ export default function Navbar() {
         </div>
       </div>
 
-      {menuOpen && (
-        <nav className="md:hidden bg-surface border-t border-surface-container-highest px-6 py-4 flex flex-col gap-2">
-          {links.map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              onClick={() => setMenuOpen(false)}
-              className={`uppercase text-label-lg font-label-lg py-2 ${
-                link.active ? 'text-primary font-medium' : 'text-on-surface-variant'
-              }`}
-            >
-              {link.label}
-            </a>
-          ))}
-        </nav>
-      )}
-    </header>
+      {/* 🎬 เมนูมือถือ: กาง/หุบแบบ animated นุ่มนวลด้วย AnimatePresence */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.nav
+            key="mobile-menu"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.28, ease: 'easeOut' }}
+            className="md:hidden overflow-hidden bg-surface border-t border-surface-container-highest"
+          >
+            <div className="px-6 py-4 flex flex-col gap-2">
+              {links.map((link) => (
+                <button
+                  key={link.label}
+                  type="button"
+                  onClick={() => setMenuOpen(false)}
+                  className={`uppercase text-label-lg font-label-lg py-2 text-left cursor-pointer transition-colors duration-200 ${
+                    link.active ? 'text-primary font-medium' : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  {link.label}
+                </button>
+              ))}
+            </div>
+          </motion.nav>
+        )}
+      </AnimatePresence>
+    </motion.header>
   )
 }

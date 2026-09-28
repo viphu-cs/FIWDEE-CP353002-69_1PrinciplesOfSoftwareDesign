@@ -102,3 +102,105 @@
 body {
   overscroll-behavior: none;
 }
+
+/* ===================================================================
+   🎬 Micro-interaction utilities (hover / active / focus)
+   ใช้ transition เฉพาะ transform + box-shadow + border-color เท่านั้น
+   เพื่อให้ browser วาดบน compositor โดยตรง — ลื่นไม่กระตุก
+   =================================================================== */
+
+/* ปุ่ม: hover ยกตัวขึ้น 2px + เงานุ่ม, กด (active) ยุบตัวเบา ๆ */
+.btn-lift {
+  transition:
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 180ms ease;
+}
+.btn-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(28, 20, 14, 0.22);
+}
+.btn-lift:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: 0 4px 12px rgba(28, 20, 14, 0.16);
+  transition-duration: 90ms;
+}
+
+/* การ์ด: hover ยกตัว + เงา + เส้นขอบไฮไลต์สี terracotta จาง ๆ */
+.card-lift {
+  border: 1px solid transparent;
+  transition:
+    transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 200ms ease;
+}
+.card-lift:hover {
+  transform: translateY(-3px);
+  border-color: rgba(184, 106, 76, 0.3);
+  box-shadow: 0 14px 32px rgba(28, 20, 14, 0.12);
+}
+
+/* การ์ดแบบไม่ยกตัว (ใช้กับการ์ดที่มี tilt ตามเมาส์อยู่แล้ว — transform ไม่ซ้ำกัน) */
+.card-highlight {
+  border: 1px solid transparent;
+  transition:
+    box-shadow 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 200ms ease;
+}
+.card-highlight:hover {
+  border-color: rgba(184, 106, 76, 0.3);
+  box-shadow: 0 14px 32px rgba(28, 20, 14, 0.12);
+}
+
+/* ลิงก์: เส้นใต้วาดจากซ้ายไปขวาเมื่อ hover */
+.link-underline {
+  position: relative;
+}
+.link-underline::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  width: 100%;
+  height: 1.5px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.link-underline:hover::after,
+.link-underline:focus-visible::after {
+  transform: scaleX(1);
+}
+
+/* Focus ring สำหรับปุ่ม/ลิงก์ (keyboard accessibility) */
+:where(button, a):focus-visible {
+  outline: 2px solid #b86a4c;
+  outline-offset: 3px;
+}
+
+/* ช่อง input/form: focus ring นุ่ม ๆ (เตรียมไว้สำหรับฟอร์มที่จะเพิ่มภายหลัง) */
+input,
+textarea,
+select {
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease;
+}
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+  border-color: #b86a4c;
+  box-shadow: 0 0 0 3px rgba(184, 106, 76, 0.15);
+}
+
+/* เคารพการตั้งค่า "ลด motion" ของระบบ — ปิด micro-transition */
+@media (prefers-reduced-motion: reduce) {
+  .btn-lift,
+  .card-lift,
+  .card-highlight,
+  .link-underline::after {
+    transition: none;
+  }
+}
