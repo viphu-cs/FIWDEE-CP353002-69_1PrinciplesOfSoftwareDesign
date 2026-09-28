@@ -3,7 +3,9 @@
 # ===================================================================
 # Stage 1: Build stage using Temurin JDK 17
 # ===================================================================
-FROM eclipse-temurin:17-jdk-alpine AS builder
+# Note: use the multi-arch (jammy) images, not *-alpine — Temurin alpine
+# images are amd64-only, so the build fails on Apple Silicon / arm64 hosts.
+FROM eclipse-temurin:17-jdk-jammy AS builder
 
 WORKDIR /app
 
@@ -24,12 +26,12 @@ RUN ./mvnw clean package -DskipTests -B
 # ===================================================================
 # Stage 2: Minimal Runtime stage using Temurin JRE 17
 # ===================================================================
-FROM eclipse-temurin:17-jre-alpine AS runner
+FROM eclipse-temurin:17-jre-jammy AS runner
 
 WORKDIR /app
 
-# Create non-root user for security
-RUN addgroup -S spring && adduser -S spring -G spring
+# Create non-root user for security (Ubuntu syntax, not alpine's adduser -S)
+RUN groupadd -r spring && useradd -r -g spring spring
 
 # Copy compiled JAR from builder stage
 COPY --from=builder /app/target/*.jar app.jar

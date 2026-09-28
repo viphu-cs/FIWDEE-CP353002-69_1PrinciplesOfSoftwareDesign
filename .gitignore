@@ -1,0 +1,5 @@
+# Environment credentials (copy from .env.example)
+.env
+
+# OS
+.DS_Store
