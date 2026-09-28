@@ -84,10 +84,10 @@
   --text-label-md--font-weight: 500;
 }
 
-/* Responsive display headline (display-mobile 36/46 -> display 56/68 ตั้งแต่ md) */
+/* Responsive display headline (มือถือ 40/52 แบบใหม่ -> desktop 56/68 แบบเดิม ตั้งแต่ md) */
 .text-display {
-  font-size: 36px;
-  line-height: 46px;
+  font-size: 40px;
+  line-height: 52px;
   letter-spacing: -0.01em;
   font-weight: 400;
 }

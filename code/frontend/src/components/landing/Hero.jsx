@@ -28,44 +28,60 @@ export default function Hero({ ready = true }) {
           className="absolute inset-0 w-full h-full bg-cover bg-center"
           style={{ backgroundImage: `url("${images.hero}")` }}
         ></motion.div>
-        <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/40 to-primary/30"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/50 to-primary/30"></div>
 
-        <div className="absolute inset-0 flex items-end">
-          <div className="max-w-6xl mx-auto w-full px-6 pb-space-2xl">
-            <motion.div style={{ y: textY, opacity: textOpacity }} className="max-w-2xl">
-              {/* 🎬 Staggered entrance: eyebrow → heading → ปุ่ม ไล่เข้ามาทีละชิ้น (เริ่มหลัง preloader) */}
-              <motion.div
-                variants={container}
-                initial="hidden"
-                animate={ready ? 'visible' : 'hidden'}
-              >
+        {/* 🎬 ข้อความ: มือถือกึ่งกลาง / desktop มุมซ้ายล่างแบบเดิม */}
+        <div className="absolute inset-0 flex items-center justify-center md:items-end">
+          <div className="max-w-6xl mx-auto w-full px-6 md:pb-[7.5rem]">
+            <motion.div
+              style={{ y: textY, opacity: textOpacity }}
+              className="max-w-2xl mx-auto md:mx-0 text-center md:text-left"
+            >
+              <motion.div variants={container} initial="hidden" animate={ready ? 'visible' : 'hidden'}>
                 <motion.p
                   variants={item}
-                  className="font-label-lg text-label-lg uppercase text-charcoal-muted tracking-widest mb-space-sm"
+                  className="font-label-lg text-label-lg uppercase text-charcoal-muted tracking-widest mb-space-md"
                 >
                   {shop.name} MASSAGE
                 </motion.p>
                 <motion.h1
                   variants={item}
-                  className="font-display text-display text-primary leading-tight tracking-tight mb-space-md"
+                  className="text-balance font-display text-display text-primary leading-tight tracking-tight"
                 >
                   เลือกหมอนวดที่ใช่
                   <br />
                   <span className="font-normal text-charcoal-soft">สำหรับช่วงเวลาของคุณ</span>
                 </motion.h1>
-                <motion.div variants={item} className="pt-space-sm">
-                  {/* TODO: เชื่อมกับหน้า /booking เมื่อทำหน้าจองคิว */}
-                  <a
-                    href="#therapists"
-                    className="btn-lift inline-flex items-center justify-center px-8 py-3.5 rounded-full bg-teak-dark text-warm-ivory font-label-lg text-label-lg uppercase tracking-wider hover:bg-teak-deep shadow-md cursor-pointer"
-                  >
-                    จองคิว
-                  </a>
-                </motion.div>
               </motion.div>
             </motion.div>
           </div>
         </div>
+
+        {/* 🎬 Scroll indicator: ลูกศรเด้งเบา ๆ บอกว่าเลื่อนลงต่อได้ (กดแล้วพาไปหมวดหมอนวด) */}
+        <motion.a
+          href="#therapists"
+          aria-label="เลื่อนลงไปดูหมอนวด"
+          initial={{ opacity: 0 }}
+          animate={ready ? { opacity: 1 } : { opacity: 0 }}
+          transition={{ delay: 1.5, duration: 0.6 }}
+          className="absolute bottom-7 left-0 right-0 mx-auto w-fit flex flex-col items-center gap-1.5 text-charcoal-soft transition-colors duration-200 hover:text-primary cursor-pointer"
+        >
+          <span className="font-label-md text-label-md uppercase tracking-widest">เลื่อนลง</span>
+          <motion.svg
+            width="26"
+            height="26"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            animate={ready ? { y: [0, 7, 0] } : { y: 0 }}
+            transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <path d="m6 9 6 6 6-6" />
+          </motion.svg>
+        </motion.a>
       </div>
     </section>
   )
