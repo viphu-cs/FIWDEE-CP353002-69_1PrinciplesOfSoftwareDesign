@@ -1,4 +1,5 @@
 import FadeIn from '../motion/FadeIn.jsx'
+import { useLanguage } from '../../i18n/useLanguage.js'
 import { therapists } from '../../data/mock.js'
 
 // 🎬 Micro-interaction: การ์ดเอียงตามตำแหน่งเมาส์ (เขียน transform ตรงทุก mousemove —
@@ -18,6 +19,8 @@ function resetTilt(event) {
 }
 
 export default function TherapistsSection() {
+  const { t } = useLanguage()
+
   return (
     <section className="w-full py-space-2xl bg-surface" id="therapists">
       <div className="max-w-6xl mx-auto px-6">
@@ -25,12 +28,14 @@ export default function TherapistsSection() {
         <FadeIn className="flex flex-col md:flex-row md:items-end justify-between mb-space-xl">
           <div>
             <p className="font-label-md text-label-md uppercase text-terracotta-muted tracking-widest mb-space-xs">
-              THERAPISTS
+              {t('therapists.label')}
             </p>
-            <h2 className="font-headline-lg text-headline-lg text-primary">หมอนวดของเรา</h2>
+            <h2 className="font-headline-lg text-headline-lg text-primary">
+              {t('therapists.title')}
+            </h2>
           </div>
           <p className="font-body-md text-body-md text-charcoal-muted mt-2 md:mt-0">
-            เลือกคนที่เหมาะกับคุณ
+            {t('therapists.subtitle')}
           </p>
         </FadeIn>
 
@@ -61,10 +66,10 @@ export default function TherapistsSection() {
                       </span>
                     </div>
                     <p className="font-body-md text-body-md text-charcoal-soft mb-1">
-                      {therapist.specialties.join(' · ')}
+                      {therapist.specialties.map((key) => t(`specialties.${key}`)).join(' · ')}
                     </p>
                     <p className="font-body-sm text-body-sm text-charcoal-muted">
-                      ประสบการณ์ {therapist.experienceYears} ปี
+                      {t('therapists.experience', { n: therapist.experienceYears })}
                     </p>
                   </div>
                   <div className="pt-space-md mt-space-sm flex items-center justify-between">
@@ -74,7 +79,7 @@ export default function TherapistsSection() {
                       className="link-underline font-label-lg text-label-lg text-primary transition-colors duration-200 hover:text-secondary"
                       href="#therapists"
                     >
-                      ดูโปรไฟล์
+                      {t('therapists.profile')}
                     </a>
                   </div>
                 </div>
@@ -89,7 +94,7 @@ export default function TherapistsSection() {
             className="link-underline font-label-lg text-label-lg uppercase tracking-widest text-primary transition-colors duration-200 hover:text-secondary"
             href="#therapists"
           >
-            ดูหมอนวดทั้งหมด
+            {t('therapists.viewAll')}
           </a>
         </FadeIn>
       </div>

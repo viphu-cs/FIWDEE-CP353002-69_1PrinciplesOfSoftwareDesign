@@ -1,11 +1,12 @@
+import { useLanguage } from '../../i18n/useLanguage.js'
 import { shop } from '../../data/mock.js'
 
 const footerLinks = [
-  { label: 'หน้าแรก', href: '#top' },
-  { label: 'หมอนวด', href: '#therapists' },
-  { label: 'บริการ', href: '#services' },
-  { label: 'เกี่ยวกับเรา', href: '#location' },
-  { label: 'จองคิว', href: '#therapists' },
+  { key: 'home', href: '#top' },
+  { key: 'therapists', href: '#therapists' },
+  { key: 'services', href: '#services' },
+  { key: 'about', href: '#location' },
+  { key: 'book', href: '#therapists' },
 ]
 
 const socialLinks = [
@@ -15,6 +16,8 @@ const socialLinks = [
 ]
 
 export default function Footer() {
+  const { t } = useLanguage()
+
   return (
     <footer className="w-full bg-surface-container-low transition-colors">
       <div className="max-w-6xl mx-auto px-6 py-space-2xl">
@@ -24,18 +27,18 @@ export default function Footer() {
               {shop.name}
             </div>
             <p className="font-body-sm text-body-sm text-on-surface-variant tracking-wide">
-              {shop.tagline} — {shop.city}
+              {t('footer.tagline')} — {t('location.city')}
             </p>
           </div>
 
           <nav className="flex flex-wrap items-center gap-x-space-lg gap-y-space-sm">
             {footerLinks.map((link) => (
               <a
-                key={link.label}
+                key={link.key}
                 href={link.href}
                 className="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors duration-200"
               >
-                {link.label}
+                {t(`nav.${link.key}`)}
               </a>
             ))}
           </nav>
@@ -55,10 +58,10 @@ export default function Footer() {
 
         <div className="pt-space-lg flex flex-col sm:flex-row items-center justify-between gap-space-sm">
           <p className="font-body-sm text-body-sm text-charcoal-muted tracking-wider">
-            © {shop.name} Boutique Massage &amp; Retreat. สงวนลิขสิทธิ์
+            {t('footer.rights')}
           </p>
           <p className="font-label-md text-label-md uppercase text-charcoal-muted tracking-widest">
-            SANCTUARY FOR BODY &amp; MIND
+            {t('footer.motto')}
           </p>
         </div>
       </div>

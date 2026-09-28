@@ -1,5 +1,6 @@
 import { motion, useScroll, useTransform } from 'motion/react'
-import { images, shop } from '../../data/mock.js'
+import { useLanguage } from '../../i18n/useLanguage.js'
+import { images } from '../../data/mock.js'
 
 const container = {
   hidden: {},
@@ -12,6 +13,7 @@ const item = {
 }
 
 export default function Hero({ ready = true }) {
+  const { t } = useLanguage()
   const { scrollY } = useScroll()
   // 🎬 Parallax: เลื่อนลง 600px ข้อความค่อย ๆ ลอยขึ้นและจางหาย (transform+opacity เท่านั้น)
   const textY = useTransform(scrollY, [0, 600], [0, -70])
@@ -37,20 +39,21 @@ export default function Hero({ ready = true }) {
               style={{ y: textY, opacity: textOpacity }}
               className="max-w-2xl mx-auto md:mx-0 text-center md:text-left"
             >
+              {/* 🎬 Staggered entrance: eyebrow → heading ไล่เข้ามาทีละชิ้น (เริ่มหลัง preloader) */}
               <motion.div variants={container} initial="hidden" animate={ready ? 'visible' : 'hidden'}>
                 <motion.p
                   variants={item}
                   className="font-label-lg text-label-lg uppercase text-charcoal-muted tracking-widest mb-space-md"
                 >
-                  {shop.name} MASSAGE
+                  {t('hero.eyebrow')}
                 </motion.p>
                 <motion.h1
                   variants={item}
                   className="text-balance font-display text-display text-primary leading-tight tracking-tight"
                 >
-                  เลือกหมอนวดที่ใช่
+                  {t('hero.title1')}
                   <br />
-                  <span className="font-normal text-charcoal-soft">สำหรับช่วงเวลาของคุณ</span>
+                  <span className="font-normal text-charcoal-soft">{t('hero.title2')}</span>
                 </motion.h1>
               </motion.div>
             </motion.div>
@@ -60,13 +63,15 @@ export default function Hero({ ready = true }) {
         {/* 🎬 Scroll indicator: ลูกศรเด้งเบา ๆ บอกว่าเลื่อนลงต่อได้ (กดแล้วพาไปหมวดหมอนวด) */}
         <motion.a
           href="#therapists"
-          aria-label="เลื่อนลงไปดูหมอนวด"
+          aria-label={t('common.scrollDown')}
           initial={{ opacity: 0 }}
           animate={ready ? { opacity: 1 } : { opacity: 0 }}
           transition={{ delay: 1.5, duration: 0.6 }}
           className="absolute bottom-7 left-0 right-0 mx-auto w-fit flex flex-col items-center gap-1.5 text-charcoal-soft transition-colors duration-200 hover:text-primary cursor-pointer"
         >
-          <span className="font-label-md text-label-md uppercase tracking-widest">เลื่อนลง</span>
+          <span className="font-label-md text-label-md uppercase tracking-widest">
+            {t('common.scrollDown')}
+          </span>
           <motion.svg
             width="26"
             height="26"
