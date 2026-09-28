@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
+import { useLanguage } from '../../i18n/useLanguage.js'
 import { shop } from '../../data/mock.js'
 
 // TODO: รอหน้าใหม่ (/therapists, /services, /about, /booking) — ตอนนี้ปุ่ม nav ยังไม่ไปที่ไหน
 const links = [
-  { label: 'หน้าแรก', active: true },
-  { label: 'หมอนวด' },
-  { label: 'บริการ' },
-  { label: 'เกี่ยวกับเรา' },
+  { key: 'home', active: true },
+  { key: 'therapists' },
+  { key: 'services' },
+  { key: 'about' },
 ]
 
 export default function Navbar({ ready = true }) {
+  const { lang, setLang, t } = useLanguage()
   const [menuOpen, setMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
 
@@ -21,6 +23,8 @@ export default function Navbar({ ready = true }) {
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  const toggleLang = () => setLang(lang === 'th' ? 'en' : 'th')
 
   return (
     <motion.header
@@ -51,28 +55,53 @@ export default function Navbar({ ready = true }) {
         <nav className="hidden md:flex items-center gap-space-xl">
           {links.map((link) => (
             <button
-              key={link.label}
+              key={link.key}
               type="button"
-              title="เร็ว ๆ นี้"
+              title={t('common.comingSoon')}
               aria-current={link.active ? 'page' : undefined}
               className={`link-underline uppercase transition-colors duration-200 text-label-lg font-label-lg cursor-pointer ${
                 link.active ? 'text-primary font-medium' : 'text-on-surface-variant hover:text-on-surface'
               }`}
             >
-              {link.label}
+              {t(`nav.${link.key}`)}
             </button>
           ))}
         </nav>
 
         <div className="flex items-center gap-space-md">
+          {/* 🎬 ปุ่มเปลี่ยนภาษา TH ↔ EN (โชว์ภาษาปลายทาง) */}
+          <button
+            type="button"
+            onClick={toggleLang}
+            aria-label="Switch language"
+            title={lang === 'th' ? 'Switch to English' : 'สลับเป็นภาษาไทย'}
+            className="btn-lift inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-sand-warm text-on-surface-variant hover:text-on-surface font-label-lg text-label-lg uppercase cursor-pointer"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+            </svg>
+            {t('nav.switchLang')}
+          </button>
+
           {/* TODO: เชื่อมกับหน้า /booking เมื่อทำหน้าจองคิว */}
           {/* 🎬 hover ยกตัว + เงา, กดยุบเบา ๆ — เป็น pure CSS (.btn-lift) ไม่ใช้ JS */}
           <button
             type="button"
-            title="เร็ว ๆ นี้"
-            className="btn-lift inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-primary-container text-warm-ivory font-label-lg text-label-lg uppercase hover:bg-teak-deep cursor-pointer"
+            title={t('common.comingSoon')}
+            className="btn-lift hidden sm:inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-primary-container text-warm-ivory font-label-lg text-label-lg uppercase hover:bg-teak-deep cursor-pointer"
           >
-            จองคิว
+            {t('nav.book')}
           </button>
           <div className="hidden sm:flex w-8 h-8 rounded-full bg-primary items-center justify-center">
             <svg
@@ -112,16 +141,26 @@ export default function Navbar({ ready = true }) {
             <div className="px-6 py-4 flex flex-col gap-2">
               {links.map((link) => (
                 <button
-                  key={link.label}
+                  key={link.key}
                   type="button"
                   onClick={() => setMenuOpen(false)}
                   className={`uppercase text-label-lg font-label-lg py-2 text-left cursor-pointer transition-colors duration-200 ${
                     link.active ? 'text-primary font-medium' : 'text-on-surface-variant hover:text-on-surface'
                   }`}
                 >
-                  {link.label}
+                  {t(`nav.${link.key}`)}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => {
+                  toggleLang()
+                  setMenuOpen(false)
+                }}
+                className="uppercase text-label-lg font-label-lg py-2 text-left text-on-surface-variant hover:text-on-surface cursor-pointer"
+              >
+                🌐 {t('nav.switchLang')}
+              </button>
             </div>
           </motion.nav>
         )}
