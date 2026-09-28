@@ -1,111 +1,104 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+@import 'tailwindcss';
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+/* ===== Design tokens พอร์ตจากไฟล์ดีไซน์ FIWDEE (Boutique Thai Wellness) ===== */
+@theme {
+  /* Colors */
+  --color-surface: #fbf9f4;
+  --color-background: #fbf9f4;
+  --color-on-surface: #1b1c19;
+  --color-on-surface-variant: #4e4540;
+  --color-surface-container-low: #f5f3ee;
+  --color-surface-container-highest: #e4e2dd;
+  --color-linen-surface: #efece6;
+  --color-sand-warm: #d8d0c5;
+  --color-warm-ivory: #f7f5f0;
+  --color-primary: #110703;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #2b1e16;
+  --color-teak-dark: #2b1e16;
+  --color-teak-deep: #1c140e;
+  --color-charcoal-muted: #6e6862;
+  --color-charcoal-soft: #332f2c;
+  --color-terracotta-muted: #b86a4c;
+  --color-secondary: #914b2f;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Radius (ตาม config เดิม: full คือ 0.75rem ไม่ใช่ pill) */
+  --radius-DEFAULT: 0.125rem;
+  --radius-lg: 0.25rem;
+  --radius-xl: 0.5rem;
+  --radius-full: 0.75rem;
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  /* Named spacing */
+  --spacing-space-xs: 0.25rem;
+  --spacing-space-sm: 0.5rem;
+  --spacing-space-md: 1rem;
+  --spacing-space-lg: 1.75rem;
+  --spacing-space-xl: 3rem;
+  --spacing-space-2xl: 5rem;
+  --spacing-gutter: 1.5rem;
+
+  /* Font families */
+  --font-display: 'Noto Serif', 'Noto Serif Thai', serif;
+  --font-headline-lg: 'Noto Serif', 'Noto Serif Thai', serif;
+  --font-headline-md: 'Noto Serif', 'Noto Serif Thai', serif;
+  --font-headline-sm: 'Noto Serif', 'Noto Serif Thai', serif;
+  --font-body-lg: 'Inter', 'Noto Sans Thai', sans-serif;
+  --font-body-md: 'Inter', 'Noto Sans Thai', sans-serif;
+  --font-body-sm: 'Inter', 'Noto Sans Thai', sans-serif;
+  --font-label-lg: 'Inter', 'Noto Sans Thai', sans-serif;
+  --font-label-md: 'Inter', 'Noto Sans Thai', sans-serif;
+  --font-title-md: 'Inter', 'Noto Sans Thai', sans-serif;
+
+  /* Type scale */
+  --text-display: 56px;
+  --text-display--line-height: 68px;
+  --text-display--letter-spacing: -0.02em;
+  --text-display--font-weight: 400;
+  --text-headline-lg: 40px;
+  --text-headline-lg--line-height: 52px;
+  --text-headline-lg--letter-spacing: -0.01em;
+  --text-headline-lg--font-weight: 400;
+  --text-headline-md: 28px;
+  --text-headline-md--line-height: 38px;
+  --text-headline-md--font-weight: 400;
+  --text-headline-sm: 22px;
+  --text-headline-sm--line-height: 32px;
+  --text-headline-sm--font-weight: 500;
+  --text-title-md: 18px;
+  --text-title-md--line-height: 26px;
+  --text-title-md--letter-spacing: 0.01em;
+  --text-title-md--font-weight: 500;
+  --text-body-lg: 17px;
+  --text-body-lg--line-height: 28px;
+  --text-body-md: 15px;
+  --text-body-md--line-height: 24px;
+  --text-body-sm: 13px;
+  --text-body-sm--line-height: 20px;
+  --text-label-lg: 13px;
+  --text-label-lg--line-height: 18px;
+  --text-label-lg--letter-spacing: 0.08em;
+  --text-label-lg--font-weight: 500;
+  --text-label-md: 11px;
+  --text-label-md--line-height: 16px;
+  --text-label-md--letter-spacing: 0.12em;
+  --text-label-md--font-weight: 500;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+/* Responsive display headline (display-mobile 36/46 -> display 56/68 ตั้งแต่ md) */
+.text-display {
+  font-size: 36px;
+  line-height: 46px;
+  letter-spacing: -0.01em;
+  font-weight: 400;
+}
+@media (min-width: 768px) {
+  .text-display {
+    font-size: 56px;
+    line-height: 68px;
+    letter-spacing: -0.02em;
   }
 }
 
 body {
-  margin: 0;
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+  overscroll-behavior: none;
 }
