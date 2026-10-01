@@ -15,8 +15,15 @@ const socialLinks = [
   { label: 'FACEBOOK', href: '#' },
 ]
 
-export default function Footer() {
+export default function Footer({ onNavigate }) {
   const { t } = useLanguage()
+
+  const handleLinkClick = (e, link) => {
+    if (onNavigate) {
+      e.preventDefault()
+      onNavigate(link.key)
+    }
+  }
 
   return (
     <footer className="w-full bg-surface-container-low transition-colors">
@@ -36,7 +43,8 @@ export default function Footer() {
               <a
                 key={link.key}
                 href={link.href}
-                className="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors duration-200"
+                onClick={(e) => handleLinkClick(e, link)}
+                className="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer"
               >
                 {t(`nav.${link.key}`)}
               </a>
