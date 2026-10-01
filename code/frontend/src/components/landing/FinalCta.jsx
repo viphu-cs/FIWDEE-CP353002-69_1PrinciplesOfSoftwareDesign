@@ -18,6 +18,10 @@ export default function FinalCta() {
             {/* TODO: เชื่อมกับหน้า /booking เมื่อทำหน้าจองคิว */}
             <a
               href="#therapists"
+              onClick={(e) => {
+                e.preventDefault()
+                document.getElementById('therapists')?.scrollIntoView({ behavior: 'smooth' })
+              }}
               className="btn-lift inline-flex items-center justify-center px-10 py-3.5 rounded-full bg-teak-dark text-warm-ivory font-label-lg text-label-lg uppercase tracking-wider hover:bg-teak-deep shadow-md cursor-pointer"
             >
               {t('cta.book')}
