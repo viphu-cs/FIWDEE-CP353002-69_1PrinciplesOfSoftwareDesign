@@ -60,14 +60,22 @@ export default function Hero({ ready = true }) {
           </div>
         </div>
 
-        {/* 🎬 Scroll indicator: ลูกศรเด้งเบา ๆ บอกว่าเลื่อนลงต่อได้ (กดแล้วพาไปหมวดหมอนวด) */}
-        <motion.a
-          href="#therapists"
+        {/* 🎬 Scroll indicator: ลูกศรเด้งเบา ๆ บอกว่าเลื่อนลงต่อได้ (กดแล้วเลื่อนลงมาด้านล่างอย่างนุ่มนวล) */}
+        <motion.button
+          type="button"
+          onClick={() => {
+            const target = document.getElementById('therapists')
+            if (target) {
+              target.scrollIntoView({ behavior: 'smooth' })
+            } else {
+              window.scrollBy({ top: window.innerHeight * 0.85, behavior: 'smooth' })
+            }
+          }}
           aria-label={t('common.scrollDown')}
           initial={{ opacity: 0 }}
           animate={ready ? { opacity: 1 } : { opacity: 0 }}
           transition={{ delay: 1.5, duration: 0.6 }}
-          className="absolute bottom-7 left-0 right-0 mx-auto w-fit flex flex-col items-center gap-1.5 text-charcoal-soft transition-colors duration-200 hover:text-primary cursor-pointer"
+          className="absolute bottom-7 left-0 right-0 mx-auto w-fit flex flex-col items-center gap-1.5 text-charcoal-soft transition-colors duration-200 hover:text-primary cursor-pointer bg-transparent border-0 outline-none"
         >
           <span className="font-label-md text-label-md uppercase tracking-widest">
             {t('common.scrollDown')}
@@ -86,7 +94,7 @@ export default function Hero({ ready = true }) {
           >
             <path d="m6 9 6 6 6-6" />
           </motion.svg>
-        </motion.a>
+        </motion.button>
       </div>
     </section>
   )

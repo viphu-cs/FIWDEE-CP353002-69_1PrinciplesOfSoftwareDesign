@@ -42,7 +42,36 @@ export default function TherapistsPage({ onNavigate }) {
   return (
     <main className="w-full pt-20 bg-surface min-h-[calc(100vh-80px)]">
       <div className="flex flex-col w-full">
-        <div className="w-full max-w-6xl mx-auto px-6 pt-space-xl pb-space-2xl">
+        <div className="w-full max-w-6xl mx-auto px-6 pt-8 md:pt-12 pb-space-2xl">
+          {/* Top-Left Back Button & Breadcrumbs (Borderless) */}
+          <FadeIn className="flex items-center gap-space-sm mb-8 flex-wrap">
+            <button
+              type="button"
+              onClick={() => onNavigate?.('home')}
+              className="inline-flex items-center gap-2 text-charcoal-muted hover:text-primary transition-colors duration-200 font-label-lg text-label-lg uppercase cursor-pointer py-1 group"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                className="transition-transform duration-200 group-hover:-translate-x-1"
+              >
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+              <span>{t('therapistsPage.backToHome')}</span>
+            </button>
+            <span className="text-charcoal-muted text-[11px] font-label-md">/</span>
+            <span className="font-label-lg text-label-lg uppercase text-primary font-medium">
+              {t('therapistsPage.breadcrumbCurrent')}
+            </span>
+          </FadeIn>
+
           {/* Editorial Header & Philosophy Narrative */}
           <section className="flex flex-col md:flex-row md:items-end justify-between gap-space-lg mb-space-2xl">
             <FadeIn className="max-w-2xl space-y-space-sm">
