@@ -18,7 +18,7 @@ function resetTilt(event) {
   event.currentTarget.style.transform = ''
 }
 
-export default function TherapistsSection() {
+export default function TherapistsSection({ onNavigate }) {
   const { t } = useLanguage()
 
   return (
@@ -73,14 +73,16 @@ export default function TherapistsSection() {
                     </p>
                   </div>
                   <div className="pt-space-md mt-space-sm flex items-center justify-between">
-                    {/* TODO: เชื่อมกับหน้าโปรไฟล์หมอนวด /therapists/:id */}
                     {/* 🎬 ลิงก์: เส้นใต้วาดจากซ้ายเมื่อ hover */}
-                    <a
-                      className="link-underline font-label-lg text-label-lg text-primary transition-colors duration-200 hover:text-secondary"
-                      href="#therapists"
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onNavigate?.('therapist-profile', { therapistId: therapist.id })
+                      }
+                      className="link-underline font-label-lg text-label-lg text-primary transition-colors duration-200 hover:text-secondary cursor-pointer"
                     >
                       {t('therapists.profile')}
-                    </a>
+                    </button>
                   </div>
                 </div>
               </article>
@@ -89,13 +91,13 @@ export default function TherapistsSection() {
         </div>
 
         <FadeIn delay={0.25} className="mt-space-xl text-center">
-          {/* TODO: เชื่อมกับหน้า /therapists เมื่อทำหน้ารวมหมอนวด */}
-          <a
-            className="link-underline font-label-lg text-label-lg uppercase tracking-widest text-primary transition-colors duration-200 hover:text-secondary"
-            href="#therapists"
+          <button
+            type="button"
+            onClick={() => onNavigate?.('therapists')}
+            className="link-underline font-label-lg text-label-lg uppercase tracking-widest text-primary transition-colors duration-200 hover:text-secondary cursor-pointer"
           >
             {t('therapists.viewAll')}
-          </a>
+          </button>
         </FadeIn>
       </div>
     </section>

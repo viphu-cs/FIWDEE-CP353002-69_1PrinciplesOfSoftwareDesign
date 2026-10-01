@@ -3,18 +3,25 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useLanguage } from '../../i18n/useLanguage.js'
 import { shop } from '../../data/mock.js'
 
-// TODO: รอหน้าใหม่ (/therapists, /services, /about, /booking) — ตอนนี้ปุ่ม nav ยังไม่ไปที่ไหน
-const links = [
-  { key: 'home', active: true },
+const navItems = [
+  { key: 'home' },
   { key: 'therapists' },
   { key: 'services' },
   { key: 'about' },
 ]
 
-export default function Navbar({ ready = true }) {
+export default function Navbar({ ready = true, currentPage = 'home', onNavigate }) {
   const { lang, setLang, t } = useLanguage()
   const [menuOpen, setMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+
+  const links = navItems.map((item) => ({
+    ...item,
+    active:
+      item.key === 'therapists'
+        ? currentPage === 'therapists' || currentPage === 'therapist-profile'
+        : item.key === currentPage,
+  }))
 
   // 🎬 เปลี่ยนพื้นหลัง/เงาของ navbar เมื่อเลื่อนลง (listener แบบ passive ไม่บล็อก scroll)
   useEffect(() => {
@@ -25,6 +32,13 @@ export default function Navbar({ ready = true }) {
   }, [])
 
   const toggleLang = () => setLang(lang === 'th' ? 'en' : 'th')
+
+  const handleLinkClick = (key) => {
+    setMenuOpen(false)
+    if (onNavigate) {
+      onNavigate(key)
+    }
+  }
 
   return (
     <motion.header
@@ -39,9 +53,12 @@ export default function Navbar({ ready = true }) {
       <div className="h-20 max-w-6xl mx-auto px-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <a
-            className="flex flex-col transition-opacity duration-200 hover:opacity-80"
+            className="flex flex-col transition-opacity duration-200 hover:opacity-80 cursor-pointer"
             href="#top"
-            onClick={() => setMenuOpen(false)}
+            onClick={(e) => {
+              e.preventDefault()
+              handleLinkClick('home')
+            }}
           >
             <span className="font-headline-sm text-headline-sm text-primary font-normal tracking-widest leading-none">
               {shop.name}
@@ -57,7 +74,7 @@ export default function Navbar({ ready = true }) {
             <button
               key={link.key}
               type="button"
-              title={t('common.comingSoon')}
+              onClick={() => handleLinkClick(link.key)}
               aria-current={link.active ? 'page' : undefined}
               className={`link-underline uppercase transition-colors duration-200 text-label-lg font-label-lg cursor-pointer ${
                 link.active ? 'text-primary font-medium' : 'text-on-surface-variant hover:text-on-surface'
@@ -94,27 +111,14 @@ export default function Navbar({ ready = true }) {
             {t('nav.switchLang')}
           </button>
 
-          {/* TODO: เชื่อมกับหน้า /booking เมื่อทำหน้าจองคิว */}
           {/* 🎬 hover ยกตัว + เงา, กดยุบเบา ๆ — เป็น pure CSS (.btn-lift) ไม่ใช้ JS */}
           <button
             type="button"
-            title={t('common.comingSoon')}
+            onClick={() => handleLinkClick('booking')}
             className="btn-lift hidden sm:inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-primary-container text-warm-ivory font-label-lg text-label-lg uppercase hover:bg-teak-deep cursor-pointer"
           >
             {t('nav.book')}
           </button>
-          <div className="hidden sm:flex w-8 h-8 rounded-full bg-primary items-center justify-center">
-            <svg
-              className="text-on-primary"
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12Zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8Z" />
-            </svg>
-          </div>
           <button
             type="button"
             className="md:hidden w-8 h-8 grid place-items-center text-primary cursor-pointer transition-transform duration-200 active:scale-90"
@@ -143,7 +147,8 @@ export default function Navbar({ ready = true }) {
                 <button
                   key={link.key}
                   type="button"
-                  onClick={() => setMenuOpen(false)}
+                  onClick={() => handleLinkClick(link.key)}
+                  aria-current={link.active ? 'page' : undefined}
                   className={`uppercase text-label-lg font-label-lg py-2 text-left cursor-pointer transition-colors duration-200 ${
                     link.active ? 'text-primary font-medium' : 'text-on-surface-variant hover:text-on-surface'
                   }`}
