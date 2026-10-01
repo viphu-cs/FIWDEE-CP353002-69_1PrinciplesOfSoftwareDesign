@@ -76,7 +76,9 @@ export default function TherapistsSection({ onNavigate }) {
                     {/* 🎬 ลิงก์: เส้นใต้วาดจากซ้ายเมื่อ hover */}
                     <button
                       type="button"
-                      onClick={() => onNavigate?.('therapists')}
+                      onClick={() =>
+                        onNavigate?.('therapist-profile', { therapistId: therapist.id })
+                      }
                       className="link-underline font-label-lg text-label-lg text-primary transition-colors duration-200 hover:text-secondary cursor-pointer"
                     >
                       {t('therapists.profile')}

@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
 import { useLanguage } from '../../i18n/useLanguage.js'
 import { therapists } from '../../data/mock.js'
 import FadeIn from '../../components/motion/FadeIn.jsx'
@@ -17,7 +16,6 @@ export default function TherapistsPage({ onNavigate }) {
   const [activeFilter, setActiveFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [hasLoadedMore, setHasLoadedMore] = useState(false)
-  const [selectedTherapist, setSelectedTherapist] = useState(null)
 
   // กรองตามหมวดหมู่และคำค้นหา
   const filteredTherapists = therapists.filter((therapist) => {
@@ -178,7 +176,9 @@ export default function TherapistsPage({ onNavigate }) {
                       </span>
                       <button
                         type="button"
-                        onClick={() => setSelectedTherapist(therapist)}
+                        onClick={() =>
+                          onNavigate?.('therapist-profile', { therapistId: therapist.id })
+                        }
                         className="inline-block font-label-lg text-label-lg text-primary underline underline-offset-8 transition-colors duration-200 hover:text-terracotta-muted cursor-pointer"
                       >
                         {t('therapistsPage.profile')}
@@ -261,98 +261,6 @@ export default function TherapistsPage({ onNavigate }) {
           </FadeIn>
         </div>
       </div>
-
-      {/* Modal ดูโปรไฟล์อย่างละเอียด (เมื่อกดดูโปรไฟล์) */}
-      <AnimatePresence>
-        {selectedTherapist && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/40 backdrop-blur-xs"
-            onClick={() => setSelectedTherapist(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, y: 16 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 16 }}
-              transition={{ duration: 0.2 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-surface max-w-md w-full p-6 shadow-xl border border-sand-warm space-y-4"
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <span className="font-label-md text-label-md text-terracotta-muted uppercase tracking-widest">
-                    {selectedTherapist.code}
-                  </span>
-                  <h3 className="font-headline-md text-headline-md text-primary mt-1">
-                    {selectedTherapist.nickname}
-                  </h3>
-                  <p className="font-label-lg text-label-lg text-charcoal-muted uppercase">
-                    {t(`roles.${selectedTherapist.roleKey}`)}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedTherapist(null)}
-                  className="text-charcoal-muted hover:text-primary text-xl p-1 cursor-pointer"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div className="aspect-[4/3] overflow-hidden bg-sand-warm">
-                <img
-                  src={selectedTherapist.imageUrl}
-                  alt={selectedTherapist.nickname}
-                  className="w-full h-full object-cover object-top"
-                />
-              </div>
-
-              <div className="space-y-2 text-body-sm text-charcoal-soft">
-                <p>
-                  <strong className="text-primary font-medium">ความเชี่ยวชาญ:</strong>{' '}
-                  {selectedTherapist.specialties
-                    .map((key) => t(`specialties.${key}`))
-                    .join(', ')}
-                </p>
-                <p>
-                  <strong className="text-primary font-medium">ประสบการณ์:</strong>{' '}
-                  {selectedTherapist.experienceYears} ปี
-                </p>
-                <p>
-                  <strong className="text-primary font-medium">รอบว่างวันนี้:</strong>{' '}
-                  {selectedTherapist.availableTime} น.
-                </p>
-                <p>
-                  <strong className="text-primary font-medium">คะแนนความพึงพอใจ:</strong>{' '}
-                  ★ {selectedTherapist.rating.toFixed(1)} / 5.0
-                </p>
-              </div>
-
-              <div className="pt-4 flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedTherapist(null)
-                    onNavigate?.('booking')
-                  }}
-                  className="btn-lift flex-1 py-2.5 bg-primary-container text-warm-ivory font-label-lg text-label-lg uppercase tracking-wider text-center cursor-pointer hover:bg-teak-deep"
-                >
-                  {t('therapistsPage.guaranteeCta')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedTherapist(null)}
-                  className="px-4 py-2.5 border border-sand-warm text-charcoal-soft font-label-lg text-label-lg uppercase cursor-pointer hover:text-primary"
-                >
-                  ปิด
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </main>
   )
 }

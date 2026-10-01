@@ -17,7 +17,10 @@ export default function Navbar({ ready = true, currentPage = 'home', onNavigate 
 
   const links = navItems.map((item) => ({
     ...item,
-    active: item.key === currentPage,
+    active:
+      item.key === 'therapists'
+        ? currentPage === 'therapists' || currentPage === 'therapist-profile'
+        : item.key === currentPage,
   }))
 
   // 🎬 เปลี่ยนพื้นหลัง/เงาของ navbar เมื่อเลื่อนลง (listener แบบ passive ไม่บล็อก scroll)
