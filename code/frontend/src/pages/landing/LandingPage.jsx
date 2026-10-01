@@ -14,7 +14,7 @@ export default function LandingPage({ ready = true, onNavigate }) {
         <ServicesSection />
         <AtmosphereSection />
         <LocationSection />
-        <FinalCta />
+        <FinalCta onNavigate={onNavigate} />
       </div>
     </main>
   )

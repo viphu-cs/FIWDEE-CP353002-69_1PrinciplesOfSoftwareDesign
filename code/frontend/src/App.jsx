@@ -7,6 +7,9 @@ import LandingPage from './pages/landing/LandingPage.jsx'
 import TherapistsPage from './pages/therapists/TherapistsPage.jsx'
 import TherapistProfilePage from './pages/therapists/TherapistProfilePage.jsx'
 import ServicesPage from './pages/services/ServicesPage.jsx'
+import AboutPage from './pages/about/AboutPage.jsx'
+import LoginPage from './pages/auth/LoginPage.jsx'
+import RegisterPage from './pages/auth/RegisterPage.jsx'
 import { LanguageProvider } from './i18n/LanguageContext.jsx'
 import { therapists } from './data/mock.js'
 
@@ -23,6 +26,15 @@ function getInitialNavigation() {
   }
   if (hash.startsWith('#services')) {
     return { page: 'services', therapistId: 1 }
+  }
+  if (hash.startsWith('#about')) {
+    return { page: 'about', therapistId: 1 }
+  }
+  if (hash.startsWith('#login') || hash.startsWith('#book') || hash.startsWith('#booking')) {
+    return { page: 'login', therapistId: 1 }
+  }
+  if (hash.startsWith('#register')) {
+    return { page: 'register', therapistId: 1 }
   }
   return { page: 'home', therapistId: 1 }
 }
@@ -70,25 +82,17 @@ export default function App() {
       window.history.pushState(null, '', '#services')
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } else if (targetKey === 'about') {
-      if (currentPage !== 'home') {
-        setCurrentPage('home')
-        window.history.pushState(null, '', '#location')
-        setTimeout(() => {
-          document.getElementById('location')?.scrollIntoView({ behavior: 'smooth' })
-        }, 100)
-      } else {
-        document.getElementById('location')?.scrollIntoView({ behavior: 'smooth' })
-      }
-    } else if (targetKey === 'booking' || targetKey === 'book') {
-      if (currentPage !== 'home') {
-        setCurrentPage('home')
-        window.history.pushState(null, '', '#therapists')
-        setTimeout(() => {
-          document.getElementById('therapists')?.scrollIntoView({ behavior: 'smooth' })
-        }, 100)
-      } else {
-        document.getElementById('therapists')?.scrollIntoView({ behavior: 'smooth' })
-      }
+      setCurrentPage('about')
+      window.history.pushState(null, '', '#about')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else if (targetKey === 'booking' || targetKey === 'book' || targetKey === 'login') {
+      setCurrentPage('login')
+      window.history.pushState(null, '', '#login')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else if (targetKey === 'register') {
+      setCurrentPage('register')
+      window.history.pushState(null, '', '#register')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
 
@@ -113,6 +117,12 @@ export default function App() {
             <TherapistsPage onNavigate={handleNavigate} />
           ) : currentPage === 'services' ? (
             <ServicesPage onNavigate={handleNavigate} />
+          ) : currentPage === 'about' ? (
+            <AboutPage onNavigate={handleNavigate} />
+          ) : currentPage === 'login' ? (
+            <LoginPage onNavigate={handleNavigate} />
+          ) : currentPage === 'register' ? (
+            <RegisterPage onNavigate={handleNavigate} />
           ) : (
             <LandingPage ready={ready} onNavigate={handleNavigate} />
           )}

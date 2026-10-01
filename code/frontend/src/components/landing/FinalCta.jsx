@@ -1,8 +1,17 @@
 import FadeIn from '../motion/FadeIn.jsx'
 import { useLanguage } from '../../i18n/useLanguage.js'
 
-export default function FinalCta() {
+export default function FinalCta({ onNavigate }) {
   const { t } = useLanguage()
+
+  const handleBookClick = (e) => {
+    e.preventDefault()
+    if (onNavigate) {
+      onNavigate('booking')
+    } else {
+      window.location.hash = '#login'
+    }
+  }
 
   return (
     <section className="w-full py-space-2xl bg-surface text-center">
@@ -15,14 +24,10 @@ export default function FinalCta() {
             </h2>
           </FadeIn>
           <FadeIn delay={0.18} className="pt-space-xs">
-            {/* TODO: เชื่อมกับหน้า /booking เมื่อทำหน้าจองคิว */}
             <a
-              href="#therapists"
-              onClick={(e) => {
-                e.preventDefault()
-                document.getElementById('therapists')?.scrollIntoView({ behavior: 'smooth' })
-              }}
-              className="btn-lift inline-flex items-center justify-center px-10 py-3.5 rounded-full bg-teak-dark text-warm-ivory font-label-lg text-label-lg uppercase tracking-wider hover:bg-teak-deep shadow-md cursor-pointer"
+              href="#login"
+              onClick={handleBookClick}
+              className="btn-lift inline-flex items-center justify-center px-10 py-3.5 rounded-full bg-primary text-warm-ivory font-label-lg text-label-lg uppercase tracking-wider hover:opacity-90 shadow-md cursor-pointer"
             >
               {t('cta.book')}
             </a>
