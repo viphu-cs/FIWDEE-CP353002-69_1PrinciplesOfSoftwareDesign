@@ -5,7 +5,7 @@ const footerLinks = [
   { key: 'home', href: '#top' },
   { key: 'therapists', href: '#therapists' },
   { key: 'services', href: '#services' },
-  { key: 'about', href: '#location' },
+  { key: 'about', href: '#about' },
   { key: 'book', href: '#therapists' },
 ]
 
