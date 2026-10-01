@@ -1,0 +1,33 @@
+# Dependencies & build output
+node_modules/
+dist/
+dist-ssr/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Local overrides
+*.local
+
+# VCS
+.git
+.gitignore
+.gitattributes
+
+# Editor
+.vscode/
+.idea/
+*.suo
+*.sw?
+
+# Docker files (not needed inside the build context)
+Dockerfile
+.dockerignore
+
+# Docs
+README.md
+
+# OS
+.DS_Store

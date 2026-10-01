@@ -1,0 +1,73 @@
+services:
+  # ===================================================================
+  # 1. PostgreSQL Database Service
+  # ===================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: fiwdee-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-fiwdee_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-fiwdee_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fiwdee-net
+
+  # ===================================================================
+  # 2. Spring Boot Backend Service (Java 17)
+  # ===================================================================
+  backend:
+    build:
+      context: ./code/backend
+      dockerfile: Dockerfile
+    container_name: fiwdee-backend
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-fiwdee_db}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO:-update}
+      SERVER_PORT: 8080
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - fiwdee-net
+
+  # ===================================================================
+  # 3. React Frontend Service (Nginx)
+  # ===================================================================
+  frontend:
+    build:
+      context: ./code/frontend
+      dockerfile: Dockerfile
+    container_name: fiwdee-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      - backend
+    networks:
+      - fiwdee-net
+
+# =====================================================================
+# Persistent Volumes & Networks
+# =====================================================================
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  fiwdee-net:
+    driver: bridge

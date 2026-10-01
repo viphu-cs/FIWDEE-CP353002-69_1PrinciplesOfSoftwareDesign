@@ -1,0 +1,186 @@
+import { useEffect, useState } from 'react'
+import { AnimatePresence, MotionConfig } from 'motion/react'
+import Footer from './components/layout/Footer.jsx'
+import Navbar from './components/layout/Navbar.jsx'
+import Preloader from './components/layout/Preloader.jsx'
+import LandingPage from './pages/landing/LandingPage.jsx'
+import TherapistsPage from './pages/therapists/TherapistsPage.jsx'
+import TherapistProfilePage from './pages/therapists/TherapistProfilePage.jsx'
+import ServicesPage from './pages/services/ServicesPage.jsx'
+import AboutPage from './pages/about/AboutPage.jsx'
+import LoginPage from './pages/auth/LoginPage.jsx'
+import RegisterPage from './pages/auth/RegisterPage.jsx'
+import BookingPage from './pages/booking/BookingPage.jsx'
+import { LanguageProvider } from './i18n/LanguageContext.jsx'
+import { therapists } from './data/mock.js'
+
+// Admin Portal Imports
+import AdminLayout from './admin/layouts/AdminLayout.jsx'
+import AdminDashboard from './admin/pages/AdminDashboard.jsx'
+import AdminQueue from './admin/pages/AdminQueue.jsx'
+import AdminBookings from './admin/pages/AdminBookings.jsx'
+import AdminTherapists from './admin/pages/AdminTherapists.jsx'
+import AdminRooms from './admin/pages/AdminRooms.jsx'
+import AdminServices from './admin/pages/AdminServices.jsx'
+
+function getInitialNavigation() {
+  if (typeof window === 'undefined') return { page: 'home', adminRoute: 'dashboard', therapistId: 1 }
+  const hash = window.location.hash.toLowerCase()
+
+  if (hash.startsWith('#admin')) {
+    const parts = hash.split('/')
+    const subRoute = parts[1] || 'dashboard'
+    return { page: 'admin', adminRoute: subRoute, therapistId: 1 }
+  }
+
+  if (hash.startsWith('#therapists/') || hash.startsWith('#profile/')) {
+    const parts = hash.split('/')
+    const id = parseInt(parts[1], 10) || 1
+    return { page: 'therapist-profile', adminRoute: 'dashboard', therapistId: id }
+  }
+  if (hash.includes('therapist')) {
+    return { page: 'therapists', adminRoute: 'dashboard', therapistId: 1 }
+  }
+  if (hash.startsWith('#services')) {
+    return { page: 'services', adminRoute: 'dashboard', therapistId: 1 }
+  }
+  if (hash.startsWith('#about')) {
+    return { page: 'about', adminRoute: 'dashboard', therapistId: 1 }
+  }
+  if (hash.startsWith('#booking') || hash.startsWith('#book-flow')) {
+    return { page: 'booking', adminRoute: 'dashboard', therapistId: 1 }
+  }
+  if (hash.startsWith('#login') || hash.startsWith('#book')) {
+    return { page: 'login', adminRoute: 'dashboard', therapistId: 1 }
+  }
+  if (hash.startsWith('#register')) {
+    return { page: 'register', adminRoute: 'dashboard', therapistId: 1 }
+  }
+  return { page: 'home', adminRoute: 'dashboard', therapistId: 1 }
+}
+
+export default function App() {
+  // 🎬 ready = ม่าน preloader ยกออกแล้ว — entrance animation ของ navbar/hero จะเริ่มตอนนั้น
+  const [ready, setReady] = useState(false)
+  const [navState, setNavState] = useState(() => getInitialNavigation())
+
+  const currentPage = navState.page
+  const adminRoute = navState.adminRoute
+  const selectedTherapistId = navState.therapistId
+
+  // 🎬 ซิงก์ URL hash และ browser back/forward
+  useEffect(() => {
+    const handleLocationChange = () => {
+      const nav = getInitialNavigation()
+      setNavState(nav)
+    }
+    window.addEventListener('hashchange', handleLocationChange)
+    window.addEventListener('popstate', handleLocationChange)
+    return () => {
+      window.removeEventListener('hashchange', handleLocationChange)
+      window.removeEventListener('popstate', handleLocationChange)
+    }
+  }, [])
+
+  const handleNavigate = (targetKey, params) => {
+    if (targetKey === 'admin') {
+      const sub = params?.subRoute || 'dashboard'
+      setNavState({ page: 'admin', adminRoute: sub, therapistId: 1 })
+      window.history.pushState(null, '', `#admin/${sub}`)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else if (targetKey === 'therapist-profile') {
+      const id = params?.therapistId || 1
+      setNavState({ page: 'therapist-profile', adminRoute: 'dashboard', therapistId: id })
+      window.history.pushState(null, '', `#therapists/${id}`)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else if (targetKey === 'therapists') {
+      setNavState({ page: 'therapists', adminRoute: 'dashboard', therapistId: 1 })
+      window.history.pushState(null, '', '#therapists')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else if (targetKey === 'home') {
+      setNavState({ page: 'home', adminRoute: 'dashboard', therapistId: 1 })
+      window.history.pushState(null, '', '#top')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else if (targetKey === 'services') {
+      setNavState({ page: 'services', adminRoute: 'dashboard', therapistId: 1 })
+      window.history.pushState(null, '', '#services')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else if (targetKey === 'about') {
+      setNavState({ page: 'about', adminRoute: 'dashboard', therapistId: 1 })
+      window.history.pushState(null, '', '#about')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else if (targetKey === 'booking-flow' || targetKey === 'direct-booking') {
+      setNavState({ page: 'booking', adminRoute: 'dashboard', therapistId: 1 })
+      window.history.pushState(null, '', '#booking')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else if (targetKey === 'booking' || targetKey === 'book' || targetKey === 'login') {
+      setNavState({ page: 'login', adminRoute: 'dashboard', therapistId: 1 })
+      window.history.pushState(null, '', '#login')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else if (targetKey === 'register') {
+      setNavState({ page: 'register', adminRoute: 'dashboard', therapistId: 1 })
+      window.history.pushState(null, '', '#register')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
+  const handleAdminNavigate = (targetSubRoute) => {
+    setNavState({ page: 'admin', adminRoute: targetSubRoute, therapistId: 1 })
+    window.history.pushState(null, '', `#admin/${targetSubRoute}`)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  // หาหมอนวดที่เลือกอยู่ สำหรับหน้าโปรไฟล์
+  const activeTherapist =
+    therapists.find((t) => t.id === selectedTherapistId) || therapists[0]
+
+  return (
+    <MotionConfig reducedMotion="user">
+      <LanguageProvider>
+        {currentPage === 'admin' ? (
+          <AdminLayout currentRoute={adminRoute} onNavigate={handleAdminNavigate}>
+            {adminRoute === 'queue' ? (
+              <AdminQueue />
+            ) : adminRoute === 'bookings' ? (
+              <AdminBookings />
+            ) : adminRoute === 'therapists' ? (
+              <AdminTherapists />
+            ) : adminRoute === 'rooms' ? (
+              <AdminRooms />
+            ) : adminRoute === 'services' ? (
+              <AdminServices />
+            ) : (
+              <AdminDashboard />
+            )}
+          </AdminLayout>
+        ) : (
+          <div className="bg-surface font-body-md text-on-surface antialiased" id="top">
+            <AnimatePresence>{!ready && <Preloader onDone={() => setReady(true)} />}</AnimatePresence>
+            <Navbar ready={ready} currentPage={currentPage} onNavigate={handleNavigate} />
+            {currentPage === 'therapist-profile' ? (
+              <TherapistProfilePage
+                therapist={activeTherapist}
+                onNavigate={handleNavigate}
+              />
+            ) : currentPage === 'therapists' ? (
+              <TherapistsPage onNavigate={handleNavigate} />
+            ) : currentPage === 'services' ? (
+              <ServicesPage onNavigate={handleNavigate} />
+            ) : currentPage === 'about' ? (
+              <AboutPage onNavigate={handleNavigate} />
+            ) : currentPage === 'booking' ? (
+              <BookingPage onNavigate={handleNavigate} />
+            ) : currentPage === 'login' ? (
+              <LoginPage onNavigate={handleNavigate} />
+            ) : currentPage === 'register' ? (
+              <RegisterPage onNavigate={handleNavigate} />
+            ) : (
+              <LandingPage ready={ready} onNavigate={handleNavigate} />
+            )}
+            <Footer onNavigate={handleNavigate} />
+          </div>
+        )}
+      </LanguageProvider>
+    </MotionConfig>
+  )
+}

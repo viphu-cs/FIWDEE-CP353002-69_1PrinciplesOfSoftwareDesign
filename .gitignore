@@ -1,0 +1,6 @@
+# Environment credentials (copy from .env.example)
+.env
+
+# OS & IDE
+.DS_Store
+.vscode/

@@ -1,0 +1,35 @@
+# Build output
+target/
+
+# Git / VCS
+.git
+.gitignore
+.gitattributes
+
+# IDE / editor
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.classpath
+.project
+.settings/
+.factorypath
+.apt_generated
+.sts4-cache
+.springBeans
+
+# Maven wrapper jar (mvnw re-downloads it when needed)
+.mvn/wrapper/maven-wrapper.jar
+
+# Docker files (not needed inside the build context)
+Dockerfile
+.dockerignore
+
+# Docs / help
+HELP.md
+README.md
+
+# OS
+.DS_Store

@@ -1,0 +1,387 @@
+@import 'tailwindcss';
+
+/* ===== Design tokens พอร์ตจากไฟล์ดีไซน์ FIWDEE (Boutique Thai Wellness) ===== */
+@theme {
+  /* Colors */
+  --color-surface: #fbf9f4;
+  --color-background: #fbf9f4;
+  --color-on-surface: #1b1c19;
+  --color-on-surface-variant: #4e4540;
+  --color-surface-container: #f0eee9;
+  --color-surface-container-low: #f5f3ee;
+  --color-surface-container-highest: #e4e2dd;
+  --color-linen-surface: #efece6;
+  --color-sand-warm: #d8d0c5;
+  --color-outline-variant: #d2c4bd;
+  --color-warm-ivory: #f7f5f0;
+  --color-primary: #110703;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #2b1e16;
+  --color-teak-dark: #2b1e16;
+  --color-teak-deep: #1c140e;
+  --color-charcoal-muted: #6e6862;
+  --color-charcoal-soft: #332f2c;
+  --color-terracotta-muted: #b86a4c;
+  --color-secondary: #914b2f;
+
+  /* Additional Stitch tokens */
+  --color-secondary-fixed: #ece1d5;
+  --color-secondary-fixed-dim: #cfc5b9;
+  --color-on-secondary-fixed: #201b13;
+  --color-on-secondary-fixed-variant: #4c463d;
+  --color-secondary-container: #e9ded2;
+  --color-on-secondary-container: #696158;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-high: #eae7e7;
+  --color-surface-dim: #dcd9d9;
+  --color-surface-bright: #fcf9f8;
+  --color-surface-variant: #e5e2e1;
+  --color-primary-fixed: #ffdbcd;
+  --color-primary-fixed-dim: #f6b99f;
+  --color-on-primary-fixed: #321204;
+  --color-on-primary-fixed-variant: #673c29;
+  --color-on-primary-container: #fffbff;
+  --color-tertiary: #366666;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #4f7f7f;
+  --color-on-tertiary-container: #000606;
+  --color-tertiary-fixed: #baeceb;
+  --color-tertiary-fixed-dim: #9ed0cf;
+  --color-on-tertiary-fixed: #002020;
+  --color-on-tertiary-fixed-variant: #1b4e4e;
+  --color-outline: #84746e;
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+  --color-on-background: #1c1b1b;
+  --color-surface-tint: #82533e;
+  --color-inverse-surface: #313030;
+  --color-inverse-on-surface: #f3f0ef;
+  --color-inverse-primary: #f6b99f;
+
+  /* Radius (ตาม config เดิม: full คือ 0.75rem ไม่ใช่ pill) */
+  --radius-DEFAULT: 0.125rem;
+  --radius-lg: 0.25rem;
+  --radius-xl: 0.5rem;
+  --radius-full: 0.75rem;
+
+  /* Named spacing */
+  --spacing-space-xs: 0.375rem;
+  --spacing-space-sm: 0.75rem;
+  --spacing-space-md: 1.25rem;
+  --spacing-space-lg: 2.25rem;
+  --spacing-space-xl: 4rem;
+  --spacing-space-2xl: 5rem;
+  --spacing-gutter: 1.5rem;
+  --spacing-gutter-desktop: 2.5rem;
+  --spacing-margin: 1.25rem;
+  --spacing-margin-tablet: 2.5rem;
+  --spacing-margin-desktop: 5rem;
+
+  /* Font families */
+  --font-display: 'Noto Serif', 'Noto Serif Thai', serif;
+  --font-headline-lg: 'Noto Serif', 'Noto Serif Thai', serif;
+  --font-headline-md: 'Noto Serif', 'Noto Serif Thai', serif;
+  --font-headline-sm: 'Noto Serif', 'Noto Serif Thai', serif;
+  --font-body-lg: 'Inter', 'Noto Sans Thai', sans-serif;
+  --font-body-md: 'Inter', 'Noto Sans Thai', sans-serif;
+  --font-body-sm: 'Inter', 'Noto Sans Thai', sans-serif;
+  --font-label-lg: 'Inter', 'Noto Sans Thai', sans-serif;
+  --font-label-md: 'Inter', 'Noto Sans Thai', sans-serif;
+  --font-label-caps: 'Manrope', 'Inter', 'Noto Sans Thai', sans-serif;
+  --font-title-md: 'Inter', 'Noto Sans Thai', sans-serif;
+
+  /* Type scale */
+  --text-display: 56px;
+  --text-display--line-height: 68px;
+  --text-display--letter-spacing: -0.02em;
+  --text-display--font-weight: 400;
+  --text-headline-lg: 40px;
+  --text-headline-lg--line-height: 52px;
+  --text-headline-lg--letter-spacing: -0.01em;
+  --text-headline-lg--font-weight: 400;
+  --text-headline-md: 28px;
+  --text-headline-md--line-height: 38px;
+  --text-headline-md--font-weight: 400;
+  --text-headline-sm: 22px;
+  --text-headline-sm--line-height: 32px;
+  --text-headline-sm--font-weight: 500;
+  --text-title-md: 18px;
+  --text-title-md--line-height: 26px;
+  --text-title-md--letter-spacing: 0.01em;
+  --text-title-md--font-weight: 500;
+  --text-body-lg: 17px;
+  --text-body-lg--line-height: 28px;
+  --text-body-md: 15px;
+  --text-body-md--line-height: 24px;
+  --text-body-sm: 13px;
+  --text-body-sm--line-height: 20px;
+  --text-label-lg: 13px;
+  --text-label-lg--line-height: 18px;
+  --text-label-lg--letter-spacing: 0.08em;
+  --text-label-lg--font-weight: 500;
+  --text-label-md: 11px;
+  --text-label-md--line-height: 16px;
+  --text-label-md--letter-spacing: 0.12em;
+  --text-label-md--font-weight: 500;
+}
+
+/* Responsive display headline (มือถือ 40/52 แบบใหม่ -> desktop 56/68 แบบเดิม ตั้งแต่ md) */
+.text-display {
+  font-size: 40px;
+  line-height: 52px;
+  letter-spacing: -0.01em;
+  font-weight: 400;
+}
+@media (min-width: 768px) {
+  .text-display {
+    font-size: 56px;
+    line-height: 68px;
+    letter-spacing: -0.02em;
+  }
+}
+
+body {
+  overscroll-behavior: none;
+}
+
+/* ===================================================================
+   🎬 Micro-interaction utilities (hover / active / focus)
+   ใช้ transition เฉพาะ transform + box-shadow + border-color เท่านั้น
+   เพื่อให้ browser วาดบน compositor โดยตรง — ลื่นไม่กระตุก
+   =================================================================== */
+
+/* ปุ่ม: hover ยกตัวขึ้น 2px + เงานุ่ม, กด (active) ยุบตัวเบา ๆ */
+.btn-lift {
+  transition:
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 180ms ease;
+}
+.btn-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(28, 20, 14, 0.22);
+}
+.btn-lift:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: 0 4px 12px rgba(28, 20, 14, 0.16);
+  transition-duration: 90ms;
+}
+
+/* การ์ด: hover ยกตัว + เงา + เส้นขอบไฮไลต์สี terracotta จาง ๆ */
+.card-lift {
+  border: 1px solid transparent;
+  transition:
+    transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 200ms ease;
+}
+.card-lift:hover {
+  transform: translateY(-3px);
+  border-color: rgba(184, 106, 76, 0.3);
+  box-shadow: 0 14px 32px rgba(28, 20, 14, 0.12);
+}
+
+/* การ์ดแบบไม่ยกตัว (ใช้กับการ์ดที่มี tilt ตามเมาส์อยู่แล้ว — transform ไม่ซ้ำกัน) */
+.card-highlight {
+  border: 1px solid transparent;
+  transition:
+    box-shadow 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 200ms ease;
+}
+.card-highlight:hover {
+  border-color: rgba(184, 106, 76, 0.3);
+  box-shadow: 0 14px 32px rgba(28, 20, 14, 0.12);
+}
+
+/* ลิงก์: เส้นใต้วาดจากซ้ายไปขวาเมื่อ hover */
+.link-underline {
+  position: relative;
+}
+.link-underline::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  width: 100%;
+  height: 1.5px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.link-underline:hover::after,
+.link-underline:focus-visible::after {
+  transform: scaleX(1);
+}
+
+/* Focus ring สำหรับปุ่ม/ลิงก์ (keyboard accessibility) */
+:where(button, a):focus-visible {
+  outline: 2px solid #b86a4c;
+  outline-offset: 3px;
+}
+
+/* ช่อง input/form: focus ring นุ่ม ๆ (เตรียมไว้สำหรับฟอร์มที่จะเพิ่มภายหลัง) */
+input,
+textarea,
+select {
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease;
+}
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+  border-color: #b86a4c;
+  box-shadow: 0 0 0 3px rgba(184, 106, 76, 0.15);
+}
+
+/* เคารพการตั้งค่า "ลด motion" ของระบบ — ปิด micro-transition */
+@media (prefers-reduced-motion: reduce) {
+  .btn-lift,
+  .card-lift,
+  .card-highlight,
+  .link-underline::after {
+    transition: none;
+  }
+}
+
+/* ===================================================================
+   🌸 Auth & Customer Sanctuary Theme (Stitch Exact Tokens)
+   =================================================================== */
+.auth-theme {
+  --color-primary: #7f513c;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #9b6853;
+  --color-on-primary-container: #fffbff;
+  --color-primary-fixed: #ffdbcd;
+  --color-primary-fixed-dim: #f6b99f;
+  --color-on-primary-fixed: #321204;
+  --color-on-primary-fixed-variant: #673c29;
+
+  --color-secondary: #655d54;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #e9ded2;
+  --color-on-secondary-container: #696158;
+  --color-secondary-fixed: #ece1d5;
+  --color-secondary-fixed-dim: #cfc5b9;
+  --color-on-secondary-fixed: #201b13;
+  --color-on-secondary-fixed-variant: #4c463d;
+
+  --color-tertiary: #366666;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #4f7f7f;
+  --color-on-tertiary-container: #000606;
+  --color-tertiary-fixed: #baeceb;
+  --color-tertiary-fixed-dim: #9ed0cf;
+  --color-on-tertiary-fixed: #002020;
+  --color-on-tertiary-fixed-variant: #1b4e4e;
+
+  --color-surface: #fcf9f8;
+  --color-background: #fcf9f8;
+  --color-surface-dim: #dcd9d9;
+  --color-surface-bright: #fcf9f8;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f6f3f2;
+  --color-surface-container: #f0eded;
+  --color-surface-container-high: #eae7e7;
+  --color-surface-container-highest: #e5e2e1;
+  --color-surface-variant: #e5e2e1;
+  --color-on-surface: #1c1b1b;
+  --color-on-surface-variant: #51443f;
+  --color-on-background: #1c1b1b;
+  --color-outline: #84746e;
+  --color-outline-variant: #d6c2bb;
+  --color-surface-tint: #82533e;
+  --color-inverse-surface: #313030;
+  --color-inverse-on-surface: #f3f0ef;
+  --color-inverse-primary: #f6b99f;
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  /* Stitch Exact Spacing */
+  --spacing-space-xs: 0.375rem;
+  --spacing-space-sm: 0.75rem;
+  --spacing-space-md: 1.25rem;
+  --spacing-space-lg: 2.25rem;
+  --spacing-space-xl: 4rem;
+  --spacing-gutter: 1.5rem;
+  --spacing-gutter-desktop: 2.5rem;
+  --spacing-margin: 1.25rem;
+  --spacing-margin-tablet: 2.5rem;
+  --spacing-margin-desktop: 5rem;
+}
+
+.font-label-caps,
+.text-label-caps {
+  font-family: 'Manrope', 'Inter', 'Noto Sans Thai', sans-serif;
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  letter-spacing: 0.14em;
+  font-weight: 600;
+}
+
+.text-headline-lg {
+  font-size: 2.5rem;
+  line-height: 3rem;
+  letter-spacing: -0.015em;
+  font-weight: 400;
+}
+
+.text-headline-sm {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  letter-spacing: 0.01em;
+  font-weight: 500;
+}
+
+.text-headline-md {
+  font-size: 1.75rem;
+  line-height: 2.25rem;
+  letter-spacing: 0em;
+  font-weight: 400;
+}
+
+.text-body-md {
+  font-size: 0.9375rem;
+  line-height: 1.625rem;
+  letter-spacing: 0.01em;
+  font-weight: 400;
+}
+
+.text-body-sm {
+  font-size: 0.8125rem;
+  line-height: 1.375rem;
+  letter-spacing: 0.02em;
+  font-weight: 400;
+}
+
+.text-label-md {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  letter-spacing: 0.03em;
+  font-weight: 500;
+}
+
+.font-display-mobile,
+.text-display-mobile {
+  font-family: 'Noto Serif', 'Noto Serif Thai', serif;
+  font-size: 2.25rem;
+  line-height: 2.75rem;
+  letter-spacing: -0.01em;
+  font-weight: 400;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+
