@@ -10,6 +10,7 @@ import ServicesPage from './pages/services/ServicesPage.jsx'
 import AboutPage from './pages/about/AboutPage.jsx'
 import LoginPage from './pages/auth/LoginPage.jsx'
 import RegisterPage from './pages/auth/RegisterPage.jsx'
+import BookingPage from './pages/booking/BookingPage.jsx'
 import { LanguageProvider } from './i18n/LanguageContext.jsx'
 import { therapists } from './data/mock.js'
 
@@ -30,7 +31,10 @@ function getInitialNavigation() {
   if (hash.startsWith('#about')) {
     return { page: 'about', therapistId: 1 }
   }
-  if (hash.startsWith('#login') || hash.startsWith('#book') || hash.startsWith('#booking')) {
+  if (hash.startsWith('#booking') || hash.startsWith('#book-flow')) {
+    return { page: 'booking', therapistId: 1 }
+  }
+  if (hash.startsWith('#login') || hash.startsWith('#book')) {
     return { page: 'login', therapistId: 1 }
   }
   if (hash.startsWith('#register')) {
@@ -85,6 +89,10 @@ export default function App() {
       setCurrentPage('about')
       window.history.pushState(null, '', '#about')
       window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else if (targetKey === 'booking-flow' || targetKey === 'direct-booking') {
+      setCurrentPage('booking')
+      window.history.pushState(null, '', '#booking')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     } else if (targetKey === 'booking' || targetKey === 'book' || targetKey === 'login') {
       setCurrentPage('login')
       window.history.pushState(null, '', '#login')
@@ -119,6 +127,8 @@ export default function App() {
             <ServicesPage onNavigate={handleNavigate} />
           ) : currentPage === 'about' ? (
             <AboutPage onNavigate={handleNavigate} />
+          ) : currentPage === 'booking' ? (
+            <BookingPage onNavigate={handleNavigate} />
           ) : currentPage === 'login' ? (
             <LoginPage onNavigate={handleNavigate} />
           ) : currentPage === 'register' ? (

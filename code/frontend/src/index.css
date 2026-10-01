@@ -367,3 +367,21 @@ select:focus-visible {
   font-weight: 500;
 }
 
+.font-display-mobile,
+.text-display-mobile {
+  font-family: 'Noto Serif', 'Noto Serif Thai', serif;
+  font-size: 2.25rem;
+  line-height: 2.75rem;
+  letter-spacing: -0.01em;
+  font-weight: 400;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+

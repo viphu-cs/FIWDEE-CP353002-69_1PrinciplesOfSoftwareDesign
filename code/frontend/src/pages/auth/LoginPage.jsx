@@ -16,20 +16,18 @@ export default function LoginPage({ onNavigate }) {
     setTimeout(() => {
       setFeedback(`ยินดีต้อนรับคุณ ${identifier} ระบบกำลังนำท่านไปยังหน้าเลือกวันเวลาและหมอนวด...`)
       setTimeout(() => {
-        alert(`เข้าสู่ระบบสำเร็จ ยินดีต้อนรับคุณ ${identifier}\nกำลังนำทางสู่หน้าจองคิวบำบัด...`)
         setSubmitting(false)
-        onNavigate?.('therapists')
-      }, 1000)
-    }, 700)
+        onNavigate?.('booking-flow')
+      }, 700)
+    }, 500)
   }
 
   const handleGoogleLogin = () => {
     setFeedback('กำลังเชื่อมต่อบัญชี Google ของท่าน...')
     setTimeout(() => {
-      alert('เชื่อมต่อบัญชี Google เรียบร้อยแล้ว')
       setFeedback('')
-      onNavigate?.('therapists')
-    }, 900)
+      onNavigate?.('booking-flow')
+    }, 700)
   }
 
   return (
@@ -37,7 +35,7 @@ export default function LoginPage({ onNavigate }) {
       <div className="flex flex-col w-full">
         <div className="w-full max-w-6xl mx-auto px-6 py-space-lg md:py-space-xl">
           {/* Breadcrumb / Ritual Progression */}
-          <div className="flex items-center gap-space-xs text-secondary mb-space-lg font-label-caps uppercase tracking-widest text-label-caps">
+          <div className="flex items-center gap-space-xs text-secondary mb-space-lg font-label-caps uppercase tracking-widest text-label-caps flex-wrap">
             <button
               type="button"
               onClick={() => onNavigate?.('home')}
@@ -48,8 +46,6 @@ export default function LoginPage({ onNavigate }) {
             </button>
             <span>—</span>
             <span className="text-primary font-semibold">เข้าสู่ระบบสมาชิก</span>
-            <span>—</span>
-            <span className="text-secondary/70">การจองคิวบำบัด</span>
           </div>
 
           {/* Main Editorial Split Layout */}
@@ -148,6 +144,24 @@ export default function LoginPage({ onNavigate }) {
                 <p className="font-body-md text-body-md text-on-surface-variant">
                   เข้าสู่ระบบสมาชิก FIWDEE เพื่อจัดการเวลานัดหมาย ปรับแต่งรายละเอียดการบำบัด และดำเนินการจองคิวต่อเนื่อง
                 </p>
+              </div>
+
+              {/* ทางลัดเข้าสู่หน้าจองคิวทันทีโดยไม่ต้องล็อกอิน */}
+              <div className="flex items-center justify-between p-3 rounded-lg bg-surface-container border border-primary/20 mb-space-md shadow-xs">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-base">bolt</span>
+                  <span className="font-body-sm text-body-sm text-on-surface">
+                    ทางลัด: ไปหน้าจองคิวโดยตรง (ไม่ต้องล็อกอิน)
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onNavigate?.('booking-flow')}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-surface font-label-caps text-label-caps uppercase tracking-wider hover:opacity-90 transition-opacity cursor-pointer shadow-sm shrink-0"
+                >
+                  <span>จองคิวทันที</span>
+                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                </button>
               </div>
 
               {/* Interactive Form */}
