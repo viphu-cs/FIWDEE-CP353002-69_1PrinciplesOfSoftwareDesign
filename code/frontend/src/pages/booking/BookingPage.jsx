@@ -80,6 +80,7 @@ const servicesData = [
     name: 'นวดไทยราชสำนัก',
     desc: 'กดจุดเส้นประธานสิบ คลายกล้ามเนื้อและสมดุลลมปราณ',
     isPopular: true,
+    image: '/images/services/service-thai.jpg',
     durationOptions: [
       { minutes: 60, price: 600 },
       { minutes: 90, price: 850 },
@@ -90,6 +91,7 @@ const servicesData = [
     id: 'aroma',
     name: 'นวดอโรมาเธอราปี',
     desc: 'น้ำมันสกัดออร์แกนิกและศาสตร์กลิ่นบำบัดผ่อนคลายลึก',
+    image: '/images/services/service-aroma.jpg',
     durationOptions: [
       { minutes: 60, price: 800 },
       { minutes: 90, price: 1100 },
@@ -100,6 +102,7 @@ const servicesData = [
     id: 'warm_oil',
     name: 'นวดน้ำมันอุ่นสมุนไพร',
     desc: 'น้ำมันงาดำและไพลสดอุ่น กระตุ้นการไหลเวียนโลหิต',
+    image: '/images/services/service-warm-oil.jpg',
     durationOptions: [
       { minutes: 60, price: 750 },
       { minutes: 90, price: 1000 },
@@ -109,6 +112,7 @@ const servicesData = [
     id: 'foot',
     name: 'นวดกดจุดสะท้อนเท้า',
     desc: 'กระตุ้นศูนย์รวมประสาทฝ่าเท้า คืนความเบาสบายคล่องตัว',
+    image: '/images/services/service-foot.jpg',
     durationOptions: [
       { minutes: 60, price: 500 },
       { minutes: 90, price: 700 },
@@ -637,12 +641,24 @@ export default function BookingPage({ onNavigate, initialStep = 1 }) {
                                       : 'bg-surface-container-low border border-transparent hover:bg-surface-container hover:border-outline-variant/40'
                                   }`}
                                 >
-                                  {/* Service header (คลิกเลือกบริการ) */}
+                                  {/* Service header & image (คลิกเลือกบริการ) */}
                                   <button
                                     type="button"
                                     onClick={() => handleSelectService(svc)}
-                                    className="text-left cursor-pointer space-y-1.5"
+                                    className="text-left cursor-pointer space-y-3 w-full group"
                                   >
+                                    <div className="w-full h-36 sm:h-44 rounded-lg overflow-hidden bg-surface-container flex-shrink-0">
+                                      <img
+                                        src={svc.image}
+                                        alt={svc.name}
+                                        loading="lazy"
+                                        onError={(e) => {
+                                          e.currentTarget.onerror = null
+                                          e.currentTarget.src = '/images/services/room-architecture.jpg'
+                                        }}
+                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                      />
+                                    </div>
                                     <div className="flex items-start gap-3">
                                       <div
                                         className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
