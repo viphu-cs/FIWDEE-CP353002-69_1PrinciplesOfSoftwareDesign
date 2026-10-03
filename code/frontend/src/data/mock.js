@@ -33,6 +33,7 @@ export const shop = {
 export const services = [
   {
     id: 1,
+    image: '/images/services/service-thai.jpg',
     durationOptions: [
       { durationMinutes: 60, price: 600 },
       { durationMinutes: 90, price: 850 },
@@ -40,6 +41,7 @@ export const services = [
   },
   {
     id: 2,
+    image: '/images/services/service-aroma.jpg',
     durationOptions: [
       { durationMinutes: 60, price: 800 },
       { durationMinutes: 90, price: 1100 },
@@ -47,6 +49,7 @@ export const services = [
   },
   {
     id: 3,
+    image: '/images/services/service-warm-oil.jpg',
     durationOptions: [
       { durationMinutes: 60, price: 750 },
       { durationMinutes: 90, price: 1000 },
@@ -54,6 +57,7 @@ export const services = [
   },
   {
     id: 4,
+    image: '/images/services/service-foot.jpg',
     durationOptions: [{ durationMinutes: 60, price: 500 }],
   },
 ]

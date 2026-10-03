@@ -1,9 +1,15 @@
 import { useState } from 'react'
 import { useLanguage } from '../../i18n/useLanguage.js'
 import FadeIn from '../../components/motion/FadeIn.jsx'
+import { services } from '../../data/mock.js'
 
 export default function ServicesPage({ onNavigate }) {
   const { t } = useLanguage()
+
+  const thaiService = services.find((s) => s.id === 1) || { image: '/images/services/service-thai.jpg' }
+  const aromaService = services.find((s) => s.id === 2) || { image: '/images/services/service-aroma.jpg' }
+  const warmOilService = services.find((s) => s.id === 3) || { image: '/images/services/service-warm-oil.jpg' }
+  const footService = services.find((s) => s.id === 4) || { image: '/images/services/service-foot.jpg' }
 
   const [formData, setFormData] = useState({
     name: '',
@@ -116,8 +122,8 @@ export default function ServicesPage({ onNavigate }) {
             {/* Treatment 1: Royal Thai Massage */}
             <FadeIn delay={0.05}>
               <article className="bg-surface-container-low rounded-xl p-8 md:p-12 hover:bg-surface-container transition-colors duration-300">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                  <div className="lg:col-span-7 space-y-4">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                  <div className="lg:col-span-6 space-y-4">
                     <span className="font-label-caps text-label-caps text-primary tracking-widest uppercase">
                       {t('servicesPage.t1Tag')}
                     </span>
@@ -127,6 +133,32 @@ export default function ServicesPage({ onNavigate }) {
                     <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">
                       {t('servicesPage.t1Desc')}
                     </p>
+                    <div className="py-4 space-y-3">
+                      <div className="flex items-baseline justify-between py-1.5">
+                        <span className="font-body-md text-body-md text-on-surface">
+                          {t('servicesPage.minuteUnit', { n: 60 })}
+                        </span>
+                        <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
+                          {t('servicesPage.bahtUnit', { price: '600' })}
+                        </span>
+                      </div>
+                      <div className="flex items-baseline justify-between py-1.5">
+                        <span className="font-body-md text-body-md text-on-surface">
+                          {t('servicesPage.minuteUnit', { n: 90 })}
+                        </span>
+                        <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
+                          {t('servicesPage.bahtUnit', { price: '850' })}
+                        </span>
+                      </div>
+                      <div className="flex items-baseline justify-between py-1.5">
+                        <span className="font-body-md text-body-md text-on-surface">
+                          {t('servicesPage.minuteUnit', { n: 120 })}
+                        </span>
+                        <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
+                          {t('servicesPage.bahtUnit', { price: '1,100' })}
+                        </span>
+                      </div>
+                    </div>
                     <div className="pt-2 flex items-center gap-6">
                       <button
                         type="button"
@@ -137,36 +169,16 @@ export default function ServicesPage({ onNavigate }) {
                       </button>
                     </div>
                   </div>
-                  <div className="lg:col-span-5 bg-surface rounded-lg p-6 space-y-4">
-                    <p className="font-label-caps text-label-caps text-secondary uppercase tracking-widest">
-                      {t('servicesPage.durationRateLabel')}
-                    </p>
-                    <div className="space-y-3">
-                      <div className="flex items-baseline justify-between py-2 border-b-0">
-                        <span className="font-body-md text-body-md text-on-surface">
-                          {t('servicesPage.minuteUnit', { n: 60 })}
-                        </span>
-                        <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
-                          {t('servicesPage.bahtUnit', { price: '600' })}
-                        </span>
-                      </div>
-                      <div className="flex items-baseline justify-between py-2 border-b-0">
-                        <span className="font-body-md text-body-md text-on-surface">
-                          {t('servicesPage.minuteUnit', { n: 90 })}
-                        </span>
-                        <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
-                          {t('servicesPage.bahtUnit', { price: '850' })}
-                        </span>
-                      </div>
-                      <div className="flex items-baseline justify-between py-2 border-b-0">
-                        <span className="font-body-md text-body-md text-on-surface">
-                          {t('servicesPage.minuteUnit', { n: 120 })}
-                        </span>
-                        <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
-                          {t('servicesPage.bahtUnit', { price: '1,100' })}
-                        </span>
-                      </div>
-                    </div>
+                  <div className="lg:col-span-6 overflow-hidden rounded-lg">
+                    <img
+                      alt={t('servicesPage.t1Title')}
+                      className="w-full h-80 lg:h-96 object-cover rounded-lg transition-transform duration-700 hover:scale-[1.01]"
+                      src={thaiService?.image || '/images/services/service-thai.jpg'}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null
+                        e.currentTarget.src = '/images/services/room-architecture.jpg'
+                      }}
+                    />
                   </div>
                 </div>
               </article>
@@ -226,7 +238,11 @@ export default function ServicesPage({ onNavigate }) {
                     <img
                       alt={t('servicesPage.t2ImageAlt')}
                       className="w-full h-80 lg:h-96 object-cover rounded-lg transition-transform duration-700 hover:scale-[1.01]"
-                      src="/images/services/aromatherapy-herbs.jpg"
+                      src={aromaService?.image || '/images/services/service-aroma.jpg'}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null
+                        e.currentTarget.src = '/images/services/aromatherapy-herbs.jpg'
+                      }}
                     />
                   </div>
                 </div>
@@ -239,6 +255,17 @@ export default function ServicesPage({ onNavigate }) {
               <FadeIn delay={0.08} className="h-full">
                 <article className="bg-surface-container-low rounded-xl p-8 md:p-10 flex flex-col justify-between h-full hover:bg-surface-container transition-colors duration-300">
                   <div className="space-y-4">
+                    <div className="w-full h-52 md:h-60 overflow-hidden rounded-lg mb-4">
+                      <img
+                        alt={t('servicesPage.t3Title')}
+                        className="w-full h-full object-cover rounded-lg transition-transform duration-700 hover:scale-[1.01]"
+                        src={warmOilService?.image || '/images/services/service-warm-oil.jpg'}
+                        onError={(e) => {
+                          e.currentTarget.onerror = null
+                          e.currentTarget.src = '/images/services/aromatherapy-herbs.jpg'
+                        }}
+                      />
+                    </div>
                     <span className="font-label-caps text-label-caps text-primary tracking-widest uppercase">
                       {t('servicesPage.t3Tag')}
                     </span>
@@ -285,6 +312,17 @@ export default function ServicesPage({ onNavigate }) {
               <FadeIn delay={0.12} className="h-full">
                 <article className="bg-surface-container-low rounded-xl p-8 md:p-10 flex flex-col justify-between h-full hover:bg-surface-container transition-colors duration-300">
                   <div className="space-y-4">
+                    <div className="w-full h-52 md:h-60 overflow-hidden rounded-lg mb-4">
+                      <img
+                        alt={t('servicesPage.t4Title')}
+                        className="w-full h-full object-cover rounded-lg transition-transform duration-700 hover:scale-[1.01]"
+                        src={footService?.image || '/images/services/service-foot.jpg'}
+                        onError={(e) => {
+                          e.currentTarget.onerror = null
+                          e.currentTarget.src = '/images/services/aromatherapy-herbs.jpg'
+                        }}
+                      />
+                    </div>
                     <span className="font-label-caps text-label-caps text-primary tracking-widest uppercase">
                       {t('servicesPage.t4Tag')}
                     </span>
