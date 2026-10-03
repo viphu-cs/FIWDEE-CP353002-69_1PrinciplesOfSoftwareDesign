@@ -1,4 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
+import { motion } from 'motion/react'
+import PromoBanner from '../../components/booking/PromoBanner.jsx'
+import { PROMO } from '../../data/promo.js'
+
+// ease เดียวกับ FadeIn ของเว็บ — ใช้ให้ทรานซิชันหน้าจองนุ่มต่อเนื่องกับทั้งเว็บ
+const EASE_ENTER = [0.22, 1, 0.36, 1]
 
 const therapistsData = [
   {
@@ -67,39 +73,46 @@ const therapistsData = [
   },
 ]
 
+// durationOptions อิงอัตราราคาตามระยะเวลาชุดเดียวกับหน้าบริการ (ServicesPage) และ mock.js
 const servicesData = [
   {
     id: 'thai',
     name: 'นวดไทยราชสำนัก',
-    duration: '90 นาที',
-    price: '฿850',
-    rawPrice: 850,
     desc: 'กดจุดเส้นประธานสิบ คลายกล้ามเนื้อและสมดุลลมปราณ',
     isPopular: true,
+    durationOptions: [
+      { minutes: 60, price: 600 },
+      { minutes: 90, price: 850 },
+      { minutes: 120, price: 1100 },
+    ],
   },
   {
     id: 'aroma',
     name: 'นวดอโรมาเธอราปี',
-    duration: '90 นาที',
-    price: '฿1,100',
-    rawPrice: 1100,
     desc: 'น้ำมันสกัดออร์แกนิกและศาสตร์กลิ่นบำบัดผ่อนคลายลึก',
+    durationOptions: [
+      { minutes: 60, price: 800 },
+      { minutes: 90, price: 1100 },
+      { minutes: 120, price: 1400 },
+    ],
   },
   {
     id: 'warm_oil',
     name: 'นวดน้ำมันอุ่นสมุนไพร',
-    duration: '90 นาที',
-    price: '฿1,000',
-    rawPrice: 1000,
     desc: 'น้ำมันงาดำและไพลสดอุ่น กระตุ้นการไหลเวียนโลหิต',
+    durationOptions: [
+      { minutes: 60, price: 750 },
+      { minutes: 90, price: 1000 },
+    ],
   },
   {
     id: 'foot',
     name: 'นวดกดจุดสะท้อนเท้า',
-    duration: '60 นาที',
-    price: '฿500',
-    rawPrice: 500,
     desc: 'กระตุ้นศูนย์รวมประสาทฝ่าเท้า คืนความเบาสบายคล่องตัว',
+    durationOptions: [
+      { minutes: 60, price: 500 },
+      { minutes: 90, price: 700 },
+    ],
   },
 ]
 
@@ -124,6 +137,7 @@ export default function BookingPage({ onNavigate, initialStep = 1 }) {
   const [step, setStep] = useState(initialStep)
   const [selectedTherapist, setSelectedTherapist] = useState(therapistsData[0])
   const [selectedService, setSelectedService] = useState(servicesData[0])
+  const [selectedDuration, setSelectedDuration] = useState(servicesData[0].durationOptions[1]) // 90 นาที
   const [selectedDate, setSelectedDate] = useState(dateOptions[0])
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(timeSlots[2]) // 15:00
   const [pressureLevel, setPressureLevel] = useState('ปานกลาง (แนะนำ)')
@@ -131,11 +145,58 @@ export default function BookingPage({ onNavigate, initialStep = 1 }) {
     'ปวดตึงกล้ามเนื้อบริเวณสะบักและคอเป็นพิเศษจากการทำงานหน้าจอคอมพิวเตอร์'
   )
   const [paymentMethod, setPaymentMethod] = useState('promptpay')
+  const [promoInput, setPromoInput] = useState('')
+  const [promoApplied, setPromoApplied] = useState(false)
+  const [promoError, setPromoError] = useState('')
   const [countdown, setCountdown] = useState(14 * 60 + 45) // 14:45
   const [isConfirmed, setIsConfirmed] = useState(false)
   const [bookingRef] = useState('FWD-20241015-883')
 
   const carouselRef = useRef(null)
+
+  // ค่าที่ใช้จริงของบริการ = บริการที่เลือก + ระยะเวลา/ราคาที่เลือกจาก durationOptions
+  const activeService = {
+    ...selectedService,
+    duration: `${selectedDuration.minutes} นาที`,
+    price: `฿${selectedDuration.price.toLocaleString('en-US')}`,
+    rawPrice: selectedDuration.price,
+  }
+
+  // ===== โปรโมชั่น (ใส่โค้ดถูกที่ช่องชำระเงิน → ลดราคาในสรุปยอดทุกจุด) =====
+  const promoDiscountAmount = promoApplied
+    ? Math.round(activeService.rawPrice * PROMO.discountRate)
+    : 0
+  const finalPrice = activeService.rawPrice - promoDiscountAmount
+  const finalPriceLabel = `฿${finalPrice.toLocaleString('en-US')}`
+  const discountLabel = `−฿${promoDiscountAmount.toLocaleString('en-US')}`
+
+  const handleApplyPromo = () => {
+    const code = promoInput.trim().toUpperCase()
+    if (!code) return
+    if (code === PROMO.code.toUpperCase()) {
+      setPromoApplied(true)
+      setPromoError('')
+    } else {
+      setPromoError('รหัสโปรโมชั่นไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง')
+    }
+  }
+
+  const handleRemovePromo = () => {
+    setPromoApplied(false)
+    setPromoInput('')
+    setPromoError('')
+  }
+
+  const handleSelectService = (svc) => {
+    setSelectedService(svc)
+    const keepSameMinutes = svc.durationOptions.find((o) => o.minutes === selectedDuration.minutes)
+    setSelectedDuration(keepSameMinutes || svc.durationOptions[1] || svc.durationOptions[0])
+  }
+
+  const handleSelectDuration = (svc, option) => {
+    setSelectedService(svc)
+    setSelectedDuration(option)
+  }
 
   // Live Countdown timer for PromptPay
   useEffect(() => {
@@ -175,7 +236,12 @@ export default function BookingPage({ onNavigate, initialStep = 1 }) {
         {/* ========================================================
             TOP STEPPER RIBBON (Consistent across all 3 steps)
             ======================================================== */}
-        <section className="w-full bg-surface-container-low py-space-md border-b border-surface-container-high/60">
+        <motion.section
+          initial={{ opacity: 0, y: -18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, ease: EASE_ENTER }}
+          className="w-full bg-surface-container-low py-space-md border-b border-surface-container-high/60"
+        >
           <div className="max-w-7xl mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop">
             <div className="flex flex-wrap items-center justify-between gap-y-space-xs text-secondary">
               <div className="flex items-center gap-space-sm sm:gap-space-md">
@@ -287,11 +353,17 @@ export default function BookingPage({ onNavigate, initialStep = 1 }) {
               </div>
             </div>
           </div>
-        </section>
+        </motion.section>
 
         {/* ========================================================
             SUCCESS CONFIRMATION SCREEN (When booking is confirmed)
             ======================================================== */}
+        <motion.div
+          key={isConfirmed ? 'confirmed' : `step-${step}`}
+          initial={{ opacity: 0, y: 28 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: EASE_ENTER }}
+        >
         {isConfirmed ? (
           <section className="w-full py-space-xl min-h-[60vh] flex items-center justify-center">
             <div className="max-w-2xl mx-auto px-6 text-center space-y-space-md">
@@ -325,7 +397,7 @@ export default function BookingPage({ onNavigate, initialStep = 1 }) {
                   <div>
                     <span className="text-secondary block">บริการ:</span>
                     <span className="font-medium text-on-surface">
-                      {selectedService.name} ({selectedService.duration})
+                      {selectedService.name} ({activeService.duration})
                     </span>
                   </div>
                   <div>
@@ -553,60 +625,103 @@ export default function BookingPage({ onNavigate, initialStep = 1 }) {
                             </span>
                           </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {servicesData.map((svc) => {
                               const isSelected = selectedService.id === svc.id
                               return (
                                 <div
                                   key={svc.id}
-                                  onClick={() => setSelectedService(svc)}
-                                  className={`cursor-pointer p-3 rounded-lg transition-all duration-200 flex items-center justify-between gap-3 group ${
+                                  className={`rounded-xl p-5 transition-all duration-200 flex flex-col justify-between gap-4 ${
                                     isSelected
-                                      ? 'bg-secondary-container border border-primary/30'
+                                      ? 'bg-secondary-container border border-primary/40'
                                       : 'bg-surface-container-low border border-transparent hover:bg-surface-container hover:border-outline-variant/40'
                                   }`}
                                 >
-                                  <div className="flex items-center gap-3 min-w-0">
-                                    <div
-                                      className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                                        isSelected
-                                          ? 'border-primary bg-primary'
-                                          : 'border-outline bg-transparent'
-                                      }`}
-                                    >
-                                      <span
-                                        className={`w-1.5 h-1.5 rounded-full ${
-                                          isSelected ? 'bg-surface' : 'bg-transparent'
+                                  {/* Service header (คลิกเลือกบริการ) */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSelectService(svc)}
+                                    className="text-left cursor-pointer space-y-1.5"
+                                  >
+                                    <div className="flex items-start gap-3">
+                                      <div
+                                        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                                          isSelected ? 'border-primary bg-primary' : 'border-outline bg-transparent'
                                         }`}
-                                      ></span>
-                                    </div>
-                                    <div className="min-w-0">
-                                      <div className="flex items-center gap-2">
-                                        <h4 className="font-label-md text-label-md text-on-surface font-semibold truncate">
-                                          {svc.name}
-                                        </h4>
-                                        {svc.isPopular && (
-                                          <span className="font-label-caps text-label-caps px-1.5 py-0.5 rounded bg-primary text-surface text-[10px] font-medium flex-shrink-0">
-                                            ยอดนิยม
-                                          </span>
-                                        )}
+                                      >
+                                        <span
+                                          className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-surface' : 'bg-transparent'}`}
+                                        ></span>
                                       </div>
-                                      <p className="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5 text-xs">
-                                        {svc.desc}
-                                      </p>
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-2">
+                                          <h4 className="font-label-lg text-label-lg text-on-surface font-semibold">
+                                            {svc.name}
+                                          </h4>
+                                          {svc.isPopular && (
+                                            <span className="font-label-caps text-label-caps px-1.5 py-0.5 rounded bg-primary text-surface text-[10px] font-medium flex-shrink-0">
+                                              ยอดนิยม
+                                            </span>
+                                          )}
+                                        </div>
+                                        <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                                          {svc.desc}
+                                        </p>
+                                      </div>
                                     </div>
-                                  </div>
-                                  <div className="text-right flex-shrink-0">
-                                    <div
-                                      className={`font-headline-sm text-[1.1rem] font-medium leading-none ${
-                                        isSelected ? 'text-primary' : 'text-on-surface'
-                                      }`}
-                                    >
-                                      {svc.price}
-                                    </div>
-                                    <span className="font-body-sm text-body-sm text-secondary text-xs">
-                                      {svc.duration}
-                                    </span>
+                                  </button>
+
+                                  {/* อัตราราคาตามระยะเวลา (สไตล์เดียวกับหน้าบริการ) */}
+                                  <div className="bg-surface rounded-lg p-4 space-y-1.5">
+                                    <p className="font-label-caps text-label-caps text-secondary uppercase tracking-widest pb-1">
+                                      อัตราราคาตามระยะเวลา
+                                    </p>
+                                    {svc.durationOptions.map((opt) => {
+                                      const isDurationActive =
+                                        isSelected && selectedDuration.minutes === opt.minutes
+                                      return (
+                                        <button
+                                          key={opt.minutes}
+                                          type="button"
+                                          onClick={() => handleSelectDuration(svc, opt)}
+                                          className={`w-full flex items-center justify-between gap-3 px-2.5 py-2 rounded transition-all duration-200 cursor-pointer text-left ${
+                                            isDurationActive
+                                              ? 'bg-secondary-container ring-1 ring-primary/50'
+                                              : 'hover:bg-surface-container'
+                                          }`}
+                                        >
+                                          <span className="flex items-center gap-2.5 min-w-0">
+                                            <span
+                                              className={`w-3 h-3 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                                                isDurationActive
+                                                  ? 'border-primary bg-primary'
+                                                  : 'border-outline bg-transparent'
+                                              }`}
+                                            >
+                                              <span
+                                                className={`w-1 h-1 rounded-full ${
+                                                  isDurationActive ? 'bg-surface' : 'bg-transparent'
+                                                }`}
+                                              ></span>
+                                            </span>
+                                            <span
+                                              className={`font-body-md text-body-md ${
+                                                isDurationActive ? 'text-primary font-semibold' : 'text-on-surface'
+                                              }`}
+                                            >
+                                              {opt.minutes} นาที
+                                            </span>
+                                          </span>
+                                          <span
+                                            className={`font-headline-sm text-headline-sm font-normal ${
+                                              isDurationActive ? 'text-primary' : 'text-on-surface'
+                                            }`}
+                                          >
+                                            ฿{opt.price.toLocaleString('en-US')}
+                                          </span>
+                                        </button>
+                                      )
+                                    })}
                                   </div>
                                 </div>
                               )
@@ -672,7 +787,7 @@ export default function BookingPage({ onNavigate, initialStep = 1 }) {
                                     {selectedService.name}
                                   </span>
                                   <span className="font-body-sm text-body-sm text-secondary">
-                                    {selectedService.duration}
+                                    {activeService.duration}
                                   </span>
                                 </div>
                               </div>
@@ -718,7 +833,7 @@ export default function BookingPage({ onNavigate, initialStep = 1 }) {
                                   ยอดชำระเบื้องต้น
                                 </span>
                                 <span className="font-headline-md text-headline-md text-primary font-medium">
-                                  {selectedService.price}
+                                  {activeService.price}
                                 </span>
                               </div>
                               <p className="font-body-sm text-body-sm text-secondary">
@@ -854,7 +969,7 @@ export default function BookingPage({ onNavigate, initialStep = 1 }) {
                               2. รอบเวลาที่เปิดรับจอง
                             </h2>
                             <span className="font-body-sm text-body-sm text-secondary">
-                              ระยะเวลาทรีตเมนต์ {selectedService.duration}
+                              ระยะเวลาทรีตเมนต์ {activeService.duration}
                             </span>
                           </div>
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-space-sm pt-space-xs">
@@ -1011,7 +1126,7 @@ export default function BookingPage({ onNavigate, initialStep = 1 }) {
                                 {selectedService.name}
                               </span>
                               <span className="font-label-caps text-label-caps text-secondary">
-                                {selectedService.duration}
+                                {activeService.duration}
                               </span>
                             </div>
                             <p className="font-body-sm text-body-sm text-on-surface-variant">
@@ -1085,7 +1200,7 @@ export default function BookingPage({ onNavigate, initialStep = 1 }) {
                               </span>
                               <div className="text-right">
                                 <span className="font-display-mobile text-display-mobile text-on-surface font-normal">
-                                  {selectedService.price}
+                                  {activeService.price}
                                 </span>
                                 <span className="font-body-sm text-body-sm text-secondary block">
                                   ราคารวมภาษีมูลค่าเพิ่มและอุปกรณ์แล้ว
@@ -1133,7 +1248,15 @@ export default function BookingPage({ onNavigate, initialStep = 1 }) {
                 ======================================================== */}
             {step === 3 && (
               <>
-                <div className="max-w-7xl mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop py-6 md:py-8">
+                <div className="max-w-7xl mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop py-6 md:py-8 relative">
+                  {/* จุดวางกล่องโปรโมชั่น — จอเล็กวางใน flow ของคอนเทนเนอร์
+                      จอใหญ่ (lg+) ลอยทับมุมขวาในกรอบเนื้อหา (PromoBanner render ในนี้) */}
+                  <div
+                    id="promo-anchor"
+                    className="relative z-40 ml-auto w-full max-w-[340px] mb-4 lg:absolute lg:top-5 lg:right-10 lg:mb-0"
+                  >
+                    <PromoBanner />
+                  </div>
                   {/* Top Back Navigation */}
                   <div className="flex items-center gap-3 mb-6 flex-wrap">
                     <button
@@ -1277,7 +1400,13 @@ export default function BookingPage({ onNavigate, initialStep = 1 }) {
                                       พร้อมเพย์สแกนได้ทุกธนาคาร
                                     </span>
                                     <p className="font-headline-sm text-headline-sm text-primary font-medium">
-                                      ยอดชำระ: {selectedService.price}
+                                      ยอดชำระ:{' '}
+                                      {promoApplied && (
+                                        <span className="font-body-sm text-body-sm text-stone-400 line-through mr-1.5">
+                                          {activeService.price}
+                                        </span>
+                                      )}
+                                      {finalPriceLabel}
                                     </p>
                                   </div>
                                   <div className="pt-1">
@@ -1304,6 +1433,59 @@ export default function BookingPage({ onNavigate, initialStep = 1 }) {
                                     >
                                       <span className="material-symbols-outlined text-xs">download</span> บันทึกรูปภาพ QR ลงอุปกรณ์
                                     </button>
+                                  </div>
+
+                                  {/* ช่องกรอกรหัสโปรโมชั่น — ใช้โค้ดถูกแล้วยอดสรุปด้านขวาจะลดทันที */}
+                                  <div className="mt-2 pt-3 border-t border-outline-variant/30 space-y-2">
+                                    <span className="font-label-caps text-label-caps text-secondary uppercase block">
+                                      รหัสโปรโมชั่น (ถ้ามี)
+                                    </span>
+                                    {promoApplied ? (
+                                      <div className="flex items-center justify-between gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+                                        <span className="font-body-sm text-body-sm text-emerald-900 flex items-center gap-1.5">
+                                          <span className="material-symbols-outlined text-base">check_circle</span>
+                                          <span>
+                                            ใช้โค้ด <span className="font-mono font-bold">{PROMO.code}</span> สำเร็จ · ส่วนลด {PROMO.discount}
+                                          </span>
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={handleRemovePromo}
+                                          aria-label="ถอนโค้ดโปรโมชั่น"
+                                          className="w-6 h-6 rounded-full text-emerald-700 hover:bg-emerald-100 transition-colors flex items-center justify-center cursor-pointer shrink-0"
+                                        >
+                                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                                            <path d="M18 6L6 18M6 6l12 12" />
+                                          </svg>
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <div className="flex gap-2">
+                                          <input
+                                            type="text"
+                                            value={promoInput}
+                                            onChange={(e) => setPromoInput(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleApplyPromo()}
+                                            placeholder="กรอกรหัส เช่น FIWDEE20"
+                                            className="flex-1 min-w-0 px-3 py-2 rounded-lg bg-surface-container-lowest border border-outline-variant/50 font-mono text-sm uppercase tracking-wider text-on-surface placeholder:font-body-sm placeholder:normal-case placeholder:tracking-normal placeholder:text-outline/70 focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                                          />
+                                          <button
+                                            type="button"
+                                            onClick={handleApplyPromo}
+                                            className="px-4 py-2 rounded-lg bg-primary text-on-primary font-label-caps text-label-caps uppercase tracking-wider hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer shrink-0"
+                                          >
+                                            ใช้โค้ด
+                                          </button>
+                                        </div>
+                                        {promoError && (
+                                          <p className="font-body-sm text-xs text-rose-700 flex items-center gap-1">
+                                            <span className="material-symbols-outlined text-sm">error</span>
+                                            {promoError}
+                                          </p>
+                                        )}
+                                      </>
+                                    )}
                                   </div>
                                 </div>
                               </div>
@@ -1407,7 +1589,7 @@ export default function BookingPage({ onNavigate, initialStep = 1 }) {
                                 </div>
                                 <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
                                   ชำระมัดจำออนไลน์ ฿300 เพื่อล็อกห้องนวดและตารางเวลา ยอดคงเหลือ ฿
-                                  {selectedService.rawPrice - 300} ชำระที่เคาน์เตอร์
+                                  {(finalPrice - 300).toLocaleString('en-US')} ชำระที่เคาน์เตอร์
                                 </p>
                               </div>
                             </label>
@@ -1513,7 +1695,7 @@ export default function BookingPage({ onNavigate, initialStep = 1 }) {
                               {selectedService.name}
                             </h3>
                             <p className="font-body-sm text-body-sm text-secondary">
-                              {selectedService.desc} ({selectedService.duration})
+                              {selectedService.desc} ({activeService.duration})
                             </p>
                           </div>
 
@@ -1571,9 +1753,20 @@ export default function BookingPage({ onNavigate, initialStep = 1 }) {
 
                           <div className="pt-space-xs space-y-2">
                             <div className="flex justify-between font-body-sm text-body-sm">
-                              <span className="text-secondary">ค่าบริการบำบัด ({selectedService.duration})</span>
-                              <span className="text-on-surface font-medium">{selectedService.price}</span>
+                              <span className="text-secondary">ค่าบริการบำบัด ({activeService.duration})</span>
+                              <span className={`font-medium ${promoApplied ? 'line-through text-stone-400' : 'text-on-surface'}`}>
+                                {activeService.price}
+                              </span>
                             </div>
+                            {promoApplied && (
+                              <div className="flex justify-between font-body-sm text-body-sm text-emerald-800">
+                                <span className="flex items-center gap-1.5">
+                                  <span className="material-symbols-outlined text-base">local_offer</span>
+                                  ส่วนลดโปรโมชั่น ({PROMO.code} · {PROMO.discount})
+                                </span>
+                                <span className="font-semibold">{discountLabel}</span>
+                              </div>
+                            )}
                             <div className="flex justify-between font-body-sm text-body-sm">
                               <span className="text-secondary">ห้องทรีตเมนต์เดี่ยว &amp; เวลคัมดริ๊งก์สมุนไพร</span>
                               <span className="text-primary font-medium">ฟรี (รวมในแพ็กเกจ)</span>
@@ -1589,7 +1782,7 @@ export default function BookingPage({ onNavigate, initialStep = 1 }) {
                                   ยอดรวมสุทธิ
                                 </span>
                                 <p className="font-headline-md text-headline-md text-on-surface font-semibold tracking-tight">
-                                  {paymentMethod === 'deposit' ? '฿300 (มัดจำ)' : selectedService.price}
+                                  {paymentMethod === 'deposit' ? '฿300 (มัดจำ)' : finalPriceLabel}
                                 </p>
                               </div>
                               <span className="font-label-caps text-label-caps text-secondary">
@@ -1605,7 +1798,7 @@ export default function BookingPage({ onNavigate, initialStep = 1 }) {
                               className="w-full bg-primary hover:opacity-90 active:scale-[0.99] text-on-primary py-3.5 px-space-md rounded font-label-md text-label-md tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all duration-200 cursor-pointer"
                             >
                               <span className="material-symbols-outlined text-base">verified</span>
-                              ยืนยันการจองและชำระเงิน ({paymentMethod === 'deposit' ? '฿300' : selectedService.price})
+                              ยืนยันการจองและชำระเงิน ({paymentMethod === 'deposit' ? '฿300' : finalPriceLabel})
                             </button>
                           </div>
 
@@ -1668,6 +1861,7 @@ export default function BookingPage({ onNavigate, initialStep = 1 }) {
             </section>
           </>
         )}
+        </motion.div>
       </div>
     </main>
   )
