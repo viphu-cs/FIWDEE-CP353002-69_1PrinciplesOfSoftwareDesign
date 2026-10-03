@@ -157,7 +157,7 @@ export function AdminAuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('fiwdee_admin_user')
     if (saved) {
-      try { return JSON.parse(saved) } catch (e) {}
+      try { return JSON.parse(saved) } catch {}
     }
     return {
       id: 1,
