@@ -14,7 +14,7 @@ export default function LandingPage({ ready = true, onNavigate }) {
       <div className="flex flex-col w-full">
         <Hero ready={ready} />
         <TherapistsSection onNavigate={onNavigate} />
-        <ServicesSection />
+        <ServicesSection onNavigate={onNavigate} />
         <AtmosphereSection />
         <LocationSection />
         <FinalCta onNavigate={onNavigate} />

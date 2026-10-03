@@ -110,6 +110,7 @@ export const en = {
     title: 'Services',
     baht: 'THB',
     durationPrice: '{min} min · {price} THB',
+    scrollHint: 'Scroll down to browse the treatments',
     items: {
       1: {
         name: 'Thai Massage',

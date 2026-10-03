@@ -110,6 +110,7 @@ export const th = {
     title: 'บริการ',
     baht: 'บาท',
     durationPrice: '{min} นาที · {price} บาท',
+    scrollHint: 'เลื่อนลงเพื่อชมรายการทรีตเมนต์',
     items: {
       1: {
         name: 'นวดไทย',
