@@ -19,6 +19,12 @@ export default function PromoPopup({ ready = true, onNavigate }) {
     return () => clearTimeout(timer)
   }, [ready])
 
+  // ปิด popup แบบ "ย่อ" — ไม่หายไปไหน แต่ย้ายไปเป็นกล่องข้อความเล็กมุมขวาบน (เหมือนหน้าชำระเงิน)
+  const close = () => {
+    setOpen(false)
+    setMinimized(true)
+  }
+
   // ปิดด้วยปุ่ม Escape + ล็อก scroll ของหน้าขณะเปิด
   useEffect(() => {
     if (!open) return undefined
@@ -31,12 +37,6 @@ export default function PromoPopup({ ready = true, onNavigate }) {
       document.body.style.overflow = prevOverflow
     }
   }, [open])
-
-  // ปิด popup แบบ "ย่อ" — ไม่หายไปไหน แต่ย้ายไปเป็นกล่องข้อความเล็กมุมขวาบน (เหมือนหน้าชำระเงิน)
-  const close = () => {
-    setOpen(false)
-    setMinimized(true)
-  }
 
   // เปิด popup เต็มกลับมาจากกล่องเล็ก
   const reopen = () => {
