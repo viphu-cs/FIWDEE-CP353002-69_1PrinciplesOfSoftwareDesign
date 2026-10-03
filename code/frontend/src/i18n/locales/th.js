@@ -12,6 +12,7 @@ export const th = {
     eyebrow: 'ข้อเสนอพิเศษ · LIMITED OFFER',
     title: 'ยินดีต้อนรับสู่ FIWDEE',
     desc: 'รับส่วนลด {discount} สำหรับการจองครั้งแรกของคุณ ทุกรายการบริการ',
+    bannerDesc: 'รับส่วนลด {discount} สำหรับการจองครั้งแรก ทุกรายการบริการ เมื่อชำระผ่านพร้อมเพย์ QR Code',
     codeLabel: 'รหัสโปรโมชั่น',
     copy: 'คัดลอก',
     copied: 'คัดลอกแล้ว',

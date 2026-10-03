@@ -64,9 +64,9 @@ export default function PromoBanner() {
                   <p className="font-label-caps text-[10px] uppercase tracking-[0.2em] text-primary font-bold">
                     {t('promo.eyebrow')}
                   </p>
-                  <p className="font-body-sm text-body-sm text-stone-700 mt-0.5">
-                    {t('promo.desc', { discount: PROMO.discount })}
-                  </p>
+                <p className="font-body-sm text-body-sm text-stone-700 mt-0.5">
+                  {t('promo.bannerDesc', { discount: PROMO.discount })}
+                </p>
                 </div>
               </div>
 

@@ -12,6 +12,7 @@ export const en = {
     eyebrow: 'SPECIAL OFFER · LIMITED TIME',
     title: 'Welcome to FIWDEE',
     desc: 'Get {discount} off your first booking, on every treatment',
+    bannerDesc: 'Get {discount} off your first booking on every treatment when paying via PromptPay QR Code',
     codeLabel: 'Promo Code',
     copy: 'Copy',
     copied: 'Copied',
