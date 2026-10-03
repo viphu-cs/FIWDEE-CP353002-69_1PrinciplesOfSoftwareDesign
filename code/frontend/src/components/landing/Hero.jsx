@@ -22,15 +22,27 @@ export default function Hero({ ready = true }) {
   return (
     <section className="relative w-full overflow-hidden -mt-20">
       <div className="relative w-full h-[88vh] min-h-[640px] max-h-[880px]">
-        {/* 🎬 ภาพพื้นหลัง: zoom ช้า ๆ หลังม่าน preloader ยกออก */}
+        {/* 🎬 ภาพพื้นหลัง: zoom ช้า ๆ หลังม่าน preloader ยกออก — เพิ่มอิ่มสี/คอนทราสต์ให้ภาพเข้มชัด */}
         <motion.div
           initial={{ scale: 1.12 }}
           animate={ready ? { scale: 1 } : { scale: 1.12 }}
           transition={{ duration: 1.8, ease: [0.22, 1, 0.36, 1] }}
           className="absolute inset-0 w-full h-full bg-cover bg-center"
-          style={{ backgroundImage: `url("${images.hero}")` }}
+          style={{
+            backgroundImage: `url("${images.hero}")`,
+            filter: 'saturate(1.2) contrast(1.08) brightness(1.02)',
+          }}
         ></motion.div>
-        <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/50 to-primary/30"></div>
+        {/* 🎬 Overlay: ขาวฟุ้งเฉพาะจุดหลังตัวหนังสือ (radial) — เบาลงเพื่อไม่ให้ภาพจาง
+            + ไล่ขาวด้านล่างเบา ๆ พอไม่มีรอยต่อกับ section ถัดไป */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(ellipse 40% 30% at 18% 82%, rgba(251,249,244,0.78), rgba(251,249,244,0.3) 55%, transparent 72%)',
+          }}
+        ></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/60 to-transparent"></div>
 
         {/* 🎬 ข้อความ: มือถือกึ่งกลาง / desktop มุมซ้ายล่างแบบเดิม */}
         <div className="absolute inset-0 flex items-center justify-center md:items-end">
@@ -43,7 +55,7 @@ export default function Hero({ ready = true }) {
               <motion.div variants={container} initial="hidden" animate={ready ? 'visible' : 'hidden'}>
                 <motion.p
                   variants={item}
-                  className="font-label-lg text-label-lg uppercase text-charcoal-muted tracking-widest mb-space-md"
+                  className="font-label-lg text-label-lg uppercase text-charcoal-soft font-semibold tracking-widest mb-space-md"
                 >
                   {t('hero.eyebrow')}
                 </motion.p>
