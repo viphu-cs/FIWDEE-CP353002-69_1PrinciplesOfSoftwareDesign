@@ -8,6 +8,7 @@ const EASE = [0.22, 1, 0.36, 1]
 export default function PromoPopup({ ready = true, onNavigate }) {
   const { t } = useLanguage()
   const [open, setOpen] = useState(false)
+  const [minimized, setMinimized] = useState(false)
   const [copied, setCopied] = useState(false)
 
   // รอ preloader ยกม่านก่อน แล้วค่อยโชว์หน่วง 2 วินาที
@@ -31,7 +32,20 @@ export default function PromoPopup({ ready = true, onNavigate }) {
     }
   }, [open])
 
-  const close = () => setOpen(false)
+  // ปิด popup แบบ "ย่อ" — ไม่หายไปไหน แต่ย้ายไปเป็นกล่องข้อความเล็กมุมขวาบน (เหมือนหน้าชำระเงิน)
+  const close = () => {
+    setOpen(false)
+    setMinimized(true)
+  }
+
+  // เปิด popup เต็มกลับมาจากกล่องเล็ก
+  const reopen = () => {
+    setMinimized(false)
+    setOpen(true)
+  }
+
+  // ปิดกล่องเล็กถาวร (จนกว่าจะกลับมาหน้าแรกครั้งใหม่)
+  const dismissMini = () => setMinimized(false)
 
   const handleCopy = async () => {
     try {
@@ -49,8 +63,9 @@ export default function PromoPopup({ ready = true, onNavigate }) {
   }
 
   return (
-    <AnimatePresence>
-      {open && (
+    <>
+      <AnimatePresence>
+        {open && (
         <motion.div
           key="promo-backdrop"
           initial={{ opacity: 0 }}
@@ -179,6 +194,67 @@ export default function PromoPopup({ ready = true, onNavigate }) {
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+      </AnimatePresence>
+
+      {/* กล่องข้อความเล็ก (หลังย่อ) — มุมขวาบนใต้ปุ่มจองคิว สไตล์เดียวกับ PromoBanner หน้าชำระเงิน */}
+      <AnimatePresence>
+        {minimized && !open && (
+          <motion.div
+            key="promo-mini"
+            initial={{ opacity: 0, x: 48, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 48, scale: 0.95 }}
+            transition={{ duration: 0.5, delay: 0.15, ease: EASE }}
+            className="fixed top-24 inset-x-0 z-[80] pointer-events-none"
+          >
+            {/* จัดชิดขวา "ในคอนเทนเนอร์เนื้อหาหลัก" (max-w-6xl) เหมือนหน้าชำระเงิน ไม่ชิดขอบจอ */}
+            <div className="max-w-6xl mx-auto px-6 relative h-0">
+              <div className="absolute right-6 top-0 w-[290px] pointer-events-auto">
+                <div className="relative">
+                  {/* หางกล่องแชท (ชี้ขึ้นไปทางปุ่มจองคิว) */}
+                  <div className="absolute -top-1.5 right-10 w-4 h-4 bg-surface rotate-45" />
+
+              <div
+                onClick={reopen}
+                className="restore-root-primary relative bg-surface rounded-2xl shadow-2xl shadow-stone-900/25 cursor-pointer hover:-translate-y-0.5 transition-transform duration-200"
+              >
+                {/* ปุ่มปิดถาวรของกล่องเล็ก */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    dismissMini()
+                  }}
+                  aria-label={t('promo.close')}
+                  className="absolute top-2.5 right-2.5 z-20 w-6 h-6 rounded-full bg-stone-100 text-stone-500 hover:bg-stone-200 transition-colors flex items-center justify-center cursor-pointer"
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+
+                <div className="flex items-center gap-3 p-4 pr-8">
+                  {/* ตราส่วนลดเล็ก */}
+                  <div className="w-11 h-11 rounded-full bg-primary text-warm-ivory shadow-md flex flex-col items-center justify-center shrink-0 ring-4 ring-warm-ivory/50">
+                    <span className="font-headline-sm text-sm leading-none">{PROMO.discount}</span>
+                    <span className="font-label-caps text-[7px] uppercase tracking-widest mt-0.5 opacity-90">OFF</span>
+                  </div>
+                  <div className="min-w-0 leading-snug">
+                    <p className="font-label-caps text-[9px] uppercase tracking-[0.2em] text-primary font-bold">
+                      {t('promo.eyebrow')}
+                    </p>
+                    <p className="font-body-sm text-body-sm text-stone-700 mt-0.5 line-clamp-2">
+                      {t('promo.bannerDesc', { discount: PROMO.discount })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              </div>
+            </div>
+          </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   )
 }
