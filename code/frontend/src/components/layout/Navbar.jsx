@@ -47,7 +47,7 @@ export default function Navbar({ ready = true, currentPage = 'home', onNavigate 
       animate={ready ? { y: 0, opacity: 1 } : { y: -72, opacity: 0 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: ready ? 0.15 : 0 }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? 'bg-surface/95 shadow-md backdrop-blur-xl' : 'bg-surface/80 backdrop-blur-xl'
+        scrolled ? 'bg-primary-container/95 shadow-lg backdrop-blur-xl' : 'bg-primary-container/75 backdrop-blur-xl'
       }`}
     >
       <div className="h-20 max-w-6xl mx-auto px-6 flex items-center justify-between">
@@ -60,10 +60,10 @@ export default function Navbar({ ready = true, currentPage = 'home', onNavigate 
               handleLinkClick('home')
             }}
           >
-            <span className="font-headline-sm text-headline-sm text-primary font-normal tracking-widest leading-none">
+            <span className="font-headline-sm text-headline-sm text-warm-ivory font-normal tracking-widest leading-none">
               {shop.name}
             </span>
-            <span className="font-label-md text-label-md text-charcoal-muted uppercase mt-0.5">
+            <span className="font-label-md text-label-md text-warm-ivory/70 uppercase mt-0.5">
               {shop.nameSuffix}
             </span>
           </a>
@@ -77,7 +77,7 @@ export default function Navbar({ ready = true, currentPage = 'home', onNavigate 
               onClick={() => handleLinkClick(link.key)}
               aria-current={link.active ? 'page' : undefined}
               className={`link-underline uppercase transition-colors duration-200 text-label-lg font-label-lg cursor-pointer ${
-                link.active ? 'text-primary font-medium' : 'text-on-surface-variant hover:text-on-surface'
+                link.active ? 'text-warm-ivory font-semibold' : 'text-warm-ivory/70 hover:text-warm-ivory'
               }`}
             >
               {t(`nav.${link.key}`)}
@@ -92,7 +92,7 @@ export default function Navbar({ ready = true, currentPage = 'home', onNavigate 
             onClick={toggleLang}
             aria-label="Switch language"
             title={lang === 'th' ? 'Switch to English' : 'สลับเป็นภาษาไทย'}
-            className="btn-lift inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-sand-warm text-on-surface-variant hover:text-on-surface font-label-lg text-label-lg uppercase cursor-pointer"
+            className="btn-lift inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-warm-ivory/40 text-warm-ivory/80 hover:text-warm-ivory font-label-lg text-label-lg uppercase cursor-pointer"
           >
             <svg
               width="14"
@@ -115,13 +115,13 @@ export default function Navbar({ ready = true, currentPage = 'home', onNavigate 
           <button
             type="button"
             onClick={() => handleLinkClick('booking')}
-            className="btn-lift hidden sm:inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-primary-container text-warm-ivory font-label-lg text-label-lg uppercase hover:bg-teak-deep cursor-pointer"
+            className="btn-lift hidden sm:inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-warm-ivory text-primary font-label-lg text-label-lg uppercase hover:bg-warm-ivory/90 cursor-pointer"
           >
             {t('nav.book')}
           </button>
           <button
             type="button"
-            className="md:hidden w-8 h-8 grid place-items-center text-primary cursor-pointer transition-transform duration-200 active:scale-90"
+            className="md:hidden w-8 h-8 grid place-items-center text-warm-ivory cursor-pointer transition-transform duration-200 active:scale-90"
             aria-label="เปิด/ปิดเมนู"
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((open) => !open)}
@@ -140,7 +140,7 @@ export default function Navbar({ ready = true, currentPage = 'home', onNavigate 
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.28, ease: 'easeOut' }}
-            className="md:hidden overflow-hidden bg-surface border-t border-surface-container-highest"
+            className="md:hidden overflow-hidden bg-primary-container border-t border-warm-ivory/10"
           >
             <div className="px-6 py-4 flex flex-col gap-2">
               {links.map((link) => (
@@ -150,7 +150,7 @@ export default function Navbar({ ready = true, currentPage = 'home', onNavigate 
                   onClick={() => handleLinkClick(link.key)}
                   aria-current={link.active ? 'page' : undefined}
                   className={`uppercase text-label-lg font-label-lg py-2 text-left cursor-pointer transition-colors duration-200 ${
-                    link.active ? 'text-primary font-medium' : 'text-on-surface-variant hover:text-on-surface'
+                    link.active ? 'text-warm-ivory font-semibold' : 'text-warm-ivory/70 hover:text-warm-ivory'
                   }`}
                 >
                   {t(`nav.${link.key}`)}
@@ -162,7 +162,7 @@ export default function Navbar({ ready = true, currentPage = 'home', onNavigate 
                   toggleLang()
                   setMenuOpen(false)
                 }}
-                className="uppercase text-label-lg font-label-lg py-2 text-left text-on-surface-variant hover:text-on-surface cursor-pointer"
+                className="uppercase text-label-lg font-label-lg py-2 text-left text-warm-ivory/60 hover:text-warm-ivory cursor-pointer"
               >
                 🌐 {t('nav.switchLang')}
               </button>

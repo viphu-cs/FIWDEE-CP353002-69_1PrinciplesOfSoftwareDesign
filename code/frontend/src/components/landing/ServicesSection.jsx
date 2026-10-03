@@ -49,7 +49,7 @@ export default function ServicesSection({ onNavigate }) {
     >
       <div className="sticky top-0 h-screen overflow-hidden flex flex-col justify-center">
         <div className="max-w-6xl mx-auto px-6 w-full">
-          <FadeIn className="mb-space-lg">
+          <FadeIn className="mb-4 md:mb-6">
             <p className="font-label-md text-label-md uppercase text-terracotta-muted tracking-widest mb-space-xs">
               {t('services.label')}
             </p>
@@ -65,60 +65,68 @@ export default function ServicesSection({ onNavigate }) {
         <motion.div
           ref={trackRef}
           style={{ x }}
-          className="flex gap-6 w-max px-6 mt-space-lg items-stretch"
+          className="flex gap-8 md:gap-10 w-max px-6 md:px-12 mt-4 md:mt-6 items-stretch"
         >
           {services.map((service, index) => {
             const key = DETAIL_KEYS[index] || `t${index + 1}`
             return (
               <article
                 key={service.id}
-                className="w-[86vw] max-w-[860px] md:w-[820px] shrink-0 bg-surface-container-low rounded-xl p-6 md:p-10 shadow-sm flex flex-col md:flex-row gap-6 md:gap-10 items-stretch"
+                className="w-[90vw] max-w-[1140px] md:w-[960px] lg:w-[1080px] xl:w-[1140px] shrink-0 bg-surface-container-low rounded-2xl p-6 sm:p-8 md:p-10 lg:p-12 shadow-sm flex flex-col md:flex-row gap-6 md:gap-10 lg:gap-12 items-stretch"
               >
                 {/* ฝั่งข้อความ */}
-                <div className="md:w-1/2 flex flex-col">
-                  <span className="font-label-caps text-label-caps text-primary tracking-widest uppercase">
-                    {t(`servicesPage.${key}Tag`)}
-                  </span>
-                  <h3 className="font-headline-sm text-headline-sm text-on-surface font-normal mt-1.5">
-                    {t(`servicesPage.${key}Title`)}
-                  </h3>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed mt-2 line-clamp-4">
-                    {t(`servicesPage.${key}Desc`)}
-                  </p>
-
-                  {/* แผงอัตราบริการ (สไตล์เดียวกับหน้าบริการ) */}
-                  <div className="bg-surface rounded-lg p-4 space-y-2 mt-4">
-                    <p className="font-label-caps text-label-caps text-secondary uppercase tracking-widest">
-                      {t('servicesPage.durationRateLabel')}
+                <div className="md:w-1/2 flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <span className="font-label-caps text-label-caps text-primary tracking-widest uppercase">
+                      {t(`servicesPage.${key}Tag`)}
+                    </span>
+                    <h3 className="font-headline-md text-headline-md md:text-headline-lg text-on-surface font-normal leading-snug mt-1">
+                      {t(`servicesPage.${key}Title`)}
+                    </h3>
+                    <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed line-clamp-3 md:line-clamp-4">
+                      {t(`servicesPage.${key}Desc`)}
                     </p>
-                    {service.durationOptions.map((option) => (
-                      <div key={option.durationMinutes} className="flex items-baseline justify-between">
-                        <span className="font-body-md text-body-md text-on-surface">
-                          {t('services.durationPrice', {
-                            min: option.durationMinutes,
-                            price: option.price.toLocaleString('th-TH'),
-                          })}
-                        </span>
+
+                    {/* แผงอัตราบริการ (สไตล์เดียวกับหน้าบริการ) */}
+                    <div className="bg-surface rounded-xl p-4 md:p-5 space-y-2 mt-4">
+                      <p className="font-label-caps text-label-caps text-secondary uppercase tracking-widest pb-1">
+                        {t('servicesPage.durationRateLabel')}
+                      </p>
+                      <div className="space-y-2">
+                        {service.durationOptions.map((option) => (
+                          <div key={option.durationMinutes} className="flex items-baseline justify-between py-1">
+                            <span className="font-body-md text-body-md text-on-surface">
+                              {t('servicesPage.minuteUnit', { n: option.durationMinutes })}
+                            </span>
+                            <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
+                              {t('servicesPage.bahtUnit', { price: option.price.toLocaleString('th-TH') })}
+                            </span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    </div>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => onNavigate?.('booking')}
-                    className="font-label-md text-label-md text-primary hover:text-on-primary-fixed-variant underline underline-offset-8 transition-colors cursor-pointer text-left mt-auto pt-4 self-start"
+                    className="font-label-lg text-label-lg text-primary hover:text-on-primary-fixed-variant underline underline-offset-8 transition-colors cursor-pointer text-left pt-6 self-start"
                   >
                     {t('servicesPage.bookThis')}
                   </button>
                 </div>
 
                 {/* ฝั่งรูป (อยู่ข้างข้อความ สูงเต็มการ์ด) */}
-                <div className="md:w-1/2 h-56 md:h-auto rounded-lg overflow-hidden bg-sand-warm group min-h-[220px]">
+                <div className="md:w-1/2 h-64 sm:h-72 md:h-auto rounded-xl overflow-hidden bg-sand-warm group min-h-[260px] md:min-h-[420px] lg:min-h-[480px]">
                   <img
                     src={service.image}
                     alt={t(`servicesPage.${key}Title`)}
                     loading="lazy"
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null
+                      e.currentTarget.src = '/images/services/room-architecture.jpg'
+                    }}
+                    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
                   />
                 </div>
               </article>
