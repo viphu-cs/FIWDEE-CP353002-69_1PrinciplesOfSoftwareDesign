@@ -22,27 +22,35 @@ export default function Hero({ ready = true }) {
   return (
     <section className="relative w-full overflow-hidden -mt-20">
       <div className="relative w-full h-[88vh] min-h-[640px] max-h-[880px]">
-        {/* 🎬 ภาพพื้นหลัง: zoom ช้า ๆ หลังม่าน preloader ยกออก — เพิ่มอิ่มสี/คอนทราสต์ให้ภาพเข้มชัด */}
+        {/* 🎬 ภาพพื้นหลัง: zoom ช้า ๆ หลังม่าน preloader ยกออก — คมชัดเต็มตา ไม่โดนฟิลเตอร์ดึงจนเพี้ยน */}
         <motion.div
-          initial={{ scale: 1.12 }}
-          animate={ready ? { scale: 1 } : { scale: 1.12 }}
+          initial={{ scale: 1.08 }}
+          animate={ready ? { scale: 1 } : { scale: 1.08 }}
           transition={{ duration: 1.8, ease: [0.22, 1, 0.36, 1] }}
           className="absolute inset-0 w-full h-full bg-cover bg-center"
           style={{
             backgroundImage: `url("${images.hero}")`,
-            filter: 'saturate(1.2) contrast(1.08) brightness(1.02)',
+            filter: 'contrast(1.03) saturate(1.06)',
           }}
         ></motion.div>
-        {/* 🎬 Overlay: ขาวฟุ้งเฉพาะจุดหลังตัวหนังสือ (radial) — เบาลงเพื่อไม่ให้ภาพจาง
-            + ไล่ขาวด้านล่างเบา ๆ พอไม่มีรอยต่อกับ section ถัดไป */}
+
+        {/* 🎬 แสงเงานุ่มนวลเฉพาะฝั่งซ้ายเพื่อให้อ่านตัวหนังสือได้คมชัด — ปล่อยฝั่งขวา (รูปคนและมือหมอนวด) คมชัด 100% ไม่โดนฝ้าขาว */}
         <div
-          className="absolute inset-0"
+          className="absolute inset-y-0 left-0 w-full md:w-3/5 pointer-events-none"
           style={{
             background:
-              'radial-gradient(ellipse 40% 30% at 18% 82%, rgba(251,249,244,0.78), rgba(251,249,244,0.3) 55%, transparent 72%)',
+              'linear-gradient(to right, rgba(251,249,244,0.85) 0%, rgba(251,249,244,0.5) 45%, rgba(251,249,244,0.15) 75%, transparent 100%)',
           }}
-        ></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/60 to-transparent"></div>
+        />
+
+        {/* 🎬 รอยต่อไร้ตะเข็บลงสู่ section ถัดไป — ไล่สีเฉพาะชายล่าง 180px ให้ผสานเนียนกริบ 100% กับ bg-surface ของ section ด้านล่าง */}
+        <div
+          className="absolute inset-x-0 bottom-0 h-36 md:h-48 pointer-events-none"
+          style={{
+            background:
+              'linear-gradient(to top, var(--color-surface) 0%, rgba(251,249,244,0.82) 35%, rgba(251,249,244,0.3) 70%, transparent 100%)',
+          }}
+        />
 
         {/* 🎬 ข้อความ: มือถือกึ่งกลาง / desktop มุมซ้ายล่างแบบเดิม */}
         <div className="absolute inset-0 flex items-center justify-center md:items-end">
