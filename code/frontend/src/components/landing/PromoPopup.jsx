@@ -1,13 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useLanguage } from '../../i18n/useLanguage.js'
-
-// ป๊อปอัพโปรโมชั่นตอนเปิด/รีเฟรชหน้าเว็บ (ดีเลย์ 2 วินาที)
-// ข้อมูลโปรโมชั่นตั้งไว้ที่นี่ — เมื่อ backend พร้อมจะดึงจาก API แทน
-const PROMO = {
-  code: 'FIWDEE20',
-  discount: '20%',
-}
+import { PROMO } from '../../data/promo.js'
 
 const EASE = [0.22, 1, 0.36, 1]
 
@@ -16,7 +10,8 @@ export default function PromoPopup({ ready = true, onNavigate }) {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  // รอ preloader ยกม่านก่อน แล้วค่อยโชว์หน่วง 2 วินาที — แสดงใหม่ทุกครั้งที่เข้า/รีเฟรช
+  // รอ preloader ยกม่านก่อน แล้วค่อยโชว์หน่วง 2 วินาที
+  // LandingPage จะ unmount/mount ใหม่ทุกครั้งที่เดินทางกลับมาหน้าแรก → popup เด้งใหม่ทุกครั้ง
   useEffect(() => {
     if (!ready) return undefined
     const timer = setTimeout(() => setOpen(true), 2000)
