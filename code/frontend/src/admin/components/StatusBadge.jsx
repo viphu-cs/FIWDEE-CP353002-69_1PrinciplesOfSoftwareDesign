@@ -80,6 +80,23 @@ export default function StatusBadge({ status, size = 'md' }) {
       label = lang === 'th' ? 'ออกกะ / ลางาน' : 'Off Duty'
       break
 
+    // User Session Statuses
+    case 'ONLINE':
+      badgeStyle = 'bg-emerald-50 text-emerald-800 border-emerald-200 font-semibold'
+      dotColor = 'bg-emerald-500 animate-ping-subtle'
+      label = lang === 'th' ? 'กำลังใช้งาน (Online)' : 'Online'
+      break
+    case 'OFFLINE':
+      badgeStyle = 'bg-stone-100 text-stone-500 border-stone-200'
+      dotColor = 'bg-stone-400'
+      label = lang === 'th' ? 'ออฟไลน์' : 'Offline'
+      break
+    case 'SUSPENDED':
+      badgeStyle = 'bg-rose-50 text-rose-700 border-rose-200'
+      dotColor = 'bg-rose-500'
+      label = lang === 'th' ? 'ถูกระงับ' : 'Suspended'
+      break
+
     // Roles
     case 'OWNER':
       badgeStyle = 'bg-purple-50 text-purple-900 border-purple-200 font-semibold'
@@ -90,6 +107,16 @@ export default function StatusBadge({ status, size = 'md' }) {
       badgeStyle = 'bg-amber-100 text-amber-900 border-amber-300 font-semibold'
       dotColor = 'bg-amber-600'
       label = t('admin.receptionist')
+      break
+    case 'THERAPIST':
+      badgeStyle = 'bg-teal-50 text-teal-900 border-teal-200 font-semibold'
+      dotColor = 'bg-teal-600'
+      label = lang === 'th' ? 'หมอนวด (THERAPIST)' : 'Therapist'
+      break
+    case 'CUSTOMER':
+      badgeStyle = 'bg-sky-50 text-sky-900 border-sky-200 font-semibold'
+      dotColor = 'bg-sky-600'
+      label = lang === 'th' ? 'ลูกค้า (CUSTOMER)' : 'Customer'
       break
 
     default:

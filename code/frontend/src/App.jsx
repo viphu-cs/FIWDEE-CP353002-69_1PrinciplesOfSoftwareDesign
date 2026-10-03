@@ -22,6 +22,7 @@ import AdminBookings from './admin/pages/AdminBookings.jsx'
 import AdminTherapists from './admin/pages/AdminTherapists.jsx'
 import AdminRooms from './admin/pages/AdminRooms.jsx'
 import AdminServices from './admin/pages/AdminServices.jsx'
+import AdminUsers from './admin/pages/AdminUsers.jsx'
 
 function getInitialNavigation() {
   if (typeof window === 'undefined') return { page: 'home', adminRoute: 'dashboard', therapistId: 1 }
@@ -149,6 +150,8 @@ export default function App() {
               <AdminRooms />
             ) : adminRoute === 'services' ? (
               <AdminServices />
+            ) : adminRoute === 'users' ? (
+              <AdminUsers />
             ) : (
               <AdminDashboard />
             )}

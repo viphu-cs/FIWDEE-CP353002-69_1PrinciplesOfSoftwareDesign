@@ -131,6 +131,23 @@ const initialServices = [
   { id: 4, code: 'SVC-FOOT', name: 'นวดเท้าคลายตึง (Foot Reflexology)', category: 'Reflexology', description: 'กดจุดสะท้อนเท้า ปรับสมดุลอวัยวะภายใน สบายเท้าและเบาตัว', durations: [{ minutes: 60, price: 500 }, { minutes: 90, price: 700 }], isActive: true }
 ]
 
+// Registered Users Mock (โครงสร้างอิง entity User ตาม doc/er-diagram.md)
+// status: ONLINE = มี session ใช้งานอยู่ตอนนี้, OFFLINE = สมัครแล้วแต่ไม่ได้ login, SUSPENDED = ถูกระงับ
+const initialUsers = [
+  { id: 1, name: 'สมชาย สุขสบาย', email: 'owner@fiwdee-massage.co.th', phone: '081-000-1111', role: 'OWNER', status: 'ONLINE', registeredAt: '2025-01-10', lastLoginAt: '2026-10-03 13:05', onlineSince: '13:05', totalBookings: 0 },
+  { id: 2, name: 'วิภาวรรณ ต้อนรับ', email: 'reception@fiwdee-massage.co.th', phone: '081-000-2222', role: 'RECEPTIONIST', status: 'ONLINE', registeredAt: '2025-01-12', lastLoginAt: '2026-10-03 09:30', onlineSince: '09:30', totalBookings: 0 },
+  { id: 3, name: 'มะลิ กัลยาณี', email: 'mali@fiwdee-massage.co.th', phone: '086-111-2233', role: 'THERAPIST', status: 'ONLINE', registeredAt: '2025-02-01', lastLoginAt: '2026-10-03 10:00', onlineSince: '10:00', totalBookings: 0 },
+  { id: 4, name: 'บัว รวีวรรณ', email: 'bua@fiwdee-massage.co.th', phone: '086-222-3344', role: 'THERAPIST', status: 'OFFLINE', registeredAt: '2025-02-01', lastLoginAt: '2026-10-02 18:40', onlineSince: null, totalBookings: 0 },
+  { id: 5, name: 'แพรวพรรณ วงศ์สว่าง', email: 'praew@fiwdee-massage.co.th', phone: '086-333-4455', role: 'THERAPIST', status: 'OFFLINE', registeredAt: '2025-02-03', lastLoginAt: '2026-10-01 20:15', onlineSince: null, totalBookings: 0 },
+  { id: 6, name: 'กิตติศักดิ์ วงศ์ดี', email: 'kittisak@gmail.com', phone: '081-234-5678', role: 'CUSTOMER', status: 'ONLINE', registeredAt: '2026-08-15', lastLoginAt: '2026-10-03 12:50', onlineSince: '12:50', totalBookings: 12 },
+  { id: 7, name: 'วรรณิสา แสงทอง', email: 'wannisa@gmail.com', phone: '089-876-5432', role: 'CUSTOMER', status: 'OFFLINE', registeredAt: '2026-07-02', lastLoginAt: '2026-10-03 08:20', onlineSince: null, totalBookings: 8 },
+  { id: 8, name: 'ธนกฤต พรหมดี', email: 'thanakrit@hotmail.com', phone: '086-555-1234', role: 'CUSTOMER', status: 'ONLINE', registeredAt: '2026-09-10', lastLoginAt: '2026-10-03 13:10', onlineSince: '13:10', totalBookings: 5 },
+  { id: 9, name: 'อารียา ใจดี', email: 'ariya@gmail.com', phone: '092-333-4444', role: 'CUSTOMER', status: 'OFFLINE', registeredAt: '2026-09-18', lastLoginAt: '2026-10-02 21:05', onlineSince: null, totalBookings: 3 },
+  { id: 10, name: 'ณัฐพล มั่นคง', email: 'nattapoul@yahoo.com', phone: '084-111-2222', role: 'CUSTOMER', status: 'OFFLINE', registeredAt: '2026-09-25', lastLoginAt: '2026-09-30 16:45', onlineSince: null, totalBookings: 2 },
+  { id: 11, name: 'ปรียาพร ลมเย็น', email: 'priyaporn@gmail.com', phone: '088-777-6666', role: 'CUSTOMER', status: 'OFFLINE', registeredAt: '2026-10-01', lastLoginAt: '2026-10-01 14:30', onlineSince: null, totalBookings: 1 },
+  { id: 12, name: 'ศุภโชค ร่มเย็น', email: 'supachok@gmail.com', phone: '082-111-9999', role: 'CUSTOMER', status: 'SUSPENDED', registeredAt: '2026-06-20', lastLoginAt: '2026-08-05 11:00', onlineSince: null, totalBookings: 6 },
+]
+
 export function AdminAuthProvider({ children }) {
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -179,6 +196,14 @@ export function AdminAuthProvider({ children }) {
   const [queueItems, setQueueItems] = useState(initialQueueItems)
   const [bookings, setBookings] = useState(initialBookings)
   const [services, setServices] = useState(initialServices)
+  const [users, setUsers] = useState(initialUsers)
+
+  // Force-logout a logged-in user (mock session management — จะเปลี่ยนเป็นเรียก API เมื่อเชื่อม backend)
+  const forceLogoutUser = (userId) => {
+    setUsers(prev => prev.map(u => u.id === userId && u.status === 'ONLINE'
+      ? { ...u, status: 'OFFLINE', onlineSince: null, lastLoginAt: new Date().toISOString().slice(0, 16).replace('T', ' ') }
+      : u))
+  }
 
   // Multi-day Work Shift Manager
   const updateTherapistShiftForDate = (therapistId, dateStr, shiftType) => {
@@ -411,7 +436,10 @@ export function AdminAuthProvider({ children }) {
         setBookings,
         services,
         setServices,
-        addOrUpdateService
+        addOrUpdateService,
+        users,
+        setUsers,
+        forceLogoutUser
       }}
     >
       {children}

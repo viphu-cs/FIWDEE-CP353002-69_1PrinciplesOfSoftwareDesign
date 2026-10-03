@@ -253,6 +253,7 @@ export const th = {
     rooms: 'ผังห้องนวด (Real-time)',
     therapists: 'ข้อมูลหมอนวด & กะงาน',
     services: 'เมนูบริการ & ราคา',
+    users: 'สรุปข้อมูลผู้ใช้ทั้งหมด',
     addQueue: 'เพิ่มคิวใหม่',
     walkinBooking: 'ลงทะเบียนคิว Walk-in',
     phoneBooking: 'จองคิวทางโทรศัพท์ (Phone Booking)',

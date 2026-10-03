@@ -253,6 +253,7 @@ export const en = {
     rooms: 'Real-time Rooms Layout',
     therapists: 'Therapists & Work Shifts',
     services: 'Services & Pricing Menu',
+    users: 'All Users Summary',
     addQueue: '+ Add Queue',
     walkinBooking: 'Walk-in Registration',
     phoneBooking: 'Phone Booking Reservation',
