@@ -12,8 +12,8 @@
 
 - [x] 1.1 All 18 entities (`domain/entity/`) per the ER diagram
 - [x] 1.2 All 9 enums (`domain/enums/`) — BookingStatus, PaymentMethod, PaymentStatus, QueueStatus, RefundStatus, RoomStatus, RoomType, UserRole, DayOfWeek
-- [ ] 1.3 All repository interfaces (`repository/`) — User, Customer, Therapist, Receptionist, Owner, Shop, BusinessHours, Service, ServiceDurationOption, Room, TherapistSchedule, TherapistSkill, WorkShift, Booking (query for free slots), QueueItem, Payment, Refund, Review
-- [ ] 1.4 Exception handling (`exception/`) — BusinessException, NotFoundException, ValidationException + GlobalExceptionHandler (@RestControllerAdvice) returning `{success, message, errors}`
+- [x] 1.3 All repository interfaces (`repository/`) — User, Customer, Therapist, Receptionist, Owner, Shop, BusinessHours, Service, ServiceDurationOption, Room, TherapistSchedule, TherapistSkill, WorkShift, Booking (query for free slots), QueueItem, Payment, Refund, Review (2026-10-04)
+- [x] 1.4 Exception handling (`exception/`) — BusinessException, NotFoundException, ValidationException, ConflictException + GlobalExceptionHandler (@RestControllerAdvice) returning `{success, message, errors}` + ApiResponse (`common/`) (2026-10-04)
 - [ ] 1.5 Request/response DTOs (`dto/`) + Mappers (`mapper/`) — start with Booking, Auth, Service, Therapist (fields must match the contract in AGENTS.md §5, e.g. `durationOptions`)
 - [ ] 1.6 JWT Auth — `POST /api/auth/register`, `POST /api/auth/login`, replace permitAll in SecurityConfig with role-based rules (CUSTOMER/THERAPIST/RECEPTIONIST/OWNER), BCrypt passwords
 - [ ] 1.7 Seed data (CommandLineRunner or data.sql) — shop with 6 rooms, 6 therapists, 4 services with durationOptions, business hours, test owner/receptionist accounts
@@ -61,3 +61,4 @@
 | 2026-10-03 | File created — entities/enums done, everything else not started |
 | 2026-10-03 | Added Admin Users summary page (frontend mock, no DB) — `#admin/users` route; backend counterpart tracked in 2.14, API wiring in 4.8 |
 | 2026-10-03 | Created treatment images (service-thai, service-aroma, service-warm-oil, service-foot), added image fields in mock.js and BookingPage, updated ServicesPage and BookingPage UI with fallback |
+| 2026-10-04 | Phase 0 Foundation completed: JJWT dependencies, ApiResponse wrapper, Exception handling (BusinessException, NotFoundException, ValidationException, ConflictException, GlobalExceptionHandler), and all 18 repository interfaces with core queries |
