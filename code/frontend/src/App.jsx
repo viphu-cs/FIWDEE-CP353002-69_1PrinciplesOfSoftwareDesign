@@ -22,6 +22,15 @@ import AdminBookings from './admin/pages/AdminBookings.jsx'
 import AdminTherapists from './admin/pages/AdminTherapists.jsx'
 import AdminRooms from './admin/pages/AdminRooms.jsx'
 import AdminServices from './admin/pages/AdminServices.jsx'
+import AdminUsers from './admin/pages/AdminUsers.jsx'
+
+// Mock customer auth (ติ๊ก "คงสถานะ" → localStorage, ไม่ติ๊ก → sessionStorage)
+// เมื่อ backend พร้อมจะเปลี่ยนเป็น JWT จริง
+const isCustomerLoggedIn = () =>
+  !!(localStorage.getItem('fiwdee_customer_auth') || sessionStorage.getItem('fiwdee_customer_auth'))
+
+// ปุ่ม CTA ที่พาไปหน้าจองคิวทั้งหมด — ต้องเช็กสถานะล็อกอินก่อนเสมอ
+const BOOKING_NAV_KEYS = ['booking', 'book', 'booking-flow', 'direct-booking']
 
 function getInitialNavigation() {
   if (typeof window === 'undefined') return { page: 'home', adminRoute: 'dashboard', therapistId: 1 }
@@ -48,9 +57,14 @@ function getInitialNavigation() {
     return { page: 'about', adminRoute: 'dashboard', therapistId: 1 }
   }
   if (hash.startsWith('#booking') || hash.startsWith('#book-flow')) {
-    return { page: 'booking', adminRoute: 'dashboard', therapistId: 1 }
+    // เข้าถึงหน้าจองคิวได้เฉพาะเมื่อล็อกอินแล้ว ไม่งั้นพาไปหน้าล็อกอิน
+    if (isCustomerLoggedIn()) {
+      return { page: 'booking', adminRoute: 'dashboard', therapistId: 1 }
+    }
+    sessionStorage.setItem('fiwdee_pending_redirect', 'booking')
+    return { page: 'login', adminRoute: 'dashboard', therapistId: 1 }
   }
-  if (hash.startsWith('#login') || hash.startsWith('#book')) {
+  if (hash.startsWith('#login')) {
     return { page: 'login', adminRoute: 'dashboard', therapistId: 1 }
   }
   if (hash.startsWith('#register')) {
@@ -109,11 +123,22 @@ export default function App() {
       setNavState({ page: 'about', adminRoute: 'dashboard', therapistId: 1 })
       window.history.pushState(null, '', '#about')
       window.scrollTo({ top: 0, behavior: 'smooth' })
-    } else if (targetKey === 'booking-flow' || targetKey === 'direct-booking') {
-      setNavState({ page: 'booking', adminRoute: 'dashboard', therapistId: 1 })
-      window.history.pushState(null, '', '#booking')
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    } else if (targetKey === 'booking' || targetKey === 'book' || targetKey === 'login') {
+    } else if (BOOKING_NAV_KEYS.includes(targetKey)) {
+      // ปุ่ม CTA จองคิว: เช็กสถานะล็อกอินก่อน — ถ้ายังไม่ล็อกอิน พาไปหน้าล็อกอิน
+      // พร้อมแนบ redirect กลับมาที่หน้าจองคิว (กรณีกดจากหน้าล็อกอินอยู่แล้ว = ทางลัดข้ามของหน้าล็อกอิน ให้ผ่าน)
+      if (!isCustomerLoggedIn() && currentPage !== 'login') {
+        sessionStorage.setItem('fiwdee_pending_redirect', 'booking')
+        setNavState({ page: 'login', adminRoute: 'dashboard', therapistId: 1 })
+        window.history.pushState(null, '', '#login')
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      } else {
+        setNavState({ page: 'booking', adminRoute: 'dashboard', therapistId: 1 })
+        window.history.pushState(null, '', '#booking')
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    } else if (targetKey === 'login') {
+      // เข้าหน้าล็อกอินตรง ๆ (ไม่มีการ redirect ค้างไว้)
+      sessionStorage.removeItem('fiwdee_pending_redirect')
       setNavState({ page: 'login', adminRoute: 'dashboard', therapistId: 1 })
       window.history.pushState(null, '', '#login')
       window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -149,6 +174,8 @@ export default function App() {
               <AdminRooms />
             ) : adminRoute === 'services' ? (
               <AdminServices />
+            ) : adminRoute === 'users' ? (
+              <AdminUsers />
             ) : (
               <AdminDashboard />
             )}

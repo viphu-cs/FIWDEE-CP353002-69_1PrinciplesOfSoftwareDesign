@@ -6,6 +6,20 @@ export const en = {
     scrollDown: 'Scroll',
     openDaily: 'Open daily',
   },
+  promo: {
+    ariaLabel: 'Special promotion',
+    close: 'Close',
+    eyebrow: 'SPECIAL OFFER · LIMITED TIME',
+    title: 'Welcome to FIWDEE',
+    desc: 'Get {discount} off your first booking, on every treatment',
+    bannerDesc: 'Get {discount} off your first booking on every treatment when paying via PromptPay QR Code',
+    codeLabel: 'Promo Code',
+    copy: 'Copy',
+    copied: 'Copied',
+    cta: 'Use this offer · Book now',
+    dismiss: 'No thanks, continue browsing',
+    terms: 'Valid for bookings made this month only · Terms apply',
+  },
   nav: {
     home: 'Home',
     therapists: 'Therapists',
@@ -96,6 +110,7 @@ export const en = {
     title: 'Services',
     baht: 'THB',
     durationPrice: '{min} min · {price} THB',
+    scrollHint: 'Scroll down to browse the treatments',
     items: {
       1: {
         name: 'Thai Massage',
@@ -253,6 +268,7 @@ export const en = {
     rooms: 'Real-time Rooms Layout',
     therapists: 'Therapists & Work Shifts',
     services: 'Services & Pricing Menu',
+    users: 'All Users Summary',
     addQueue: '+ Add Queue',
     walkinBooking: 'Walk-in Registration',
     phoneBooking: 'Phone Booking Reservation',

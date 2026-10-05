@@ -8,16 +8,44 @@ export default function LoginPage({ onNavigate }) {
   const [submitting, setSubmitting] = useState(false)
   const [feedback, setFeedback] = useState('')
 
+  // redirect path ที่แนบมาตอนถูกส่งมาจากปุ่มจองคิว (เก็บใน sessionStorage)
+  const pendingRedirect = sessionStorage.getItem('fiwdee_pending_redirect')
+
+  // Mock customer auth — เมื่อ backend พร้อมจะเปลี่ยนเป็น JWT จริง
+  const saveCustomerAuth = () => {
+    const authData = { identifier, name: identifier, loginAt: new Date().toISOString() }
+    if (rememberMe) {
+      localStorage.setItem('fiwdee_customer_auth', JSON.stringify(authData))
+    } else {
+      sessionStorage.setItem('fiwdee_customer_auth', JSON.stringify(authData))
+    }
+  }
+
+  // หลังล็อกอินสำเร็จ: ถ้ามี redirect ที่แนบมาให้กลับไปหน้านั้น (เช่น หน้าจองคิว)
+  const navigateAfterLogin = () => {
+    if (pendingRedirect === 'booking') {
+      sessionStorage.removeItem('fiwdee_pending_redirect')
+      onNavigate?.('booking-flow')
+      return
+    }
+    onNavigate?.('booking-flow')
+  }
+
   const handleLoginSubmit = (e) => {
     e.preventDefault()
     if (!identifier.trim() || !password.trim()) return
 
     setSubmitting(true)
     setTimeout(() => {
-      setFeedback(`ยินดีต้อนรับคุณ ${identifier} ระบบกำลังนำท่านไปยังหน้าเลือกวันเวลาและหมอนวด...`)
+      saveCustomerAuth()
+      setFeedback(
+        pendingRedirect === 'booking'
+          ? `ยินดีต้อนรับคุณ ${identifier} ระบบกำลังนำท่านกลับไปหน้าจองคิว...`
+          : `ยินดีต้อนรับคุณ ${identifier} ระบบกำลังนำท่านไปยังหน้าเลือกวันเวลาและหมอนวด...`
+      )
       setTimeout(() => {
         setSubmitting(false)
-        onNavigate?.('booking-flow')
+        navigateAfterLogin()
       }, 700)
     }, 500)
   }
@@ -25,8 +53,9 @@ export default function LoginPage({ onNavigate }) {
   const handleGoogleLogin = () => {
     setFeedback('กำลังเชื่อมต่อบัญชี Google ของท่าน...')
     setTimeout(() => {
+      saveCustomerAuth()
       setFeedback('')
-      onNavigate?.('booking-flow')
+      navigateAfterLogin()
     }, 700)
   }
 

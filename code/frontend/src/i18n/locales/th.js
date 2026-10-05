@@ -6,6 +6,20 @@ export const th = {
     scrollDown: 'เลื่อนลง',
     openDaily: 'เปิดบริการทุกวัน',
   },
+  promo: {
+    ariaLabel: 'โปรโมชั่นพิเศษ',
+    close: 'ปิดหน้าต่าง',
+    eyebrow: 'ข้อเสนอพิเศษ · LIMITED OFFER',
+    title: 'ยินดีต้อนรับสู่ FIWDEE',
+    desc: 'รับส่วนลด {discount} สำหรับการจองครั้งแรกของคุณ ทุกรายการบริการ',
+    bannerDesc: 'รับส่วนลด {discount} สำหรับการจองครั้งแรก ทุกรายการบริการ เมื่อชำระผ่านพร้อมเพย์ QR Code',
+    codeLabel: 'รหัสโปรโมชั่น',
+    copy: 'คัดลอก',
+    copied: 'คัดลอกแล้ว',
+    cta: 'ใช้โปรโมชั่นนี้ · จองคิวเลย',
+    dismiss: 'ไม่เป็นไร ขอดูเว็บต่อ',
+    terms: 'ใช้ได้กับการจองภายในเดือนนี้เท่านั้น · เงื่อนไขเป็นไปตามที่ร้านกำหนด',
+  },
   nav: {
     home: 'หน้าแรก',
     therapists: 'หมอนวด',
@@ -96,6 +110,7 @@ export const th = {
     title: 'บริการ',
     baht: 'บาท',
     durationPrice: '{min} นาที · {price} บาท',
+    scrollHint: 'เลื่อนลงเพื่อชมรายการทรีตเมนต์',
     items: {
       1: {
         name: 'นวดไทย',
@@ -253,6 +268,7 @@ export const th = {
     rooms: 'ผังห้องนวด (Real-time)',
     therapists: 'ข้อมูลหมอนวด & กะงาน',
     services: 'เมนูบริการ & ราคา',
+    users: 'สรุปข้อมูลผู้ใช้ทั้งหมด',
     addQueue: 'เพิ่มคิวใหม่',
     walkinBooking: 'ลงทะเบียนคิว Walk-in',
     phoneBooking: 'จองคิวทางโทรศัพท์ (Phone Booking)',

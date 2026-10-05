@@ -26,14 +26,14 @@ export default function Footer({ onNavigate }) {
   }
 
   return (
-    <footer className="w-full bg-surface-container-low transition-colors">
+    <footer className="w-full bg-primary-container transition-colors">
       <div className="max-w-6xl mx-auto px-6 py-space-2xl">
-        <div className="flex flex-col md:flex-row md:items-baseline md:justify-between gap-space-xl pb-space-xl border-b border-surface-container-highest">
+        <div className="flex flex-col md:flex-row md:items-baseline md:justify-between gap-space-xl pb-space-xl border-b border-warm-ivory/15">
           <div className="space-y-space-xs max-w-xs">
-            <div className="font-headline-md text-headline-md text-primary font-normal tracking-widest text-xl">
+            <div className="font-headline-md text-headline-md text-warm-ivory font-normal tracking-widest text-xl">
               {shop.name}
             </div>
-            <p className="font-body-sm text-body-sm text-on-surface-variant tracking-wide">
+            <p className="font-body-sm text-body-sm text-warm-ivory/70 tracking-wide">
               {t('footer.tagline')} — {t('location.city')}
             </p>
           </div>
@@ -44,7 +44,7 @@ export default function Footer({ onNavigate }) {
                 key={link.key}
                 href={link.href}
                 onClick={(e) => handleLinkClick(e, link)}
-                className="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer"
+                className="font-label-lg text-label-lg text-warm-ivory/70 hover:text-warm-ivory transition-colors duration-200 cursor-pointer"
               >
                 {t(`nav.${link.key}`)}
               </a>
@@ -56,7 +56,7 @@ export default function Footer({ onNavigate }) {
               <a
                 key={link.label}
                 href={link.href}
-                className="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors duration-200 uppercase"
+                className="font-label-lg text-label-lg text-warm-ivory/70 hover:text-warm-ivory transition-colors duration-200 uppercase"
               >
                 {link.label}
               </a>
@@ -65,10 +65,10 @@ export default function Footer({ onNavigate }) {
         </div>
 
         <div className="pt-space-lg flex flex-col sm:flex-row items-center justify-between gap-space-sm">
-          <p className="font-body-sm text-body-sm text-charcoal-muted tracking-wider">
+          <p className="font-body-sm text-body-sm text-warm-ivory/50 tracking-wider">
             {t('footer.rights')}
           </p>
-          <p className="font-label-md text-label-md uppercase text-charcoal-muted tracking-widest">
+          <p className="font-label-md text-label-md uppercase text-warm-ivory/50 tracking-widest">
             {t('footer.motto')}
           </p>
         </div>
