@@ -1,24 +1,34 @@
 import { useState } from 'react'
+import { api } from '../../lib/api.js'
+import { useLanguage } from '../../i18n/useLanguage.js'
 
 export default function LoginPage({ onNavigate }) {
+  const { t } = useLanguage()
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [feedback, setFeedback] = useState('')
+  const [feedbackError, setFeedbackError] = useState(false)
 
   // redirect path ที่แนบมาตอนถูกส่งมาจากปุ่มจองคิว (เก็บใน sessionStorage)
   const pendingRedirect = sessionStorage.getItem('fiwdee_pending_redirect')
 
-  // Mock customer auth — เมื่อ backend พร้อมจะเปลี่ยนเป็น JWT จริง
-  const saveCustomerAuth = () => {
-    const authData = { identifier, name: identifier, loginAt: new Date().toISOString() }
-    if (rememberMe) {
-      localStorage.setItem('fiwdee_customer_auth', JSON.stringify(authData))
-    } else {
-      sessionStorage.setItem('fiwdee_customer_auth', JSON.stringify(authData))
+  // บันทึกผลล็อกอินจริงจาก POST /api/auth/login:
+  // - fiwdee_token → JWT ที่ lib/api.js แนบเป็น Bearer ทุก request
+  // - fiwdee_customer_auth → โปรไฟล์สำหรับ UI (ติ๊ก "คงสถานะ" → localStorage, ไม่ติ๊ก → sessionStorage)
+  const saveCustomerAuth = (data) => {
+    const profile = {
+      id: data.userId,
+      name: data.fullName,
+      identifier,
+      role: data.role,
+      loginAt: new Date().toISOString(),
     }
+    localStorage.setItem('fiwdee_token', data.token)
+    const store = rememberMe ? localStorage : sessionStorage
+    store.setItem('fiwdee_customer_auth', JSON.stringify(profile))
   }
 
   // หลังล็อกอินสำเร็จ: ถ้ามี redirect ที่แนบมาให้กลับไปหน้านั้น (เช่น หน้าจองคิว)
@@ -31,32 +41,39 @@ export default function LoginPage({ onNavigate }) {
     onNavigate?.('booking-flow')
   }
 
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault()
     if (!identifier.trim() || !password.trim()) return
 
     setSubmitting(true)
+    setFeedback('')
+    setFeedbackError(false)
+
+    const res = await api.post('/auth/login', {
+      identifier: identifier.trim(),
+      password,
+    })
+
+    if (!res.success) {
+      setSubmitting(false)
+      setFeedbackError(true)
+      setFeedback(res.message || t('auth.errLoginFailed'))
+      return
+    }
+
+    saveCustomerAuth(res.data)
+    setFeedback(
+      `${pendingRedirect === 'booking' ? t('auth.loginSuccessRedirect') : t('auth.loginSuccess')}`
+    )
     setTimeout(() => {
-      saveCustomerAuth()
-      setFeedback(
-        pendingRedirect === 'booking'
-          ? `ยินดีต้อนรับคุณ ${identifier} ระบบกำลังนำท่านกลับไปหน้าจองคิว...`
-          : `ยินดีต้อนรับคุณ ${identifier} ระบบกำลังนำท่านไปยังหน้าเลือกวันเวลาและหมอนวด...`
-      )
-      setTimeout(() => {
-        setSubmitting(false)
-        navigateAfterLogin()
-      }, 700)
-    }, 500)
+      setSubmitting(false)
+      navigateAfterLogin()
+    }, 700)
   }
 
   const handleGoogleLogin = () => {
-    setFeedback('กำลังเชื่อมต่อบัญชี Google ของท่าน...')
-    setTimeout(() => {
-      saveCustomerAuth()
-      setFeedback('')
-      navigateAfterLogin()
-    }, 700)
+    setFeedbackError(true)
+    setFeedback(t('auth.googleNotAvailable'))
   }
 
   return (
@@ -344,7 +361,13 @@ export default function LoginPage({ onNavigate }) {
 
                 {/* Notification feedback banner */}
                 {feedback && (
-                  <div className="p-space-sm rounded bg-secondary-container text-on-secondary-container font-body-sm text-body-sm text-center">
+                  <div
+                    className={`p-space-sm rounded font-body-sm text-body-sm text-center ${
+                      feedbackError
+                        ? 'bg-error-container text-on-error-container'
+                        : 'bg-secondary-container text-on-secondary-container'
+                    }`}
+                  >
                     {feedback}
                   </div>
                 )}

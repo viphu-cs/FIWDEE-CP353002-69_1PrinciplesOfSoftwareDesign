@@ -1,10 +1,11 @@
-import React, { useState } from 'react'
-import { useAdminAuth } from '../context/AdminAuthContext.jsx'
+import React, { useCallback, useEffect, useState } from 'react'
+import { api } from '../../lib/api.js'
+import { useLanguage } from '../../i18n/useLanguage.js'
 import StatusBadge from '../components/StatusBadge.jsx'
 
-// หน้าสรุปข้อมูล Users — แยกชัดเจนระหว่าง "ผู้ใช้ที่กำลัง login อยู่" กับ "ผู้ใช้ที่สมัครไว้ทั้งหมด"
-// ปัจจุบันใช้ mock data จาก AdminAuthContext (ยังไม่เชื่อม DB) — เมื่อ backend พร้อมจะสลับไปเรียก
-// GET /api/admin/users ตาม AGENTS.md §5
+// หน้าสรุปข้อมูล Users — เชื่อม GET /api/admin/users จริงแล้ว (TASKS 2.14 / 4.8)
+// ข้อมูลรวม: totalUsers / onlineUsers / activeToday / newThisMonth + รายชื่อผู้ใช้ทั้งหมด
+// Force Logout เรียก POST /api/admin/users/{id}/force-logout (จบ session ฝั่ง backend)
 
 function StatCard({ label, value, sub, accent = 'stone' }) {
   const accentStyles = {
@@ -27,14 +28,47 @@ function StatCard({ label, value, sub, accent = 'stone' }) {
 }
 
 export default function AdminUsers() {
-  const { users, forceLogoutUser } = useAdminAuth()
+  const { t } = useLanguage()
+  const [summary, setSummary] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [forceLoggingOutId, setForceLoggingOutId] = useState(null)
+
   const [roleFilter, setRoleFilter] = useState('ALL')
   const [sessionFilter, setSessionFilter] = useState('ALL')
   const [search, setSearch] = useState('')
 
+  const fetchUsers = useCallback(async () => {
+    setLoading(true)
+    setError('')
+    const res = await api.get('/admin/users')
+    if (!res.success) {
+      setError(res.message || t('admin.usersError'))
+      setSummary(null)
+    } else {
+      setSummary(res.data)
+    }
+    setLoading(false)
+  }, [t])
+
+  useEffect(() => {
+    fetchUsers()
+  }, [fetchUsers])
+
+  const users = summary?.users ?? []
+
+  const handleForceLogout = async (userId) => {
+    setForceLoggingOutId(userId)
+    const res = await api.post(`/admin/users/${userId}/force-logout`)
+    setForceLoggingOutId(null)
+    if (!res.success) {
+      setError(res.message || t('admin.usersError'))
+      return
+    }
+    fetchUsers()
+  }
+
   const onlineUsers = users.filter((u) => u.status === 'ONLINE')
-  const activeToday = users.filter((u) => u.lastLoginAt?.startsWith('2026-10-03'))
-  const newThisMonth = users.filter((u) => u.registeredAt?.startsWith('2026-10'))
 
   const filteredUsers = users.filter((u) => {
     if (roleFilter !== 'ALL' && u.role !== roleFilter) return false
@@ -42,6 +76,32 @@ export default function AdminUsers() {
     if (search && !`${u.name} ${u.email}`.toLowerCase().includes(search.toLowerCase())) return false
     return true
   })
+
+  if (loading && !summary) {
+    return (
+      <div className="space-y-6 text-stone-800">
+        <div className="bg-white rounded-2xl border border-stone-200/80 p-10 text-center text-sm text-stone-500">
+          {t('admin.usersLoading')}
+        </div>
+      </div>
+    )
+  }
+
+  if (error && !summary) {
+    return (
+      <div className="space-y-6 text-stone-800">
+        <div className="bg-white rounded-2xl border border-rose-200 p-10 text-center">
+          <p className="text-sm font-semibold text-rose-700">{error}</p>
+          <button
+            onClick={fetchUsers}
+            className="mt-4 px-4 py-2 rounded-xl bg-stone-900 text-white text-xs font-semibold hover:bg-stone-700 transition-colors cursor-pointer"
+          >
+            {t('admin.usersRetry')}
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6 text-stone-800">
@@ -55,17 +115,24 @@ export default function AdminUsers() {
         </p>
       </div>
 
+      {/* Error banner (refresh/force-logout failures) */}
+      {error && (
+        <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700">
+          {error}
+        </div>
+      )}
+
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="สมัครใช้งานทั้งหมด" value={users.length} sub="บัญชีที่ลงทะเบียนในระบบ" accent="stone" />
+        <StatCard label="สมัครใช้งานทั้งหมด" value={summary.totalUsers} sub="บัญชีที่ลงทะเบียนในระบบ" accent="stone" />
         <StatCard
           label="กำลัง Login อยู่"
-          value={onlineUsers.length}
-          sub={`Owner/Receptionist/Therapist/Customer · ล่าสุด ${onlineUsers[0]?.onlineSince ?? '-'} น.`}
+          value={summary.onlineUsers}
+          sub="Owner/Receptionist/Therapist/Customer"
           accent="emerald"
         />
-        <StatCard label="ใช้งานวันนี้" value={activeToday.length} sub="login ในวันที่ 2026-10-03" accent="amber" />
-        <StatCard label="สมาชิกใหม่เดือนนี้" value={newThisMonth.length} sub="สมัครระหว่าง ต.ค. 2026" accent="sky" />
+        <StatCard label="ใช้งานวันนี้" value={summary.activeToday} sub="login ภายในวันนี้" accent="amber" />
+        <StatCard label="สมาชิกใหม่เดือนนี้" value={summary.newThisMonth} sub="สมัครในเดือนปัจจุบัน" accent="sky" />
       </div>
 
       {/* Currently Logged-in Panel */}
@@ -178,10 +245,11 @@ export default function AdminUsers() {
                   <td className="px-4 py-3.5 text-right">
                     {u.status === 'ONLINE' ? (
                       <button
-                        onClick={() => forceLogoutUser(u.id)}
-                        className="px-2.5 py-1.5 rounded-xl text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-colors cursor-pointer"
+                        onClick={() => handleForceLogout(u.id)}
+                        disabled={forceLoggingOutId === u.id}
+                        className="px-2.5 py-1.5 rounded-xl text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-colors cursor-pointer disabled:opacity-60"
                       >
-                        Force Logout
+                        {forceLoggingOutId === u.id ? '...' : 'Force Logout'}
                       </button>
                     ) : (
                       <span className="text-[11px] text-stone-400">—</span>
