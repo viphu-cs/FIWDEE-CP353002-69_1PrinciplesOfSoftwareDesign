@@ -20,7 +20,6 @@ export default function Navbar({ ready = true, currentPage = 'home', onNavigate 
   const profileRef = useRef(null)
 
   const avatarInitial = (user?.name || '?').trim().charAt(0).toUpperCase()
-  const firstName = (user?.name || '').trim().split(/\s+/)[0] || ''
 
   // 🎬 ปิดแถบเด้งโปรไฟล์เมื่อคลิกนอกพื้นที่ avatar
   useEffect(() => {
@@ -153,12 +152,9 @@ export default function Navbar({ ready = true, currentPage = 'home', onNavigate 
                 onClick={() => setProfileOpen((open) => !open)}
                 aria-label={t('nav.profile')}
                 aria-expanded={profileOpen}
-                className="btn-lift hidden sm:flex items-center gap-2 pl-1.5 pr-4 py-1.5 rounded-full bg-warm-ivory text-primary hover:bg-warm-ivory/90 cursor-pointer"
+                className="btn-lift hidden sm:grid w-10 h-10 place-items-center rounded-full bg-warm-ivory text-primary font-label-md text-label-md font-semibold cursor-pointer"
               >
-                <span className="w-9 h-9 rounded-full bg-primary text-warm-ivory grid place-items-center font-label-md text-label-md font-semibold shrink-0">
-                  {avatarInitial}
-                </span>
-                <span className="font-label-md text-label-md font-medium truncate max-w-24">{firstName}</span>
+                {avatarInitial}
               </button>
 
               <AnimatePresence>
