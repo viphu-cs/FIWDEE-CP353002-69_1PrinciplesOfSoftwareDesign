@@ -4,6 +4,7 @@ import com.fiwdee.common.ApiResponse;
 import com.fiwdee.domain.entity.User;
 import com.fiwdee.dto.request.LoginRequestDTO;
 import com.fiwdee.dto.request.RegisterRequestDTO;
+import com.fiwdee.dto.request.UpdateProfileRequestDTO;
 import com.fiwdee.dto.response.AuthResponseDTO;
 import com.fiwdee.dto.response.UserResponseDTO;
 import com.fiwdee.exception.BusinessException;
@@ -16,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -53,5 +55,17 @@ public class AuthController {
         }
         UserResponseDTO profile = userService.getUserProfile(currentUser.getId());
         return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลผู้ใช้สำเร็จ", profile));
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<ApiResponse<UserResponseDTO>> updateMe(
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody UpdateProfileRequestDTO request) {
+        if (currentUser == null) {
+            throw new BusinessException("Authentication required. Please provide a valid Bearer token",
+                    HttpStatus.UNAUTHORIZED);
+        }
+        UserResponseDTO profile = userService.updateProfile(currentUser.getId(), request);
+        return ResponseEntity.ok(ApiResponse.success("บันทึกข้อมูลผู้ใช้สำเร็จ", profile));
     }
 }

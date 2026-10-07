@@ -205,7 +205,7 @@ export default function PromoPopup({ ready = true, onNavigate }) {
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: 48, scale: 0.95 }}
             transition={{ duration: 0.5, delay: 0.15, ease: EASE }}
-            className="fixed top-24 inset-x-0 z-[80] pointer-events-none"
+            className="fixed top-24 inset-x-0 z-40 pointer-events-none"
           >
             {/* จัดชิดขวา "ในคอนเทนเนอร์เนื้อหาหลัก" (max-w-6xl) เหมือนหน้าชำระเงิน ไม่ชิดขอบจอ */}
             <div className="max-w-6xl mx-auto px-6 relative h-0">

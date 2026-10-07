@@ -2,9 +2,12 @@ package com.fiwdee.service.impl;
 
 import com.fiwdee.domain.entity.Customer;
 import com.fiwdee.domain.entity.User;
+import com.fiwdee.dto.request.UpdateProfileRequestDTO;
 import com.fiwdee.dto.response.AdminUserSummaryResponseDTO;
 import com.fiwdee.dto.response.UserResponseDTO;
+import com.fiwdee.exception.ConflictException;
 import com.fiwdee.exception.NotFoundException;
+import com.fiwdee.exception.ValidationException;
 import com.fiwdee.mapper.UserMapper;
 import com.fiwdee.repository.UserRepository;
 import com.fiwdee.service.UserSessionService;
@@ -14,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +35,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final UserSessionService userSessionService;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional(readOnly = true)
@@ -87,6 +92,41 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User", userId));
         return toResponse(user);
+    }
+
+    @Override
+    @Transactional
+    public UserResponseDTO updateProfile(Long userId, UpdateProfileRequestDTO request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User", userId));
+
+        String email = request.getEmail().trim();
+        String phoneNumber = request.getPhoneNumber().trim();
+
+        userRepository.findByEmailAndIdNot(email, userId)
+                .ifPresent(other -> { throw new ConflictException("อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่น"); });
+        userRepository.findByPhoneNumberAndIdNot(phoneNumber, userId)
+                .ifPresent(other -> { throw new ConflictException("เบอร์โทรศัพท์นี้ถูกใช้งานแล้ว กรุณาใช้เบอร์อื่น"); });
+
+        if (request.getNewPassword() != null && !request.getNewPassword().isBlank()) {
+            if (request.getCurrentPassword() == null || request.getCurrentPassword().isBlank()
+                    || !passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+                throw new ValidationException("รหัสผ่านปัจจุบันไม่ถูกต้อง");
+            }
+            user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        }
+
+        user.setFullName(request.getFullName().trim());
+        user.setEmail(email);
+        user.setPhoneNumber(phoneNumber);
+
+        if (user instanceof Customer customer) {
+            customer.setHealthNotes(request.getHealthNotes());
+            customer.setPreferredPressure(request.getPreferredPressure());
+        }
+
+        User saved = userRepository.save(user);
+        return toResponse(saved);
     }
 
     private UserResponseDTO toResponse(User user) {

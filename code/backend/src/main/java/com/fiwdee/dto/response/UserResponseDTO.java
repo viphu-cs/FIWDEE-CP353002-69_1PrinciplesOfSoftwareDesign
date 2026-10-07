@@ -38,4 +38,11 @@ public class UserResponseDTO {
     private String onlineSince;
 
     private Long totalBookings;
+
+    // Profile fields for GET /api/auth/me — null unless the user is a Customer
+    private String username;
+
+    private String healthNotes;
+
+    private String preferredPressure;
 }

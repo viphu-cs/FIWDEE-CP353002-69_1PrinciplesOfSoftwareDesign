@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { api } from '../../lib/api.js'
 import { useLanguage } from '../../i18n/useLanguage.js'
+import { useCustomerAuth } from '../../context/CustomerAuthContext.jsx'
 
 export default function LoginPage({ onNavigate }) {
   const { t } = useLanguage()
+  const { login } = useCustomerAuth()
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -12,33 +14,18 @@ export default function LoginPage({ onNavigate }) {
   const [feedback, setFeedback] = useState('')
   const [feedbackError, setFeedbackError] = useState(false)
 
-  // redirect path ที่แนบมาตอนถูกส่งมาจากปุ่มจองคิว (เก็บใน sessionStorage)
+  // redirect path ที่แนบมาตอนถูกส่งมาจากปุ่มจองคิว/โปรไฟล์ (เก็บใน sessionStorage)
   const pendingRedirect = sessionStorage.getItem('fiwdee_pending_redirect')
 
-  // บันทึกผลล็อกอินจริงจาก POST /api/auth/login:
-  // - fiwdee_token → JWT ที่ lib/api.js แนบเป็น Bearer ทุก request
-  // - fiwdee_customer_auth → โปรไฟล์สำหรับ UI (ติ๊ก "คงสถานะ" → localStorage, ไม่ติ๊ก → sessionStorage)
-  const saveCustomerAuth = (data) => {
-    const profile = {
-      id: data.userId,
-      name: data.fullName,
-      identifier,
-      role: data.role,
-      loginAt: new Date().toISOString(),
-    }
-    localStorage.setItem('fiwdee_token', data.token)
-    const store = rememberMe ? localStorage : sessionStorage
-    store.setItem('fiwdee_customer_auth', JSON.stringify(profile))
-  }
-
   // หลังล็อกอินสำเร็จ: ถ้ามี redirect ที่แนบมาให้กลับไปหน้านั้น (เช่น หน้าจองคิว)
+  // ไม่งั้นกลับไปหน้าแรกก่อนเสมอ
   const navigateAfterLogin = () => {
-    if (pendingRedirect === 'booking') {
+    if (pendingRedirect) {
       sessionStorage.removeItem('fiwdee_pending_redirect')
-      onNavigate?.('booking-flow')
+      onNavigate?.(pendingRedirect)
       return
     }
-    onNavigate?.('booking-flow')
+    onNavigate?.('home')
   }
 
   const handleLoginSubmit = async (e) => {
@@ -61,9 +48,10 @@ export default function LoginPage({ onNavigate }) {
       return
     }
 
-    saveCustomerAuth(res.data)
+    // บันทึก token + โปรไฟล์ผ่าน CustomerAuthContext (fiwdee_token + fiwdee_customer_auth)
+    login(res.data, rememberMe)
     setFeedback(
-      `${pendingRedirect === 'booking' ? t('auth.loginSuccessRedirect') : t('auth.loginSuccess')}`
+      `${pendingRedirect ? t('auth.loginSuccessRedirect') : t('auth.loginSuccess')}`
     )
     setTimeout(() => {
       setSubmitting(false)
@@ -192,24 +180,6 @@ export default function LoginPage({ onNavigate }) {
                 </p>
               </div>
 
-              {/* ทางลัดเข้าสู่หน้าจองคิวทันทีโดยไม่ต้องล็อกอิน */}
-              <div className="flex items-center justify-between p-3 rounded-lg bg-surface-container border border-primary/20 mb-space-md shadow-xs">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary text-base">bolt</span>
-                  <span className="font-body-sm text-body-sm text-on-surface">
-                    ทางลัด: ไปหน้าจองคิวโดยตรง (ไม่ต้องล็อกอิน)
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onNavigate?.('booking-flow')}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-surface font-label-caps text-label-caps uppercase tracking-wider hover:opacity-90 transition-opacity cursor-pointer shadow-sm shrink-0"
-                >
-                  <span>จองคิวทันที</span>
-                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                </button>
-              </div>
-
               {/* Interactive Form */}
               <form className="space-y-space-md" onSubmit={handleLoginSubmit}>
                 {/* Contact / Identifier Input */}
@@ -301,7 +271,7 @@ export default function LoginPage({ onNavigate }) {
                     className="w-full py-3.5 px-6 rounded bg-primary text-on-primary font-label-md text-label-md tracking-wider flex items-center justify-center gap-2 hover:opacity-95 transition-opacity active:scale-[0.99] cursor-pointer disabled:opacity-70"
                     type="submit"
                   >
-                    <span>{submitting ? 'กำลังเชื่อมต่อห้องพักผ่อน...' : 'เข้าสู่ระบบและไปที่การจองคิว'}</span>
+                    <span>{submitting ? t('auth.loginSubmitting') : t('auth.loginCta')}</span>
                     <span className="material-symbols-outlined text-lg">arrow_forward</span>
                   </button>
                 </div>

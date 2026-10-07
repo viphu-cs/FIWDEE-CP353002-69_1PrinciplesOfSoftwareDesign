@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { api } from '../../lib/api.js'
 import { useLanguage } from '../../i18n/useLanguage.js'
+import { useCustomerAuth } from '../../context/CustomerAuthContext.jsx'
 
 export default function RegisterPage({ onNavigate }) {
   const { t } = useLanguage()
+  const { login } = useCustomerAuth()
   const [fullName, setFullName] = useState('')
   const [phoneNumber, setPhoneNumber] = useState('')
   const [googleAccount, setGoogleAccount] = useState('')
@@ -39,23 +41,20 @@ export default function RegisterPage({ onNavigate }) {
       return
     }
 
-    // เก็บ token + โปรไฟล์ให้สถานะล็อกอินพร้อมใช้ทันที (รูปแบบเดียวกับหน้า Login)
-    localStorage.setItem('fiwdee_token', res.data.token)
-    localStorage.setItem(
-      'fiwdee_customer_auth',
-      JSON.stringify({
-        id: res.data.userId,
-        name: res.data.fullName,
-        identifier: email.trim(),
-        role: res.data.role,
-        loginAt: new Date().toISOString(),
-      })
-    )
+    // เก็บ token + โปรไฟล์ผ่าน CustomerAuthContext (รูปแบบเดียวกับหน้า Login)
+    login(res.data, true)
 
     setSuccessMessage(t('auth.registerSuccess'))
     setTimeout(() => {
       setSubmitting(false)
-      onNavigate?.('booking-flow')
+      // ถ้าถูกส่งมาจากปุ่มจองคิว/โปรไฟล์ ให้กลับไปหน้านั้น ไม่งั้นไปหน้าแรก
+      const pendingRedirect = sessionStorage.getItem('fiwdee_pending_redirect')
+      if (pendingRedirect) {
+        sessionStorage.removeItem('fiwdee_pending_redirect')
+        onNavigate?.(pendingRedirect)
+      } else {
+        onNavigate?.('home')
+      }
     }, 800)
   }
 

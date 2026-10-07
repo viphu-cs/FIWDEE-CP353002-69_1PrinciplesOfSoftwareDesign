@@ -36,6 +36,9 @@ public class UserMapper {
                 .lastLoginAt(user.getLastLoginAt() != null ? user.getLastLoginAt().format(DATETIME_FORMAT) : null)
                 .onlineSince(onlineSince != null ? onlineSince.format(TIME_FORMAT) : null)
                 .totalBookings(totalBookings)
+                .username(user.getUsername())
+                .healthNotes(user instanceof Customer customer ? customer.getHealthNotes() : null)
+                .preferredPressure(user instanceof Customer customer ? customer.getPreferredPressure() : null)
                 .build();
     }
 
