@@ -153,12 +153,12 @@ export default function Navbar({ ready = true, currentPage = 'home', onNavigate 
                 onClick={() => setProfileOpen((open) => !open)}
                 aria-label={t('nav.profile')}
                 aria-expanded={profileOpen}
-                className="btn-lift hidden sm:flex items-center gap-2 pl-1.5 pr-4 py-1.5 rounded-full border border-warm-ivory/25 text-warm-ivory hover:border-warm-ivory/50 transition-colors cursor-pointer"
+                className="btn-lift hidden sm:flex items-center gap-2 pl-1.5 pr-4 py-1.5 rounded-full bg-warm-ivory text-primary hover:bg-warm-ivory/90 cursor-pointer"
               >
-                <span className="w-9 h-9 rounded-full bg-warm-ivory text-primary grid place-items-center font-label-md text-label-md font-semibold shrink-0">
+                <span className="w-9 h-9 rounded-full bg-primary text-warm-ivory grid place-items-center font-label-md text-label-md font-semibold shrink-0">
                   {avatarInitial}
                 </span>
-                <span className="font-label-md text-label-md truncate max-w-24">{firstName}</span>
+                <span className="font-label-md text-label-md font-medium truncate max-w-24">{firstName}</span>
               </button>
 
               <AnimatePresence>
