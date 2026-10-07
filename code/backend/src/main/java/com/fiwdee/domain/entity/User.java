@@ -61,6 +61,9 @@ public class User {
     @lombok.Builder.Default
     private Boolean isActive = true;
 
+    @Column(name = "last_login_at")
+    private LocalDateTime lastLoginAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

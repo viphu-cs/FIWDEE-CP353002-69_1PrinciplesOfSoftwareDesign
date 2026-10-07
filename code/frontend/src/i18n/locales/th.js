@@ -300,6 +300,20 @@ export const th = {
     checkedIn: 'เช็คอินแล้ว',
     inService: 'กำลังนวด',
     completed: 'เสร็จสิ้น',
-    cancelled: 'ยกเลิก'
+    cancelled: 'ยกเลิก',
+    errRequired: 'กรุณากรอกอีเมลและรหัสผ่าน',
+    errLoginFailed: 'เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบอีเมลและรหัสผ่านอีกครั้ง',
+    errNotStaff: 'บัญชีนี้ไม่มีสิทธิ์เข้าใช้งานระบบหลังบ้าน (เฉพาะ OWNER และ RECEPTIONIST)',
+    usersLoading: 'กำลังโหลดข้อมูลผู้ใช้...',
+    usersError: 'ไม่สามารถโหลดข้อมูลผู้ใช้ได้',
+    usersRetry: 'ลองอีกครั้ง'
+  },
+  auth: {
+    errLoginFailed: 'เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบข้อมูลและลองอีกครั้ง',
+    errRegisterFailed: 'สมัครสมาชิกไม่สำเร็จ กรุณาตรวจสอบข้อมูลและลองอีกครั้ง',
+    loginSuccess: 'ระบบกำลังนำท่านไปยังหน้าจองคิว...',
+    loginSuccessRedirect: 'ระบบกำลังนำท่านกลับไปหน้าจองคิว...',
+    registerSuccess: 'สมัครสมาชิกสำเร็จ! ยินดีต้อนรับสู่ FIWDEE Member',
+    googleNotAvailable: 'Google Sign-In ยังไม่เปิดใช้งานในเวอร์ชันนี้ กรุณาใช้อีเมลและรหัสผ่าน'
   },
 }

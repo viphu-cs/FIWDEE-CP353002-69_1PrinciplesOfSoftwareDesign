@@ -303,6 +303,7 @@ erDiagram
 | `phone_number` | `VARCHAR(20)` | | NO | `UNIQUE` | หมายเลขโทรศัพท์ (ใช้ค้นหา/ระบุตัวตน/Check-in) |
 | `role` | `VARCHAR(20)` | | NO | `CHECK (role IN ('CUSTOMER', 'RECEPTIONIST', 'THERAPIST', 'OWNER'))` | บทบาทผู้ใช้งานตาม `UserRole` Enum |
 | `is_active` | `BOOLEAN` | | NO | `DEFAULT TRUE` | สถานะการเปิดใช้งานบัญชี |
+| `last_login_at` | `TIMESTAMP` | | YES | | วันเวลาที่เข้าสู่ระบบครั้งล่าสุด (อัปเดตโดย Auth Service ตอน Login — ใช้แสดงในหน้า Admin Users summary) |
 | `created_at` | `TIMESTAMP` | | NO | `DEFAULT CURRENT_TIMESTAMP` | วันเวลาที่สร้างบัญชี |
 
 ---

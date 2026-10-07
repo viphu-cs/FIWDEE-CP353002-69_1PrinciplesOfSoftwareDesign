@@ -1,8 +1,12 @@
 package com.fiwdee.config;
 
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -10,18 +14,22 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 /**
  * Spring Security Configuration for FIWDEE REST API.
- * Currently configured in permissive mode (permitAll) for frictionless team development.
- * Disables form login and enables CORS for React frontend.
+ * Stateless JWT authentication with role-based access control
+ * (CUSTOMER / THERAPIST / RECEPTIONIST / OWNER).
  */
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -39,12 +47,50 @@ public class SecurityConfig {
             .formLogin(AbstractHttpConfigurer::disable)
             .httpBasic(AbstractHttpConfigurer::disable)
 
-            // 5. Allow all requests during development phase
+            // 5. Resolve the authenticated user from the JWT Bearer token
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+
+            // 6. Unauthorized / forbidden answers follow the unified ApiResponse JSON contract
+            .exceptionHandling(exceptions -> exceptions
+                .authenticationEntryPoint((request, response, authException) ->
+                        writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED,
+                                "Authentication required. Please provide a valid Bearer token"))
+                .accessDeniedHandler((request, response, accessDeniedException) ->
+                        writeErrorResponse(response, HttpServletResponse.SC_FORBIDDEN,
+                                "Access denied: You do not have permission to perform this action")))
+
+            // 7. Role-based access rules
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll()
-            );
+                // Public: authentication + public shop catalog
+                // (me ต้องมี token — ประกาศก่อน permitAll ของ /api/auth/** เพราะ first match wins)
+                .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/services/**", "/api/therapists/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/bookings/availability").permitAll()
+                // Admin user management: Owner only
+                .requestMatchers("/api/admin/users/**").hasRole("OWNER")
+                // Other back-office endpoints: Owner + Receptionist (Therapist self-service rules
+                // are added by their owning modules)
+                .requestMatchers("/api/admin/**").hasAnyRole("OWNER", "RECEPTIONIST")
+                // Everything else requires a valid token
+                .anyRequest().authenticated());
 
         return http.build();
+    }
+
+    /**
+     * Writes the unified ApiResponse JSON contract directly — messages are fixed
+     * literals, so no serializer dependency is needed at the filter-chain level.
+     */
+    private void writeErrorResponse(HttpServletResponse response, int status, String message) throws java.io.IOException {
+        response.setStatus(status);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().write("{\"success\":false,\"message\":" + jsonString(message) + "}");
+    }
+
+    private String jsonString(String value) {
+        return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
     }
 
     /**

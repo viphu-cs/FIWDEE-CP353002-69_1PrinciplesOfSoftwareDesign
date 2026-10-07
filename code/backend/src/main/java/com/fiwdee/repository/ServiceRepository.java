@@ -10,9 +10,9 @@ public interface ServiceRepository extends JpaRepository<Service, Long> {
 
     List<Service> findByIsActiveTrue();
 
-    boolean existsByServiceCodeIgnoreCase(String serviceCode);
-
     java.util.Optional<Service> findByServiceCodeIgnoreCase(String serviceCode);
+
+    boolean existsByServiceCodeIgnoreCase(String serviceCode);
 
     boolean existsByServiceCodeIgnoreCaseAndIdNot(String serviceCode, Long id);
 }
