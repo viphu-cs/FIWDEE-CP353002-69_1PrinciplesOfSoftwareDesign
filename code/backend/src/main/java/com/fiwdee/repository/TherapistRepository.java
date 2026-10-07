@@ -9,4 +9,6 @@ import org.springframework.stereotype.Repository;
 public interface TherapistRepository extends JpaRepository<Therapist, Long> {
 
     List<Therapist> findByEmploymentStatus(String employmentStatus);
+
+    List<Therapist> findByIsActiveTrueAndEmploymentStatusIgnoreCase(String employmentStatus);
 }

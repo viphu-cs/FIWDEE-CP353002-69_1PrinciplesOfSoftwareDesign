@@ -3,6 +3,7 @@ package com.fiwdee.repository;
 import com.fiwdee.domain.entity.BusinessHours;
 import com.fiwdee.domain.enums.DayOfWeek;
 import java.util.Optional;
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -10,4 +11,6 @@ import org.springframework.stereotype.Repository;
 public interface BusinessHoursRepository extends JpaRepository<BusinessHours, Long> {
 
     Optional<BusinessHours> findByDayOfWeek(DayOfWeek dayOfWeek);
+
+    List<BusinessHours> findByShopId(Long shopId);
 }
