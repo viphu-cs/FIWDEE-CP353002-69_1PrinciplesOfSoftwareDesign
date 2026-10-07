@@ -57,14 +57,14 @@ TASKS.md              # task checklist + progress — update it every time work 
 | Therapists | `GET /api/therapists` | with skills and photo |
 | Booking wizard | `POST /api/bookings`, `GET /api/bookings/availability?date=&serviceId=&durationMinutes=` | returns available room + therapist slots |
 | Booking payment | `POST /api/bookings/{id}/payment` | PromptPay (mock) via Strategy pattern |
-| Login/Register | `POST /api/auth/login`, `POST /api/auth/register` | returns token + role |
+| Login/Register | `POST /api/auth/login`, `POST /api/auth/register`, `GET /api/auth/me` | login รับ `{identifier, password}` — identifier เป็น email/username/phone ก็ได้ → คืน `{token, tokenType, userId, username, fullName, email, phoneNumber, role}`; register (Public) สร้าง CUSTOMER + BCrypt + auto-login คืน token ทันที |
 | Admin Dashboard/Bookings/Queue | `GET /api/admin/bookings?date=`, `GET /api/admin/queue?date=`, `PATCH /api/bookings/{id}/status` | status follows the State pattern |
 | Admin Therapists/Rooms/Services | CRUD `/api/admin/therapists`, `/rooms`, `/services` | role Owner/Receptionist |
-| Admin Users summary | `GET /api/admin/users`, `GET /api/admin/users/online` | totals + per-user fields (role, session status, registeredAt, lastLoginAt, totalBookings); page exists as mock (`#admin/users`) |
+| Admin Users summary | `GET /api/admin/users`, `GET /api/admin/users/online`, `POST /api/admin/users/{id}/force-logout` | Role OWNER; `/users` คืน `{totalUsers, onlineUsers, activeToday, newThisMonth, users:[{id, name, email, phone, role, status(ONLINE/OFFLINE/SUSPENDED), registeredAt, lastLoginAt, onlineSince, totalBookings}]}`; online = มี valid token ภายใน 15 นาทีล่าสุด (`fiwdee.security.online-window-minutes`) — หน้า `#admin/users` เชื่อม API จริงแล้ว |
 | Therapist (self-service) | `GET /api/therapist/me/schedule`, `POST /api/therapist/queue/{id}/start`, `/complete` | role Therapist |
 | Review | `POST /api/bookings/{id}/review` | |
 
-**Frontend integration**: create `src/lib/api.js` (mock.js already has a comment saying it will use this file) — replace mocks page by page, replace localStorage admin auth (`fiwdee_admin_auth`) with real JWT
+**Frontend integration**: `src/lib/api.js` พร้อมใช้แล้ว (fetch wrapper + Bearer token จาก localStorage `fiwdee_token`, dev ใช้ `.env.development` ชี้ `VITE_API_URL=http://localhost:8080/api`) — Auth (customer + admin) และหน้า `#admin/users` เชื่อม API จริงแล้ว; หน้าที่เหลือยังใช้ mock รอตามแผน Dev 2–5
 
 ## 6. How to run / test
 

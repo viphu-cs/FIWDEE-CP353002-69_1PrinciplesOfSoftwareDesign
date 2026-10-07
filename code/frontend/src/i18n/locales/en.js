@@ -300,6 +300,20 @@ export const en = {
     checkedIn: 'Checked-in',
     inService: 'In-Service',
     completed: 'Completed',
-    cancelled: 'Cancelled'
+    cancelled: 'Cancelled',
+    errRequired: 'Please enter your email and password',
+    errLoginFailed: 'Login failed. Please check your email and password.',
+    errNotStaff: 'This account does not have back-office access (OWNER and RECEPTIONIST only)',
+    usersLoading: 'Loading users...',
+    usersError: 'Unable to load users',
+    usersRetry: 'Retry'
+  },
+  auth: {
+    errLoginFailed: 'Login failed. Please check your details and try again.',
+    errRegisterFailed: 'Registration failed. Please check your details and try again.',
+    loginSuccess: 'Taking you to the booking page...',
+    loginSuccessRedirect: 'Taking you back to the booking page...',
+    registerSuccess: 'Registration successful! Welcome to FIWDEE Member',
+    googleNotAvailable: 'Google Sign-In is not available in this version yet. Please use your email and password.'
   },
 }

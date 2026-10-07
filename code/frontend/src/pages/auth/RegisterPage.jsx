@@ -1,6 +1,9 @@
 import { useState } from 'react'
+import { api } from '../../lib/api.js'
+import { useLanguage } from '../../i18n/useLanguage.js'
 
 export default function RegisterPage({ onNavigate }) {
+  const { t } = useLanguage()
   const [fullName, setFullName] = useState('')
   const [phoneNumber, setPhoneNumber] = useState('')
   const [googleAccount, setGoogleAccount] = useState('')
@@ -10,16 +13,49 @@ export default function RegisterPage({ onNavigate }) {
   const [agreeTerms, setAgreeTerms] = useState(false)
   const [receiveNews, setReceiveNews] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
 
-  const handleRegisterSubmit = (e) => {
+  const handleRegisterSubmit = async (e) => {
     e.preventDefault()
     if (!fullName.trim() || !phoneNumber.trim() || !email.trim() || !password.trim()) return
 
     setSubmitting(true)
-    setTimeout(() => {
-      alert(`ยินดีต้อนรับคุณ ${fullName} สู่ FIWDEE Member\nระบบกำลังนำท่านไปสู่หน้าเลือกบริการและช่วงเวลา...`)
+    setErrorMessage('')
+    setSuccessMessage('')
+
+    // POST /api/auth/register — backend สร้าง Customer + ออก JWT ทันที (auto-login)
+    const res = await api.post('/auth/register', {
+      fullName: fullName.trim(),
+      email: email.trim(),
+      phoneNumber: phoneNumber.trim(),
+      password,
+      healthNotes: healthNotes.trim() || null,
+    })
+
+    if (!res.success) {
       setSubmitting(false)
-      onNavigate?.('therapists')
+      setErrorMessage(res.message || t('auth.errRegisterFailed'))
+      return
+    }
+
+    // เก็บ token + โปรไฟล์ให้สถานะล็อกอินพร้อมใช้ทันที (รูปแบบเดียวกับหน้า Login)
+    localStorage.setItem('fiwdee_token', res.data.token)
+    localStorage.setItem(
+      'fiwdee_customer_auth',
+      JSON.stringify({
+        id: res.data.userId,
+        name: res.data.fullName,
+        identifier: email.trim(),
+        role: res.data.role,
+        loginAt: new Date().toISOString(),
+      })
+    )
+
+    setSuccessMessage(t('auth.registerSuccess'))
+    setTimeout(() => {
+      setSubmitting(false)
+      onNavigate?.('booking-flow')
     }, 800)
   }
 
@@ -82,7 +118,7 @@ export default function RegisterPage({ onNavigate }) {
                 <button
                   className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 rounded bg-secondary-container text-on-secondary-fixed hover:bg-secondary-fixed transition-colors duration-200 font-label-md text-label-md gap-2 cursor-pointer shrink-0"
                   type="button"
-                  onClick={() => alert('กำลังเชื่อมต่อบัญชี Google...')}
+                  onClick={() => setErrorMessage(t('auth.googleNotAvailable'))}
                 >
                   <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                     <path
@@ -116,6 +152,17 @@ export default function RegisterPage({ onNavigate }) {
               </div>
 
               <form className="space-y-space-md" onSubmit={handleRegisterSubmit}>
+                {/* API error / success feedback */}
+                {errorMessage && (
+                  <div className="p-3 rounded bg-error-container text-on-error-container font-body-sm text-body-sm">
+                    {errorMessage}
+                  </div>
+                )}
+                {successMessage && (
+                  <div className="p-3 rounded bg-secondary-container text-on-secondary-container font-body-sm text-body-sm">
+                    {successMessage}
+                  </div>
+                )}
                 <div className="space-y-1.5">
                   <label className="block font-label-caps text-label-caps uppercase text-secondary" htmlFor="fullName">
                     ชื่อ - นามสกุล (Full Name) <span className="text-primary">*</span>

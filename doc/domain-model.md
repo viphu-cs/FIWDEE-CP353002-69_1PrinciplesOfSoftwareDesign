@@ -53,6 +53,7 @@ classDiagram
         +String phoneNumber
         +UserRole role
         +Boolean isActive
+        +DateTime lastLoginAt
         +DateTime createdAt
     }
 
