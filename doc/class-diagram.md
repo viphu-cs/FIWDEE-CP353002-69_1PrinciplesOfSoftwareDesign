@@ -105,6 +105,7 @@ classDiagram
             +Long bookingId
             +Decimal amount
             +PaymentMethod paymentMethod
+            +String promoCode
             +String transactionNote
         }
 
@@ -113,6 +114,8 @@ classDiagram
             +Long paymentId
             +String paymentReferenceCode
             +String receiptNumber
+            +Decimal grossAmount
+            +Decimal discountAmount
             +Decimal netAmount
             +PaymentMethod paymentMethod
             +PaymentStatus paymentStatus
@@ -174,9 +177,10 @@ classDiagram
             -PaymentRepository paymentRepository
             -BookingRepository bookingRepository
             -PaymentStrategyFactory strategyFactory
+            -DiscountStrategyFactory discountStrategyFactory
             -ApplicationEventPublisher eventPublisher
-            +PaymentService(PaymentRepository pr, BookingRepository br, PaymentStrategyFactory sf, ApplicationEventPublisher ep)
-            +processPayment(Long bookingId, PaymentMethod method, String note) Payment
+            +PaymentService(PaymentRepository pr, BookingRepository br, PaymentStrategyFactory sf, DiscountStrategyFactory df, ApplicationEventPublisher ep)
+            +processPayment(Long bookingId, PaymentMethod method, String promoCode, String note) Payment
             +processRefund(Long paymentId, Decimal amount, String reason, String staffName) Refund
             +getPaymentById(Long paymentId) Payment
         }
@@ -305,6 +309,40 @@ classDiagram
             -Map~PaymentMethod, PaymentStrategy~ strategyMap
             +PaymentStrategyFactory(List~PaymentStrategy~ strategies)
             +getStrategy(PaymentMethod method) PaymentStrategy
+        }
+
+        %% GoF Strategy Pattern for Extensible Discounts
+        class DiscountStrategy {
+            <<interface>>
+            <<Strategy Pattern>>
+            +getPromotionCode()* String
+            +isApplicable(Booking booking)* Boolean
+            +calculateDiscount(Decimal grossAmount)* Decimal
+        }
+
+        class PercentageDiscountStrategy {
+            <<Concrete Strategy>>
+            -String promoCode
+            -Decimal percentageRate
+            +getPromotionCode() String
+            +isApplicable(Booking booking) Boolean
+            +calculateDiscount(Decimal grossAmount) Decimal
+        }
+
+        class FixedAmountDiscountStrategy {
+            <<Concrete Strategy>>
+            -String promoCode
+            -Decimal fixedAmount
+            +getPromotionCode() String
+            +isApplicable(Booking booking) Boolean
+            +calculateDiscount(Decimal grossAmount) Decimal
+        }
+
+        class DiscountStrategyFactory {
+            <<Strategy Factory>>
+            -Map~String, DiscountStrategy~ strategyMap
+            +DiscountStrategyFactory(List~DiscountStrategy~ strategies)
+            +findStrategy(String promoCode) Optional~DiscountStrategy~
         }
     }
 
@@ -741,11 +779,20 @@ classDiagram
     AbstractBookingState <|-- NoShowState : extends
     Booking --> BookingState : delegates lifecycle behavior
 
-    %% GoF Strategy Pattern Hierarchy
+    %% GoF Strategy Pattern Hierarchy (Payment Methods)
     PaymentStrategy <|.. CashPaymentStrategy : realizes
     PaymentStrategy <|.. QRPaymentStrategy : realizes
     PaymentStrategy <|.. CardPaymentStrategy : realizes
     PaymentStrategyFactory --> PaymentStrategy : manages strategies
+    PaymentService --> PaymentStrategyFactory : gets payment strategy
+    PaymentService ..> PaymentStrategy : delegates payment
+
+    %% GoF Strategy Pattern Hierarchy (Promotions & Discounts)
+    DiscountStrategy <|.. PercentageDiscountStrategy : realizes
+    DiscountStrategy <|.. FixedAmountDiscountStrategy : realizes
+    DiscountStrategyFactory --> DiscountStrategy : manages discount strategies
+    PaymentService --> DiscountStrategyFactory : gets discount strategy
+    PaymentService ..> DiscountStrategy : calculates discount
 
     %% GoF Observer Pattern Wiring
     NotificationListener ..> BookingStatusChangedEvent : observes & notifies
@@ -766,9 +813,10 @@ classDiagram
 | **5** | **DTO Pattern + Mapper** | Enterprise / Architectural | `BookingRequestDTO`, `BookingResponseDTO`, `PaymentRequestDTO`, `BookingMapper`, `PaymentMapper` | `presentation` Layer | กำหนด Boundary ระหว่าง Presentation และ Application/Domain ป้องกันข้อมูลภายในรั่วไหล (`passwordHash`, `commissionRate`) และแก้ปัญหา Infinite JSON Recursion |
 | **6** | **Dependency Injection** | Enterprise / Architectural | Constructors ในทุก Controller, Service, Factory, และ Repository | ข้าม Layers ผ่าน Constructor Injection | ลด Coupling และกำจัดคำสั่ง `new` ภายในคลาส เพื่อให้คลาสคงสภาพ Immutable และรองรับการทำ Unit Testing ด้วย Mockito |
 | **7** | **State Pattern (LSP Compliant)** | GoF Behavioral | `BookingState`, `AbstractBookingState`, `PendingState`, `ConfirmedState`, `CheckedInState`, `InServiceState`, `CompletedState`, `CancelledState`, `NoShowState` | `pattern_state` $\rightarrow$ เชื่อมกับ `Booking` ใน `domain` | Encapsulate วงจรชีวิตของ Booking (7 สถานะ) พร้อมโครงสร้าง Base State ที่จัดการ Invalid Transitions อย่างเป็นเอกภาพตามหลัก Liskov Substitution Principle และตรวจสอบเงื่อนไข Payment สำเร็จก่อนจบงาน |
-| **8** | **Strategy Pattern** | GoF Behavioral | `PaymentStrategy`, `CashPaymentStrategy`, `QRPaymentStrategy`, `CardPaymentStrategy`, `PaymentStrategyFactory` | `pattern_strategy` $\rightarrow$ เชื่อมกับ `PaymentService` | Encapsulate Algorithm การชำระเงินแต่ละวิธี (`CASH`, `QR_PROMPTPAY`, `CREDIT_CARD`) โดย Strategy รับเฉพาะ Domain Entity (`Payment`) ไม่ผูกติดกับ Presentation DTO |
-| **9** | **Observer Pattern** | GoF Behavioral | `BookingStatusChangedEvent`, `NotificationListener`, `QueueListener` | `pattern_observer` $\rightarrow$ รับ Event จาก `BookingService` | ให้ระบบแจ้งเตือนและระบบออกบัตรคิวหน้าร้านตอบสนองต่อการเปลี่ยนสถานะการจองแบบ Event-driven โดย `BookingService` ไม่ต้องผูกติดกับระบบสนับสนุน |
-| **10** | **Factory Pattern** | GoF Creational | `PaymentStrategyFactory` | `pattern_strategy` | จัดเตรียมและสร้าง/ดึง Strategy Object ที่สอดคล้องกับ `PaymentMethod` ส่งมอบให้ `PaymentService` ณ Runtime ตามหลัก Open-Closed Principle |
+| **8** | **Strategy Pattern (Payment)** | GoF Behavioral | `PaymentStrategy`, `CashPaymentStrategy`, `QRPaymentStrategy`, `CardPaymentStrategy`, `PaymentStrategyFactory` | `pattern_strategy` $\rightarrow$ เชื่อมกับ `PaymentService` | Encapsulate Algorithm การชำระเงินแต่ละวิธี (`CASH`, `QR_PROMPTPAY`, `CREDIT_CARD`) โดย Strategy รับเฉพาะ Domain Entity (`Payment`) ไม่ผูกติดกับ Presentation DTO |
+| **9** | **Strategy Pattern (Promotions)** | GoF Behavioral | `DiscountStrategy`, `PercentageDiscountStrategy`, `FixedAmountDiscountStrategy`, `DiscountStrategyFactory` | `pattern_strategy.discount` $\rightarrow$ เชื่อมกับ `PaymentService` | Encapsulate Algorithm การคำนวณส่วนลดโปรโมชั่น (`Percentage`, `FixedAmount`) ตามหลัก Open-Closed Principle ป้องกันการปลอมแปลงราคาจาก Client และรองรับการขยายแคมเปญในอนาคต |
+| **10** | **Observer Pattern** | GoF Behavioral | `BookingStatusChangedEvent`, `NotificationListener`, `QueueListener` | `pattern_observer` $\rightarrow$ รับ Event จาก `BookingService` | ให้ระบบแจ้งเตือนและระบบออกบัตรคิวหน้าร้านตอบสนองต่อการเปลี่ยนสถานะการจองแบบ Event-driven โดย `BookingService` ไม่ต้องผูกติดกับระบบสนับสนุน |
+| **11** | **Factory Pattern** | GoF Creational | `PaymentStrategyFactory`, `DiscountStrategyFactory` | `pattern_strategy` / `discount` | จัดเตรียมและดึง Strategy Object ที่สอดคล้องกับ `PaymentMethod` หรือ `promoCode` ส่งมอบให้ `PaymentService` ณ Runtime ตามหลัก Open-Closed Principle |
 
 ---
 

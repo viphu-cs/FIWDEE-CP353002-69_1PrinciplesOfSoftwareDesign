@@ -245,6 +245,8 @@ sequenceDiagram
     participant PayMapper as PaymentMapper
     participant BkService as BookingService
     participant PayService as PaymentService
+    participant DiscountFactory as DiscountStrategyFactory
+    participant DiscountStrategy as DiscountStrategy
     participant Factory as PaymentStrategyFactory
     participant Strategy as PaymentStrategy
     participant Booking as booking: Booking
@@ -330,14 +332,34 @@ sequenceDiagram
     deactivate BkController
 
     %% Phase C
-    Note over Receptionist, PayRepo: == Phase C: Process Payment (UC-19) ==
-    Receptionist->>PayController: POST /api/payments (PaymentRequestDTO)
+    Note over Receptionist, PayRepo: == Phase C: Process Payment with Discount Strategy (UC-19, UC-19a) ==
+    Receptionist->>PayController: POST /api/payments (PaymentRequestDTO: method, promoCode)
     activate PayController
-    PayController->>PayService: processPayment(bookingId, paymentMethod, note)
+    PayController->>PayService: processPayment(bookingId, paymentMethod, promoCode, note)
     activate PayService
     PayService->>BkRepo: findById(bookingId)
+    activate BkRepo
+    BkRepo-->>PayService: Optional<Booking>
+    deactivate BkRepo
+
+    Note over PayService, DiscountStrategy: <<Strategy Pattern>> 1. Extensible Promotion / Discount
+    opt Promo Code Provided (e.g., FIWDEE20)
+        PayService->>DiscountFactory: findStrategy(promoCode)
+        activate DiscountFactory
+        DiscountFactory-->>PayService: Optional<DiscountStrategy>
+        deactivate DiscountFactory
+        alt Valid Strategy & Applicable
+            PayService->>DiscountStrategy: calculateDiscount(booking.totalPrice)
+            activate DiscountStrategy
+            DiscountStrategy-->>PayService: discountAmount
+            deactivate DiscountStrategy
+        end
+    end
+
     create Payment
-    PayService->>Payment: new Payment(grossAmount = booking.totalPrice, netAmount = booking.totalPrice)
+    PayService->>Payment: new Payment(grossAmount = booking.totalPrice, discountAmount, netAmount = gross - discount)
+    
+    Note over PayService, Strategy: <<Strategy Pattern>> 2. Settlement Execution
     PayService->>Factory: getStrategy(paymentMethod)
     activate Factory
     Factory-->>PayService: return PaymentStrategy (Cash / QR / Card)

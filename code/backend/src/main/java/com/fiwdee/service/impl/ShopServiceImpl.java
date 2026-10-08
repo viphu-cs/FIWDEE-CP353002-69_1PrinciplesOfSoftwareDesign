@@ -32,19 +32,31 @@ public class ShopServiceImpl implements ShopService {
             throw new ValidationException("Business hours for the week are required");
         }
         HashSet<com.fiwdee.domain.enums.DayOfWeek> days = new HashSet<>();
-        shop.getBusinessHours().clear();
+        java.util.Map<com.fiwdee.domain.enums.DayOfWeek, BusinessHours> existingMap = shop.getBusinessHours().stream()
+                .collect(java.util.stream.Collectors.toMap(BusinessHours::getDayOfWeek, java.util.function.Function.identity()));
+
+        java.util.List<BusinessHours> updatedHours = new java.util.ArrayList<>();
         for (ShopUpdateRequestDTO.BusinessHoursRequest item : request.businessHours()) {
             if (!days.add(item.dayOfWeek())) throw new ValidationException("Duplicate business hours day: " + item.dayOfWeek());
             if (!item.closed() && !item.closeTime().isAfter(item.openTime())) {
                 throw new ValidationException("Closing time must be after opening time");
             }
-            BusinessHours hours = new BusinessHours();
-            hours.setShop(shop);
-            hours.setDayOfWeek(item.dayOfWeek());
+            BusinessHours hours = existingMap.get(item.dayOfWeek());
+            if (hours == null) {
+                hours = new BusinessHours();
+                hours.setShop(shop);
+                hours.setDayOfWeek(item.dayOfWeek());
+            }
             hours.setOpenTime(item.openTime());
             hours.setCloseTime(item.closeTime());
             hours.setIsClosed(item.closed());
-            shop.getBusinessHours().add(hours);
+            updatedHours.add(hours);
+        }
+        shop.getBusinessHours().removeIf(h -> !days.contains(h.getDayOfWeek()));
+        for (BusinessHours h : updatedHours) {
+            if (!shop.getBusinessHours().contains(h)) {
+                shop.getBusinessHours().add(h);
+            }
         }
         shop.setShopName(request.shopName().trim());
         shop.setAddress(request.address().trim());

@@ -68,11 +68,14 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/services/**", "/api/therapists/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/bookings/availability").permitAll()
-                // Admin user management: Owner only
+                // Admin user & financial reports management: Owner only
                 .requestMatchers("/api/admin/users/**").hasRole("OWNER")
+                .requestMatchers("/api/admin/reports/**").hasRole("OWNER")
                 // Other back-office endpoints: Owner + Receptionist (Therapist self-service rules
                 // are added by their owning modules)
                 .requestMatchers("/api/admin/**").hasAnyRole("OWNER", "RECEPTIONIST")
+                // Payments & Refunds: authenticated staff or customers
+                .requestMatchers(HttpMethod.POST, "/api/payments/*/refund").hasAnyRole("OWNER", "RECEPTIONIST")
                 // Everything else requires a valid token
                 .anyRequest().authenticated());
 

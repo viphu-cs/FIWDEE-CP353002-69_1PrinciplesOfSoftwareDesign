@@ -20,4 +20,13 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findPaymentsBetween(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT p FROM Payment p JOIN FETCH p.booking b "
+            + "LEFT JOIN FETCH b.service s "
+            + "LEFT JOIN FETCH b.therapist t "
+            + "WHERE p.paymentStatus IN ('COMPLETED', 'REFUNDED') "
+            + "AND p.paidAt >= :startDate AND p.paidAt <= :endDate ORDER BY p.paidAt DESC")
+    List<Payment> findCompletedPaymentsBetween(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
 }
