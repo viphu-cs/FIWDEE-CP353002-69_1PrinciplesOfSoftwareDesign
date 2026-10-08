@@ -3,6 +3,7 @@ package com.fiwdee.controller.api;
 import com.fiwdee.common.ApiResponse;
 import com.fiwdee.dto.request.RefundRequestDTO;
 import com.fiwdee.dto.response.RefundResponseDTO;
+import com.fiwdee.exception.ValidationException;
 import com.fiwdee.service.RefundService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -33,6 +34,10 @@ public class RefundController {
             @PathVariable("id") Long paymentId,
             @Valid @RequestBody RefundRequestDTO request) {
 
+        if (request.getPaymentId() != null && !request.getPaymentId().equals(paymentId)) {
+            throw new ValidationException("Payment ID in URL (" + paymentId 
+                    + ") does not match Payment ID in request body (" + request.getPaymentId() + ")");
+        }
         request.setPaymentId(paymentId);
         RefundResponseDTO response = refundService.processRefund(request);
         return ResponseEntity.ok(ApiResponse.success("ประมวลผลการคืนเงินสำเร็จ", response));
