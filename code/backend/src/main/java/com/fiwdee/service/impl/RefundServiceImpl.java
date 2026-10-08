@@ -104,9 +104,20 @@ public class RefundServiceImpl implements RefundService {
         if (paymentId == null) {
             throw new ValidationException("Payment ID cannot be null");
         }
-        Refund refund = refundRepository.findByPaymentId(paymentId)
+        Refund refund = refundRepository.findTopByPaymentIdOrderByIdDesc(paymentId)
                 .orElseThrow(() -> new NotFoundException("No refund record found for payment ID: " + paymentId));
         return refundMapper.toResponseDTO(refund);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RefundResponseDTO> getRefundsByPaymentId(Long paymentId) {
+        if (paymentId == null) {
+            throw new ValidationException("Payment ID cannot be null");
+        }
+        return refundRepository.findByPaymentIdOrderByIdDesc(paymentId).stream()
+                .map(refundMapper::toResponseDTO)
+                .collect(Collectors.toList());
     }
 
     @Override

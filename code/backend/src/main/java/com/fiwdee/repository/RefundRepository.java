@@ -9,7 +9,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface RefundRepository extends JpaRepository<Refund, Long> {
 
-    Optional<Refund> findByPaymentId(Long paymentId);
+    Optional<Refund> findTopByPaymentIdOrderByIdDesc(Long paymentId);
+
+    List<Refund> findByPaymentIdOrderByIdDesc(Long paymentId);
 
     List<Refund> findByPaymentBookingId(Long bookingId);
 }

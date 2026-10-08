@@ -39,7 +39,7 @@ public class RefundController {
     }
 
     /**
-     * Retrieves the refund record for a payment ID.
+     * Retrieves the latest refund record for a payment ID.
      */
     @GetMapping("/payments/{id}/refund")
     public ResponseEntity<ApiResponse<RefundResponseDTO>> getRefundByPayment(
@@ -47,6 +47,17 @@ public class RefundController {
 
         RefundResponseDTO response = refundService.getRefundByPaymentId(paymentId);
         return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลการคืนเงินสำเร็จ", response));
+    }
+
+    /**
+     * Retrieves all refund records for a payment ID (e.g. partial refunds).
+     */
+    @GetMapping("/payments/{id}/refunds")
+    public ResponseEntity<ApiResponse<List<RefundResponseDTO>>> getRefundsByPayment(
+            @PathVariable("id") Long paymentId) {
+
+        List<RefundResponseDTO> response = refundService.getRefundsByPaymentId(paymentId);
+        return ResponseEntity.ok(ApiResponse.success("ดึงรายการประวัติการคืนเงินสำเร็จ", response));
     }
 
     /**

@@ -16,9 +16,14 @@ public interface RefundService {
     RefundResponseDTO processRefund(RefundRequestDTO request);
 
     /**
-     * Retrieves refund records associated with a specific payment ID.
+     * Retrieves the latest refund record associated with a specific payment ID.
      */
     RefundResponseDTO getRefundByPaymentId(Long paymentId);
+
+    /**
+     * Retrieves all refund records associated with a specific payment ID (e.g. partial refunds).
+     */
+    List<RefundResponseDTO> getRefundsByPaymentId(Long paymentId);
 
     /**
      * Retrieves all refunds for a specific booking ID.

@@ -20,7 +20,7 @@ import lombok.Setter;
 @Builder
 public class RefundRequestDTO {
 
-    @NotNull(message = "Payment ID is required")
+    // Optional in request body when provided via URL path (/payments/{id}/refund)
     private Long paymentId;
 
     @NotNull(message = "Refund amount is required")
