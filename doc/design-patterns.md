@@ -716,6 +716,88 @@ classDiagram
 
 ---
 
+## 5.8.1 Discount Strategy Pattern (Promotions & Extensible Discounts)
+
+### Status
+`Design-level / Planned`
+
+### Problem
+ในระบบร้านนวด FIWDEE มีการจัดโปรโมชั่นและส่วนลด (เช่น โค้ด `FIWDEE20` ลด 20% สำหรับการจองครั้งแรก) และร้านมีความต้องการเพิ่มแคมเปญโปรโมชั่นใหม่ๆ ในอนาคต (เช่น โปรโมชั่นลดเงินสดคงที่, โปรโมชั่นตามเทศกาล หรือโปรโมชั่นสมาชิก) 
+
+หากเขียนโค้ดตรวจสอบโปรโมชั่นด้วย `if-else` หรือ `switch-case` ฝังไว้ใน `PaymentService` จะทำให้:
+1. ฝ่าฝืนหลักการ **Open-Closed Principle (OCP)** เพราะทุกครั้งที่มีโปรโมชั่นใหม่ ต้องเปิดแก้โค้ดและทดสอบระบบการเงินเดิมใหม่ทั้งหมด
+2. หากอนุญาตให้ Client ส่งยอดส่วนลดเป็นตัวเลขดิบเข้ามาโดยตรง จะเกิดช่องโหว่ด้านความปลอดภัยร้ายแรง (Client-side Price Tampering) ลูกค้าสามารถแก้ตัวเลขส่วนลดได้เอง
+
+### Classes / Files
+* **Strategy Interface:** `src/main/java/com/fiwdee/pattern/strategy/discount/DiscountStrategy.java`
+* **Concrete Strategies:**
+  * `src/main/java/com/fiwdee/pattern/strategy/discount/PercentageDiscountStrategy.java` (โปรโมชั่นคิดส่วนลดเป็นเปอร์เซ็นต์ เช่น `FIWDEE20`)
+  * `src/main/java/com/fiwdee/pattern/strategy/discount/FixedAmountDiscountStrategy.java` (โปรโมชั่นคิดส่วนลดเป็นจำนวนเงินคงที่)
+* **Strategy Factory (GoF Factory Pattern):** `src/main/java/com/fiwdee/pattern/strategy/discount/DiscountStrategyFactory.java`
+* **Service:** `src/main/java/com/fiwdee/service/PaymentService.java`
+* **Request DTO:** `src/main/java/com/fiwdee/dto/request/PaymentRequestDTO.java` (ส่งเพียง `promoCode`)
+
+### Class Diagram
+
+```mermaid
+classDiagram
+    note "«Discount Strategy Pattern (Extensible Promotions & Security)»"
+    direction TB
+
+    class PaymentService {
+        <<Service Layer>>
+        -DiscountStrategyFactory discountStrategyFactory
+        -PaymentStrategyFactory paymentStrategyFactory
+        +processPayment(Long bookingId, PaymentMethod method, String promoCode, String note) Payment
+    }
+
+    class DiscountStrategyFactory {
+        <<Strategy Factory>>
+        -Map~String, DiscountStrategy~ strategyMap
+        +DiscountStrategyFactory(List~DiscountStrategy~ strategies)
+        +findStrategy(String promoCode) Optional~DiscountStrategy~
+    }
+
+    class DiscountStrategy {
+        <<interface>>
+        <<Strategy Pattern>>
+        +getPromotionCode()* String
+        +isApplicable(Booking booking)* Boolean
+        +calculateDiscount(Decimal grossAmount)* Decimal
+    }
+
+    class PercentageDiscountStrategy {
+        <<Concrete Strategy>>
+        -String promoCode
+        -Decimal percentageRate
+        +getPromotionCode() String
+        +isApplicable(Booking booking) Boolean
+        +calculateDiscount(Decimal grossAmount) Decimal
+    }
+
+    class FixedAmountDiscountStrategy {
+        <<Concrete Strategy>>
+        -String promoCode
+        -Decimal fixedAmount
+        +getPromotionCode() String
+        +isApplicable(Booking booking) Boolean
+        +calculateDiscount(Decimal grossAmount) Decimal
+    }
+
+    PaymentService --> DiscountStrategyFactory : retrieves discount strategy
+    DiscountStrategyFactory --> DiscountStrategy : manages discount strategies
+    PaymentService ..> DiscountStrategy : executes discount calculation
+    DiscountStrategy <|.. PercentageDiscountStrategy : realizes
+    DiscountStrategy <|.. FixedAmountDiscountStrategy : realizes
+```
+
+### How it is applied in FIWDEE
+* **Security & Single Source of Truth:** ฝั่ง Client ส่งมาเพียงรหัสโปรโมชั่น `promoCode` (เช่น `"FIWDEE20"`) ผ่าน `PaymentRequestDTO` ระบบ Backend จะนำยอดเต็ม `grossAmount` มาจาก `Booking.totalPrice` ในฐานข้อมูลจริง แล้วส่งให้ `DiscountStrategy` ทำการคำนวณ `discountAmount` อย่างถูกต้อง ปลอดภัย ไม่ให้ผู้ใช้ดัดแปลงราคาได้
+* **Open-Closed Principle (OCP):** ในอนาคตหากทางร้านต้องการเพิ่มโปรโมชั่นใหม่ (เช่น ส่วนลดเทศกาลสงกรานต์) สามารถสร้าง Concrete Class ใหม่ที่ Implement `DiscountStrategy` ขึ้นมาเป็น Spring Bean ได้ทันทีโดยไม่ต้องแก้ไขหรือกระทบโค้ดใน `PaymentService` เลย
+* **Zero Collision:** โครงสร้างคลาสส่วนลดนี้อยู่ในแพ็กเกจ `com.fiwdee.pattern.strategy.discount` ภายใต้ความรับผิดชอบของ Dev 5 จึงไม่กระทบกับโมดูลของเพื่อนในทีม
+
+---
+
 ## 5.9 Observer Pattern
 
 ### Status

@@ -217,16 +217,22 @@
   * `PaymentRepository.java`
   * `RefundRepository.java`
 * **Design Pattern บังคับ (GoF Strategy Pattern):**
-  * แพ็กเกจ: `com.fiwdee.pattern.strategy`
-  * `PaymentStrategy.java` (Interface: `processPayment(Payment payment)`, `getSupportedMethod()`)
-  * Concrete Classes:
-    - `CashPaymentStrategy.java` (ชำระด้วยเงินสดหน้าร้าน)
-    - `QRPaymentStrategy.java` (จำลองสร้าง QR PromptPay และตรวจสอบสลิป)
-    - `CardPaymentStrategy.java` (จำลองตัดบัตรเครดิต)
-  * `PaymentStrategyFactory.java` (เลือก Strategy ที่ตรงกับ `PaymentMethod` ณ ตอนทำงาน)
+  * แพ็กเกจการชำระเงิน: `com.fiwdee.pattern.strategy`
+    - `PaymentStrategy.java` (Interface: `processPayment(Payment payment)`, `getSupportedMethod()`)
+    - Concrete Classes:
+      - `CashPaymentStrategy.java` (ชำระด้วยเงินสดหน้าร้าน)
+      - `QRPaymentStrategy.java` (จำลองสร้าง QR PromptPay และตรวจสอบสลิป)
+      - `CardPaymentStrategy.java` (จำลองตัดบัตรเครดิต)
+    - `PaymentStrategyFactory.java` (เลือก Strategy ที่ตรงกับ `PaymentMethod` ณ ตอนทำงาน)
+  * แพ็กเกจส่วนลด/โปรโมชั่น (Extensible Promotions ตาม OCP): `com.fiwdee.pattern.strategy.discount`
+    - `DiscountStrategy.java` (Interface: `calculateDiscount(grossAmount)`, `isApplicable(booking)`, `getPromotionCode()`)
+    - Concrete Classes:
+      - `PercentageDiscountStrategy.java` (คำนวณส่วนลดตามเปอร์เซ็นต์ เช่น โค้ด `FIWDEE20` ลด 20%)
+      - `FixedAmountDiscountStrategy.java` (คำนวณส่วนลดจำนวนเงินคงที่)
+    - `DiscountStrategyFactory.java` (ค้นหา Strategy ตาม `promoCode` ที่ Client ส่งมาอย่างปลอดภัย)
 * **Services ที่ต้องสร้าง:**
   * `com.fiwdee.service.PaymentService`
-    - `processPayment(PaymentRequestDTO dto)` — ตัดเงินผ่าน Strategy, บันทึก Entity `Payment` (Immutable)
+    - `processPayment(PaymentRequestDTO dto)` — คำนวณส่วนลดผ่าน DiscountStrategy, ตัดเงินผ่าน PaymentStrategy, บันทึก Entity `Payment` (Immutable)
     - `getReceipt(Long paymentId)` — ดึงข้อมูลใบเสร็จ
     - `processRefund(RefundRequestDTO dto)` — จัดการคืนเงินและบันทึก Entity `Refund`
   * `com.fiwdee.service.ReportService`
