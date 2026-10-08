@@ -11,7 +11,10 @@ import AboutPage from './pages/about/AboutPage.jsx'
 import LoginPage from './pages/auth/LoginPage.jsx'
 import RegisterPage from './pages/auth/RegisterPage.jsx'
 import BookingPage from './pages/booking/BookingPage.jsx'
+import CustomerProfilePage from './pages/profile/CustomerProfilePage.jsx'
+import BookingHistoryPage from './pages/booking/BookingHistoryPage.jsx'
 import { LanguageProvider } from './i18n/LanguageContext.jsx'
+import { CustomerAuthProvider } from './context/CustomerAuthContext.jsx'
 import { therapists } from './data/mock.js'
 
 // Admin Portal Imports
@@ -24,13 +27,19 @@ import AdminRooms from './admin/pages/AdminRooms.jsx'
 import AdminServices from './admin/pages/AdminServices.jsx'
 import AdminUsers from './admin/pages/AdminUsers.jsx'
 
-// Mock customer auth (ติ๊ก "คงสถานะ" → localStorage, ไม่ติ๊ก → sessionStorage)
-// เมื่อ backend พร้อมจะเปลี่ยนเป็น JWT จริง
+// สถานะล็อกอิน = มีทั้ง JWT token และโปรไฟล์ (เช็คแค่โปรไฟล์ไม่พอ — ข้อมูลเก่าค้างจากยุค mock
+// ต้องไม่นับเป็นล็อกอิน ให้ตรงกับเงื่อนไขของ CustomerAuthContext)
 const isCustomerLoggedIn = () =>
-  !!(localStorage.getItem('fiwdee_customer_auth') || sessionStorage.getItem('fiwdee_customer_auth'))
+  !!(
+    localStorage.getItem('fiwdee_token') &&
+    (localStorage.getItem('fiwdee_customer_auth') || sessionStorage.getItem('fiwdee_customer_auth'))
+  )
 
 // ปุ่ม CTA ที่พาไปหน้าจองคิวทั้งหมด — ต้องเช็กสถานะล็อกอินก่อนเสมอ
 const BOOKING_NAV_KEYS = ['booking', 'book', 'booking-flow', 'direct-booking']
+
+// หน้าที่ต้องล็อกอินก่อน (โปรไฟล์ / ประวัติการจอง รวมอยู่ด้วย)
+const LOGIN_REQUIRED_KEYS = [...BOOKING_NAV_KEYS, 'profile', 'my-bookings']
 
 function getInitialNavigation() {
   if (typeof window === 'undefined') return { page: 'home', adminRoute: 'dashboard', therapistId: 1 }
@@ -55,6 +64,22 @@ function getInitialNavigation() {
   }
   if (hash.startsWith('#about')) {
     return { page: 'about', adminRoute: 'dashboard', therapistId: 1 }
+  }
+  // เข้าถึงหน้าโปรไฟล์/ประวัติการจองได้เฉพาะเมื่อล็อกอิน
+  // (เช็ค #my-bookings ก่อน #booking เพราะ hash prefix ทับกัน)
+  if (hash.startsWith('#my-bookings')) {
+    if (isCustomerLoggedIn()) {
+      return { page: 'my-bookings', adminRoute: 'dashboard', therapistId: 1 }
+    }
+    sessionStorage.setItem('fiwdee_pending_redirect', 'my-bookings')
+    return { page: 'login', adminRoute: 'dashboard', therapistId: 1 }
+  }
+  if (hash === '#profile') {
+    if (isCustomerLoggedIn()) {
+      return { page: 'profile', adminRoute: 'dashboard', therapistId: 1 }
+    }
+    sessionStorage.setItem('fiwdee_pending_redirect', 'profile')
+    return { page: 'login', adminRoute: 'dashboard', therapistId: 1 }
   }
   if (hash.startsWith('#booking') || hash.startsWith('#book-flow')) {
     // เข้าถึงหน้าจองคิวได้เฉพาะเมื่อล็อกอินแล้ว ไม่งั้นพาไปหน้าล็อกอิน
@@ -123,17 +148,18 @@ export default function App() {
       setNavState({ page: 'about', adminRoute: 'dashboard', therapistId: 1 })
       window.history.pushState(null, '', '#about')
       window.scrollTo({ top: 0, behavior: 'smooth' })
-    } else if (BOOKING_NAV_KEYS.includes(targetKey)) {
-      // ปุ่ม CTA จองคิว: เช็กสถานะล็อกอินก่อน — ถ้ายังไม่ล็อกอิน พาไปหน้าล็อกอิน
-      // พร้อมแนบ redirect กลับมาที่หน้าจองคิว (กรณีกดจากหน้าล็อกอินอยู่แล้ว = ทางลัดข้ามของหน้าล็อกอิน ให้ผ่าน)
-      if (!isCustomerLoggedIn() && currentPage !== 'login') {
-        sessionStorage.setItem('fiwdee_pending_redirect', 'booking')
+    } else if (LOGIN_REQUIRED_KEYS.includes(targetKey)) {
+      // CTA จองคิว / โปรไฟล์ / ประวัติการจอง: เช็กสถานะล็อกอินก่อน — ถ้ายังไม่ล็อกอิน
+      // พาไปหน้าล็อกอินพร้อมแนบ redirect กลับมาหน้าเดิมหลังล็อกอินสำเร็จ
+      const destination = BOOKING_NAV_KEYS.includes(targetKey) ? 'booking' : targetKey
+      if (!isCustomerLoggedIn()) {
+        sessionStorage.setItem('fiwdee_pending_redirect', destination)
         setNavState({ page: 'login', adminRoute: 'dashboard', therapistId: 1 })
         window.history.pushState(null, '', '#login')
         window.scrollTo({ top: 0, behavior: 'smooth' })
       } else {
-        setNavState({ page: 'booking', adminRoute: 'dashboard', therapistId: 1 })
-        window.history.pushState(null, '', '#booking')
+        setNavState({ page: destination, adminRoute: 'dashboard', therapistId: 1 })
+        window.history.pushState(null, '', `#${destination}`)
         window.scrollTo({ top: 0, behavior: 'smooth' })
       }
     } else if (targetKey === 'login') {
@@ -162,6 +188,7 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
       <LanguageProvider>
+        <CustomerAuthProvider>
         {currentPage === 'admin' ? (
           <AdminLayout currentRoute={adminRoute} onNavigate={handleAdminNavigate}>
             {adminRoute === 'queue' ? (
@@ -197,6 +224,10 @@ export default function App() {
               <AboutPage onNavigate={handleNavigate} />
             ) : currentPage === 'booking' ? (
               <BookingPage onNavigate={handleNavigate} />
+            ) : currentPage === 'profile' ? (
+              <CustomerProfilePage onNavigate={handleNavigate} />
+            ) : currentPage === 'my-bookings' ? (
+              <BookingHistoryPage onNavigate={handleNavigate} />
             ) : currentPage === 'login' ? (
               <LoginPage onNavigate={handleNavigate} />
             ) : currentPage === 'register' ? (
@@ -207,6 +238,7 @@ export default function App() {
             <Footer onNavigate={handleNavigate} />
           </div>
         )}
+        </CustomerAuthProvider>
       </LanguageProvider>
     </MotionConfig>
   )

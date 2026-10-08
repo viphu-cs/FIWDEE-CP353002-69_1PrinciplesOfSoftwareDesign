@@ -22,5 +22,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByPhoneNumber(String phoneNumber);
 
+    /** Uniqueness checks scoped to "taken by someone other than id" (self-update keeps own values). */
+    Optional<User> findByEmailAndIdNot(String email, Long id);
+
+    Optional<User> findByPhoneNumberAndIdNot(String phoneNumber, Long id);
+
     List<User> findByRole(UserRole role);
 }

@@ -1,5 +1,6 @@
 package com.fiwdee.service;
 
+import com.fiwdee.dto.request.UpdateProfileRequestDTO;
 import com.fiwdee.dto.response.AdminUserSummaryResponseDTO;
 import com.fiwdee.dto.response.UserResponseDTO;
 import java.util.List;
@@ -20,4 +21,7 @@ public interface UserService {
 
     /** Profile of the currently authenticated user (GET /api/auth/me). */
     UserResponseDTO getUserProfile(Long userId);
+
+    /** Updates the authenticated user's own profile (PUT /api/auth/me). */
+    UserResponseDTO updateProfile(Long userId, UpdateProfileRequestDTO request);
 }

@@ -64,6 +64,7 @@ public class SecurityConfig {
                 // Public: authentication + public shop catalog
                 // (me ต้องมี token — ประกาศก่อน permitAll ของ /api/auth/** เพราะ first match wins)
                 .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/auth/me").authenticated()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/services/**", "/api/therapists/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/bookings/availability").permitAll()
