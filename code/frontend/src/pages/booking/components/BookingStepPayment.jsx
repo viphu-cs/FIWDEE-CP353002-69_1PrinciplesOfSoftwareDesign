@@ -329,13 +329,22 @@ export default function BookingStepPayment({
                       ยอดรวมสุทธิ
                     </span>
                     <p className="font-headline-md text-headline-md text-on-surface font-semibold tracking-tight">
-                      {paymentMethod === 'deposit' ? '฿300 (มัดจำ)' : finalPriceLabel}
+                      {finalPriceLabel}
                     </p>
                   </div>
                   <span className="font-label-caps text-label-caps text-secondary">
-                    {paymentMethod === 'deposit' ? 'ยอดมัดจำออนไลน์' : 'สุทธิ (Net Price)'}
+                    {paymentMethod === 'counter' || paymentMethod === 'deposit'
+                      ? 'ชำระที่เคาน์เตอร์'
+                      : 'สุทธิ (Net Price)'}
                   </span>
                 </div>
+
+                {(paymentMethod === 'counter' || paymentMethod === 'deposit') && (
+                  <div className="pt-2 text-xs text-secondary border-t border-outline-variant/20 flex justify-between">
+                    <span>ยอดชำระออนไลน์ตอนนี้</span>
+                    <span className="font-semibold text-primary">฿0 (ชำระเต็มจำนวนหน้าร้าน)</span>
+                  </div>
+                )}
               </div>
 
               {submitError && (
@@ -358,7 +367,9 @@ export default function BookingStepPayment({
                   </span>
                   {isSubmitting
                     ? 'กำลังประมวลผลการจอง...'
-                    : `ยืนยันการจองและชำระเงิน (${paymentMethod === 'deposit' ? '฿300' : finalPriceLabel})`}
+                    : paymentMethod === 'counter' || paymentMethod === 'deposit'
+                    ? 'ยืนยันการจอง (ชำระเงินที่หน้าร้าน)'
+                    : `ยืนยันการจองและชำระเงิน (${finalPriceLabel})`}
                 </button>
               </div>
 
