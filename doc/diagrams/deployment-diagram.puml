@@ -1,0 +1,70 @@
+@startuml deployment-diagram
+!theme plain
+skinparam shadowing false
+skinparam linetype ortho
+skinparam nodeBackgroundColor #F8F9FA
+skinparam nodeBorderColor #6C757D
+skinparam artifactBackgroundColor #E9ECEF
+skinparam artifactBorderColor #495057
+
+title FIWDEE Massage Management & Booking System - UML Deployment Diagram\n(Cloud PaaS Architecture: Vercel + Render + Supabase)
+
+node "Client Tier (User Devices)" as ClientTier {
+    node "Customer Device\n<<device>>" as CustDev {
+        artifact "Mobile / Desktop Browser" as CustBrowser
+    }
+    node "Receptionist Workstation\n<<device>>" as StaffDev {
+        artifact "Desktop Web Browser" as StaffBrowser
+    }
+    node "Therapist Mobile Device\n<<device>>" as ThDev {
+        artifact "Mobile Web Browser" as ThBrowser
+    }
+}
+
+cloud "Vercel Global Edge Network (Frontend)\nDomain: https://fiwdee.vercel.app" as VercelCloud {
+    node "Vercel Edge Node\n<<execution environment>>" as VercelNode {
+        artifact "React 19 SPA Bundle\n<<artifact>>\n(index.html, JS Modules, CSS)" as ReactBundle
+        artifact "vercel.json\n<<artifact>>\n(SPA Rewrite Routing)" as VercelConfig
+    }
+}
+
+cloud "Render.com Cloud Platform (Backend)\nRegion: Singapore (ap-southeast-1)\nDomain: https://fiwdee-backend.onrender.com" as RenderCloud {
+    node "Render Web Service (Linux Container)\n<<execution environment>>\nRuntime: Temurin JRE 17 (Docker)" as RenderNode {
+        artifact "app.jar\n<<artifact>>\n(Spring Boot 4.1.1 Application)" as AppJar
+        artifact "HikariCP Connection Pool\n<<component>>" as HikariPool
+        
+        folder "Injected Environment Variables" as EnvFolder {
+            artifact "SPRING_DATASOURCE_URL" as EnvDbUrl
+            artifact "SPRING_DATASOURCE_USERNAME" as EnvDbUser
+            artifact "SPRING_DATASOURCE_PASSWORD" as EnvDbPass
+            artifact "FIWDEE_JWT_SECRET" as EnvJwt
+        }
+    }
+}
+
+cloud "Supabase Cloud Platform (Database)\nRegion: Singapore (AWS ap-southeast-1)\nHost: aws-0-ap-southeast-1.pooler.supabase.com" as SupabaseCloud {
+    node "Supavisor Connection Pooler\n<<execution environment>>\nPort: 5432 (Session Mode)" as SupaPooler {
+        database "PostgreSQL 16 Engine\nDatabase: postgres (public)\n<<database system>>" as SupaDB {
+            folder "18 Normalized Relational Tables" as DBTables
+        }
+    }
+}
+
+CustBrowser --> VercelNode : 1. GET / (HTTPS: 443 / TLS 1.3)
+StaffBrowser --> VercelNode : 1. GET / (HTTPS: 443 / TLS 1.3)
+ThBrowser --> VercelNode : 1. GET / (HTTPS: 443 / TLS 1.3)
+
+VercelNode ..> ReactBundle : serves static files
+VercelConfig ..> ReactBundle : client routing fallback
+
+CustBrowser --> RenderNode : 2. REST API Requests (HTTPS: 443 + JWT)
+StaffBrowser --> RenderNode : 2. REST API Requests (HTTPS: 443 + JWT)
+ThBrowser --> RenderNode : 2. REST API Requests (HTTPS: 443 + JWT)
+
+EnvFolder ..> AppJar : configures runtime
+AppJar ..> HikariPool : manages connections
+
+HikariPool --> SupaPooler : 3. PostgreSQL Wire Protocol over TLS [Port 5432]
+SupaPooler --> SupaDB : proxies queries
+
+@enduml
