@@ -12,10 +12,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Therapist-facing schedule and service execution endpoints. */
+@Tag(name = "Therapist Self-Service", description = "ระบบสำหรับหมอนวด (ตรวจสอบตารางงานตนเอง, เริ่ม/เสร็จสิ้นการบริการ)")
 @RestController
 @RequestMapping("/api/therapist")
 @RequiredArgsConstructor

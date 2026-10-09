@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -35,6 +36,7 @@ import org.springframework.web.bind.annotation.RestController;
  * TODO: Apply OWNER/RECEPTIONIST authorization after shared method security is enabled by Dev 1.
  * OWNER may use all endpoints; RECEPTIONIST may read and change room status only.
  */
+@Tag(name = "Admin Resources", description = "จัดการข้อมูลหลัก (CRUD ห้องนวด, บริการ, ตารางงานหมอนวด)")
 @RestController
 @RequestMapping("/api/admin")
 public class AdminResourceController {

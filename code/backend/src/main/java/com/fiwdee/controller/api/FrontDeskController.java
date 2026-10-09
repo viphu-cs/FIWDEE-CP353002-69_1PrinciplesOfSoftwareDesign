@@ -9,9 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Front-desk booking arrival operations. */
+@Tag(name = "Front Desk", description = "เคาน์เตอร์บริการหน้าร้าน (เช็คอินลูกค้าเมื่อมาถึงร้าน)")
 @RestController
 @RequestMapping("/api/bookings")
 @RequiredArgsConstructor

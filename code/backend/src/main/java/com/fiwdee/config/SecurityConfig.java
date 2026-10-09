@@ -61,6 +61,14 @@ public class SecurityConfig {
 
             // 7. Role-based access rules
             .authorizeHttpRequests(auth -> auth
+                // Swagger UI & OpenAPI documentation (Public)
+                .requestMatchers(
+                    "/swagger-ui.html",
+                    "/swagger-ui/**",
+                    "/v3/api-docs/**",
+                    "/swagger-resources/**",
+                    "/webjars/**"
+                ).permitAll()
                 // Public: authentication + public shop catalog
                 // (me ต้องมี token — ประกาศก่อน permitAll ของ /api/auth/** เพราะ first match wins)
                 .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()

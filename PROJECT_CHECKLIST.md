@@ -10,12 +10,12 @@
 
 | หัวข้อตามใบงาน | น้ำหนัก/ความสำคัญ | สถานะปัจจุบัน | เปอร์เซ็นต์ความพร้อม | สรุปสิ่งที่ต้องทำต่อ |
 |---|:---:|:---:|:---:|---|
-| **1. Technical Requirements** | บังคับ | 🟡 มีบางส่วน | 85% | เพิ่ม Swagger UI (`/swagger-ui.html`) |
+| **1. Technical Requirements** | บังคับ | 🟢 สมบูรณ์ | 95% | นำระบบขึ้น Cloud Server |
 | **2. Layered Architecture** | บังคับ | 🟢 สมบูรณ์ | 100% | ครบทุก Layer (Controller, Service, Repository, Entity, DTO, Mapper) |
 | **3. SOLID Principles** | บังคับ | 🟡 มีบางส่วน | 70% | จัดทำเอกสาร `doc/solid-analysis.md` ระบุคลาสและบรรทัด |
 | **4. Design Patterns** | บังคับ | 🟢 สมบูรณ์ | 95% | GoF Behavioral ครบ 3 รูปแบบ (State, Strategy, Observer) |
 | **5. Database Requirements** | บังคับ | 🟡 มีบางส่วน | 80% | ทำ Migration Script (`schema.sql` + `data.sql` หรือ Flyway) |
-| **6. REST API Requirements** | บังคับ | 🟢 สมบูรณ์ | 95% | มี Pagination & Sorting แล้ว, เหลือเปิด Swagger UI |
+| **6. REST API Requirements** | บังคับ | 🟢 สมบูรณ์ | 100% | มี Pagination, Sorting และ Swagger UI ครบถ้วน |
 | **7. Testing (JUnit 5 + Mockito)** | บังคับ | 🟡 มีบางส่วน | 35% | มี Pagination Unit Test ผ่านแล้ว, เพิ่ม Service Tests อื่นๆ |
 | **8. Git Workflow & ยอด Commit** | บังคับ | 🟡 มีบางส่วน | 70% | สมาชิกบางท่านต้อง Commit เพิ่มให้ครบอย่างน้อย 15 ครั้ง |
 | **9. โครงสร้างโฟลเดอร์ Repository** | บังคับ | 🟡 มีบางส่วน | 75% | เพิ่มโฟลเดอร์ `test/` ที่ root และ `doc/slide/` |
@@ -37,8 +37,8 @@
 - [x] **Database**: PostgreSQL (Relational Database)
 - [x] **ORM**: Spring Data JPA (Hibernate)
 - [x] **Frontend**: React (React 19 + Vite 8 + Tailwind CSS)
-- [ ] **API Documentation**: Swagger UI / OpenAPI (`/swagger-ui.html`)
-  - *สิ่งที่ต้องทำ*: เพิ่ม `springdoc-openapi-starter-webmvc-ui` ลงใน `code/backend/pom.xml` และตั้งค่า Security ให้เข้าถึงได้
+- [x] **API Documentation**: Swagger UI / OpenAPI (`/swagger-ui.html`)
+  - เพิ่ม `springdoc-openapi-starter-webmvc-ui:2.8.5` ลงใน `code/backend/pom.xml`, สร้าง `OpenApiConfig` พร้อมระบบยืนยันตัวตน JWT Bearer token, ปลดล็อคเส้นทางใน `SecurityConfig`, ตกแต่ง `@Tag` ใน Controller ครบทุกกลุ่ม และทดสอบผ่านทั้ง `OpenApiConfigTest` และรันจริงบน Docker (2026-10-09)
 - [ ] **Deployment**: Deploy ขึ้น Cloud Server ใช้งานได้จริง
   - *สิ่งที่ต้องทำ*: Deploy บน Railway / Render / Fly.io / VPS พร้อม Cloud PostgreSQL (Supabase / Neon / Railway)
 
@@ -136,8 +136,8 @@
   - `GET /api/admin/bookings` รองรับ `Pageable` (`page`, `size`, `sort`) พร้อมฟิลเตอร์ `date`, `status`, `search` และส่งค่าคืนเป็น `Page<BookingResponseDTO>`
   - `GET /api/admin/users/page` รองรับ `Pageable` (`page`, `size`, `sort`) พร้อมฟิลเตอร์ `role`, `search` และส่งค่าคืนเป็น `Page<UserResponseDTO>`
   - มี Unit Test `BookingServicePaginationTest` (JUnit 5 + Mockito) ทดสอบผ่าน 100%
-- [ ] **Swagger UI**:
-  - *สิ่งที่ต้องทำ*: เปิดใช้งานและทดสอบว่าเปิดเข้า `/swagger-ui.html` ได้จริง
+- [x] **Swagger UI**:
+  - เปิดใช้งานสำเร็จที่ `/swagger-ui.html` และ `/swagger-ui/index.html` (OpenAPI Spec ที่ `/v3/api-docs`) มี `@Tag` จัดหมวดหมู่คอนโทรลเลอร์ครบ 13 กลุ่ม พร้อมปุ่ม Authorize รองรับ Bearer JWT (2026-10-09)
 
 ---
 
@@ -234,7 +234,7 @@
 - [ ] สมาชิกทุกคนมี Commit ไม่น้อยกว่า 15 ครั้ง กระจายตามช่วงเวลาทำงาน
 - [ ] รวมโค้ดเข้ากิ่ง `develop` และ `main` ผ่าน Pull Request พร้อม Code Review
 - [ ] Public Deployment URL เปิดใช้งานได้จริง ณ วันนำเสนอ
-- [ ] Swagger UI เข้าถึงได้จริง (`http://<host>:<port>/swagger-ui.html`)
+- [x] Swagger UI เข้าถึงได้จริง (`http://<host>:<port>/swagger-ui.html`) ✅ (ทดสอบบน Docker และ Localhost แล้ว)
 - [ ] Test ทั้งหมดรันผ่าน (`./mvnw test`) และมี Test Report
 - [ ] มีเอกสาร `doc/solid-analysis.md`
 - [ ] เอกสาร Diagram ครบทุกชนิดใน `doc/diagrams/` (รวม Component, Deployment, State Diagram)

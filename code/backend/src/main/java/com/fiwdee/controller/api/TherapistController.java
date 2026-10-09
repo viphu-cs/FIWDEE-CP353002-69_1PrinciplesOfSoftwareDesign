@@ -7,8 +7,10 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "Therapists Catalog", description = "รายชื่อหมอนวดและทักษะความเชี่ยวชาญ (Public)")
 @RestController
 @RequestMapping("/api/therapists")
 public class TherapistController {

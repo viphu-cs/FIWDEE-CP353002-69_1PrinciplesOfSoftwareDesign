@@ -29,12 +29,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Controller exposing booking availability, customer lifecycle actions, and back-office bookings.
  */
+@Tag(name = "Booking", description = "ระบบการจองคิวนวด (ตรวจสอบช่วงเวลาว่าง, สร้างการจอง, ยกเลิก, ดูประวัติการจอง, อัปเดตสถานะ)")
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor

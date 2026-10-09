@@ -16,12 +16,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Admin Users summary endpoints — Owner only (see BACKEND_TEAM_ROLES.md / UC-28).
  */
+@Tag(name = "Admin Users", description = "จัดการและตรวจสอบผู้ใช้ในระบบ รายชื่อผู้ใช้ออนไลน์ และ Force Logout (สิทธิ์ OWNER)")
 @RestController
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor

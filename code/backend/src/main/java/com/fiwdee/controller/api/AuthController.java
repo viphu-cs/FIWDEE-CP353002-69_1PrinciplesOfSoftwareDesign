@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Public authentication endpoints (register / login) + current-profile lookup.
  */
+@Tag(name = "Authentication", description = "ระบบยืนยันตัวตน (ลงทะเบียน, เข้าสู่ระบบ, ข้อมูลผู้ใช้)")
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor

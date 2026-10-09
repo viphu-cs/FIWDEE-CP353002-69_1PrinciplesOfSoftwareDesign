@@ -14,9 +14,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Customer feedback endpoint for completed services. */
+@Tag(name = "Reviews", description = "ระบบรีวิวการให้บริการ (สำหรับรายการที่เสร็จสิ้น COMPLETED)")
 @RestController
 @RequestMapping("/api/bookings")
 @RequiredArgsConstructor
