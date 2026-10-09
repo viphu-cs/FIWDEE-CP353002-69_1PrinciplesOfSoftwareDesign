@@ -15,6 +15,10 @@ import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -129,12 +133,27 @@ public class BookingController {
     }
 
     /**
-     * Retrieves bookings for a specific date for staff/admin overview (UC-09).
+     * Retrieves bookings for staff/admin overview with pagination, sorting, and filtering (UC-09).
+     * Supports ?page=0&size=10&sort=startDateTime,desc (or sort=totalPrice,asc, etc.)
+     * and optional filters ?date=2026-10-09, ?status=CONFIRMED, ?search=keyword
      */
     @GetMapping("/admin/bookings")
-    public ResponseEntity<ApiResponse<List<BookingResponseDTO>>> getAdminBookings(
+    public ResponseEntity<ApiResponse<Page<BookingResponseDTO>>> getAdminBookings(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) BookingStatus status,
+            @RequestParam(required = false) String search,
+            @PageableDefault(page = 0, size = 10, sort = "startDateTime", direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<BookingResponseDTO> bookings = bookingService.getAdminBookings(date, status, search, pageable);
+        return ResponseEntity.ok(ApiResponse.success("ดึงรายการจองสำหรับผู้ดูแลสำเร็จ (แบ่งหน้าและจัดเรียง)", bookings));
+    }
+
+    /**
+     * Retrieves unpaged daily bookings for quick front-desk schedule view (UC-09).
+     */
+    @GetMapping("/admin/bookings/daily")
+    public ResponseEntity<ApiResponse<List<BookingResponseDTO>>> getDailyBookings(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         List<BookingResponseDTO> bookings = bookingService.getAdminBookings(date);
-        return ResponseEntity.ok(ApiResponse.success("ดึงรายการจองสำหรับผู้ดูแลสำเร็จ", bookings));
+        return ResponseEntity.ok(ApiResponse.success("ดึงรายการจองประจำวันสำเร็จ", bookings));
     }
 }

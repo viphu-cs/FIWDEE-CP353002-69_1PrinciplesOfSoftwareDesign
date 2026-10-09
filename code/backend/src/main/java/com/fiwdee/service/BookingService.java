@@ -8,6 +8,8 @@ import com.fiwdee.dto.response.BookingResponseDTO;
 import com.fiwdee.dto.response.MyBookingResponseDTO;
 import java.time.LocalDate;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 /**
  * Service managing the core booking lifecycle, creation, cancellation, and retrieval.
@@ -43,4 +45,10 @@ public interface BookingService {
      * Retrieves all bookings for a given date for front-desk and administration (UC-09).
      */
     List<BookingResponseDTO> getAdminBookings(LocalDate date);
+
+    /**
+     * Retrieves paginated and sorted bookings with optional date, status, and keyword search filters (UC-09).
+     */
+    Page<BookingResponseDTO> getAdminBookings(
+            LocalDate date, BookingStatus status, String search, Pageable pageable);
 }

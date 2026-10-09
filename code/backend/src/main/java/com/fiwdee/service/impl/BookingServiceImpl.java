@@ -332,6 +332,19 @@ public class BookingServiceImpl implements BookingService {
         return bookingMapper.toBookingResponses(bookings);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<BookingResponseDTO> getAdminBookings(
+            LocalDate date, BookingStatus status, String search, org.springframework.data.domain.Pageable pageable) {
+        LocalDateTime startOfDay = (date != null) ? date.atStartOfDay() : null;
+        LocalDateTime endOfDay = (date != null) ? date.atTime(LocalTime.MAX) : null;
+        String trimmedSearch = (search != null && !search.isBlank()) ? search.trim() : null;
+
+        org.springframework.data.domain.Page<Booking> page =
+                bookingRepository.findAdminBookings(startOfDay, endOfDay, status, trimmedSearch, pageable);
+        return page.map(bookingMapper::toBookingResponse);
+    }
+
     private String generateBookingReferenceCode() {
         String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String randomPart = UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();
