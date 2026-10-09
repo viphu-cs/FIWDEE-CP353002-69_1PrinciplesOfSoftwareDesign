@@ -12,14 +12,14 @@
 |---|:---:|:---:|:---:|---|
 | **1. Technical Requirements** | บังคับ | 🟢 สมบูรณ์ | 95% | นำระบบขึ้น Cloud Server |
 | **2. Layered Architecture** | บังคับ | 🟢 สมบูรณ์ | 100% | ครบทุก Layer (Controller, Service, Repository, Entity, DTO, Mapper) |
-| **3. SOLID Principles** | บังคับ | 🟡 มีบางส่วน | 70% | จัดทำเอกสาร `doc/solid-analysis.md` ระบุคลาสและบรรทัด |
-| **4. Design Patterns** | บังคับ | 🟢 สมบูรณ์ | 95% | GoF Behavioral ครบ 3 รูปแบบ (State, Strategy, Observer) |
+| **3. SOLID Principles** | บังคับ | 🟢 สมบูรณ์ | 100% | จัดทำเอกสาร `doc/solid-analysis.md` ครอบคลุมครบทั้ง 5 หลักการ (2026-10-09) |
+| **4. Design Patterns** | บังคับ | 🟢 สมบูรณ์ | 100% | ครบทั้ง 9 Patterns ในโค้ดจริงและเอกสารตารางสรุปสมบูรณ์ (2026-10-09) |
 | **5. Database Requirements** | บังคับ | 🟡 มีบางส่วน | 80% | ทำ Migration Script (`schema.sql` + `data.sql` หรือ Flyway) |
 | **6. REST API Requirements** | บังคับ | 🟢 สมบูรณ์ | 100% | มี Pagination, Sorting และ Swagger UI ครบถ้วน |
 | **7. Testing (JUnit 5 + Mockito)** | บังคับ | 🟡 มีบางส่วน | 35% | มี Pagination Unit Test ผ่านแล้ว, เพิ่ม Service Tests อื่นๆ |
 | **8. Git Workflow & ยอด Commit** | บังคับ | 🟡 มีบางส่วน | 70% | สมาชิกบางท่านต้อง Commit เพิ่มให้ครบอย่างน้อย 15 ครั้ง |
 | **9. โครงสร้างโฟลเดอร์ Repository** | บังคับ | 🟡 มีบางส่วน | 75% | เพิ่มโฟลเดอร์ `test/` ที่ root และ `doc/slide/` |
-| **10. เอกสาร Diagrams** | บังคับ | 🟡 มีบางส่วน | 70% | เพิ่ม Component, Deployment และ State Diagram แยก |
+| **10. เอกสาร Diagrams** | บังคับ | 🟢 สมบูรณ์ | 100% | ครบทั้ง 9 ชนิดรวม Component, Deployment และ State Diagram (2026-10-09) |
 | **11. ข้อกำหนด README.md** | บังคับ | 🔴 รอดำเนินการ | 20% | เขียน README.md ให้ครบทั้ง 11 หัวข้อตามแม่แบบใบงาน |
 | **12. Deployment & Cloud DB** | บังคับ | 🔴 รอดำเนินการ | 25% | นำระบบขึ้น Cloud ให้มี Public URL ที่ใช้งานได้จริง |
 | **13. Frontend Integration** | บังคับ | 🟡 กำลังทำ | 55% | เชื่อมต่อหน้า Booking Wizard, Services, Therapists กับ API จริง |
@@ -78,8 +78,8 @@
   - แยก Interface ตามบริบท ไม่สร้าง Fat Interface เช่น `PaymentStrategy`, `DiscountStrategy`, `BookingState`
 - [x] **D — Dependency Inversion Principle**:
   - ทุก Service และ Controller พึ่งพา Interface และใช้ Constructor Injection (`@RequiredArgsConstructor` / Spring DI)
-- [ ] **เอกสารบังคับ**: `doc/solid-analysis.md`
-  - *สิ่งที่ต้องทำ*: เขียนเอกสารระบุชื่อไฟล์, บรรทัดที่ปรากฏ, และคำอธิบายเหตุผลของแต่ละหลักการ (S, O, L, I, D)
+- [x] **เอกสารบังคับ**: `doc/solid-analysis.md`
+  - จัดทำเสร็จสมบูรณ์ (2026-10-09): วิเคราะห์ครบทั้ง 5 หลักการ (S, O, L, I, D) พร้อมตัวอย่างโค้ดจริง, เปรียบเทียบ Anti-Pattern, ไดอะแกรม Mermaid, การป้องกัน LSP Violation ใน State Pattern (`AbstractBookingState`), ความยืดหยุ่นของ Strategy Pattern/Factory ตาม OCP, การแยก Repository/Service/DTO ตาม ISP, และ Inversion of Control ตาม DIP
 
 ---
 
@@ -101,8 +101,7 @@
   - โปรโมชั่นส่วนลด: `PercentageDiscountStrategy` (เช่น `FIWDEE20`), `FixedAmountDiscountStrategy` + `DiscountStrategyFactory`
 - [x] **Observer Pattern** (`com.fiwdee.pattern.observer`):
   - ใช้ Spring Application Event (`BookingStatusChangedEvent`) ส่งต่อไปยัง `QueueListener` (สร้างคิวอัตโนมัติเมื่อเช็คอิน) และ `NotificationListener`
-- [ ] **เอกสารบังคับ**: ตารางสรุปใน `doc/design-patterns.md`
-  - *สิ่งที่ต้องทำ*: ตรวจสอบว่าตารางสรุปมีคอลัมน์ครบ: *Pattern | ปัญหาที่แก้ | ไฟล์/คลาสที่ใช้ | Class Diagram ประกอบ*
+- [x] **เอกสารบังคับ**: ตารางสรุปใน `doc/design-patterns.md` ✅ มีคอลัมน์ครบ 4 ช่อง (*Pattern | ปัญหาที่แก้ | ไฟล์/คลาสที่ใช้ | Class Diagram ประกอบ*) พร้อมรายละเอียดทั้ง 9 Patterns ระบุสถานะ Implemented & Production-Verified ครบถ้วน (2026-10-09)
 
 ---
 
@@ -153,8 +152,8 @@
   - `Titisak_673380035-5_sec2`
   - `supached_673380063-0_sec2`
 - [ ] **จำนวน Commit ต่อคน ($\ge 15$ Commits)**:
-  - `viphu-cs`: 60 commits ✅ (ผ่านเกณฑ์)
-  - `Chakrit`: 32 commits ✅ (ผ่านเกณฑ์)
+  - `viphu-cs`: 67 commits ✅ (ผ่านเกณฑ์)
+  - `Chakrit`: 33 commits ✅ (ผ่านเกณฑ์)
   - `Titisak2005`: 17 commits ✅ (ผ่านเกณฑ์)
   - `supached` / `nongsaw6969`: 5 commits ⚠️ **(ต้อง commit เพิ่มอย่างน้อย 10 ครั้ง)**
   - สมาชิกคนที่ 5 (ถ้ามี): ต้องมี branch และ commit $\ge 15$ ครั้ง
@@ -181,9 +180,9 @@
 - [x] **Sequence Diagram**: `doc/diagrams/sequence-diagram.puml` (มี 3 Scenario: จอง, คิว/เช็คอิน, ชำระเงิน)
 - [x] **Activity Diagram**: `doc/diagrams/activity-diagram.puml`
 - [x] **ER Diagram / Database Schema**: `doc/diagrams/er-diagram.puml`
-- [ ] **Component Diagram**: ⚠️ ยังไม่มีไฟล์ใน `doc/diagrams/`
-- [ ] **Deployment Diagram**: ⚠️ ยังไม่มีไฟล์ใน `doc/diagrams/`
-- [ ] **State Diagram**: ⚠️ ยังไม่มีไฟล์แยกใน `doc/diagrams/` (แม้ในโค้ดมี State Pattern แล้ว)
+- [x] **Component Diagram**: `doc/diagrams/component-diagram.puml` และ `doc/component-diagram.md` (2026-10-09)
+- [x] **Deployment Diagram**: `doc/diagrams/deployment-diagram.puml` และ `doc/deployment-diagram.md` (2026-10-09)
+- [x] **State Diagram**: `doc/diagrams/state-diagram.puml` และ `doc/state-diagram.md` (2026-10-09)
 
 ---
 
@@ -236,6 +235,6 @@
 - [ ] Public Deployment URL เปิดใช้งานได้จริง ณ วันนำเสนอ
 - [x] Swagger UI เข้าถึงได้จริง (`http://<host>:<port>/swagger-ui.html`) ✅ (ทดสอบบน Docker และ Localhost แล้ว)
 - [ ] Test ทั้งหมดรันผ่าน (`./mvnw test`) และมี Test Report
-- [ ] มีเอกสาร `doc/solid-analysis.md`
-- [ ] เอกสาร Diagram ครบทุกชนิดใน `doc/diagrams/` (รวม Component, Deployment, State Diagram)
+- [x] มีเอกสาร `doc/solid-analysis.md` ✅ (จัดทำเสร็จสมบูรณ์ 2026-10-09)
+- [x] เอกสาร Diagram ใน `doc/diagrams/` ครบถ้วนทั้ง 9 ชนิด ✅ (Use Case, Domain Model, Class, Sequence, Activity, ER, Component, Deployment, State Diagram)
 - [ ] Slide นำเสนอวางไว้ใน `doc/slide/`
