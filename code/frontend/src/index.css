@@ -523,6 +523,28 @@ select:focus-visible {
   background: var(--admin-surface-subtle);
 }
 
+/* Keep operational screens comfortable on narrow touch devices without
+   changing their data layout or interaction model. */
+.admin-theme main,
+.admin-theme .overflow-x-auto {
+  min-width: 0;
+}
+
+.admin-theme .overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-color: var(--admin-border) transparent;
+}
+
+@media (max-width: 639px) {
+  .admin-theme :is(button, input, select) {
+    min-height: 2.5rem;
+  }
+
+  .admin-theme .admin-table-row:hover {
+    background: transparent;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .admin-theme .admin-table-row {
     transition: none;

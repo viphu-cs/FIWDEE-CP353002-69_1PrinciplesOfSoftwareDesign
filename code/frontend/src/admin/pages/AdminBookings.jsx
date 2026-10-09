@@ -78,7 +78,7 @@ export default function AdminBookings() {
       {/* Table Section */}
       <div className="bg-surface rounded-2xl border border-outline-variant shadow-[var(--admin-shadow-sm)] overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full min-w-[960px] text-left border-collapse">
             <thead>
               <tr className="bg-teak-deep text-warm-ivory text-xs uppercase tracking-wider font-semibold border-b border-teak-dark">
                 <th className="py-3.5 px-4">รหัสการจอง / คิว</th>

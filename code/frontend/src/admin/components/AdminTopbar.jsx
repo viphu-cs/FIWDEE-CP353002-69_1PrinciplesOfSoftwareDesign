@@ -42,7 +42,7 @@ export default function AdminTopbar({ currentRoute, onNavigate, onOpenWalkInModa
         </div>
 
         {/* Right side: Customer Link + Language Switcher + User Profile + Hamburger (Right side) */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex min-w-0 items-center gap-1 sm:gap-3">
           {/* Button to go to Customer Portal */}
           <button
             type="button"
@@ -94,7 +94,7 @@ export default function AdminTopbar({ currentRoute, onNavigate, onOpenWalkInModa
           </button>
 
           {/* User Profile Info (No profile picture frame/ring) */}
-          <div className="relative">
+          <div className="relative hidden min-[420px]:block">
             <button
               onClick={() => setShowUserDropdown(!showUserDropdown)}
               type="button"

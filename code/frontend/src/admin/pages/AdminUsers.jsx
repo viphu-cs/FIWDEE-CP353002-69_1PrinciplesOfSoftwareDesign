@@ -209,7 +209,7 @@ export default function AdminUsers() {
           </h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full min-w-[760px] text-left">
             <thead>
               <tr className="text-[11px] uppercase tracking-wider text-charcoal-muted bg-surface-container-low border-b border-outline-variant/80">
                 <th className="px-5 py-3 font-semibold">ผู้ใช้</th>
