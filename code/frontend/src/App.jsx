@@ -117,11 +117,25 @@ function getInitialNavigation() {
     return { page: 'login', adminRoute: 'dashboard', therapistId: 1 }
   }
   if (hash.startsWith('#booking') || hash.startsWith('#book-flow')) {
+    let bookingTherapistId = null
+    const queryIdx = hash.indexOf('?')
+    if (queryIdx !== -1) {
+      const search = new URLSearchParams(hash.substring(queryIdx))
+      bookingTherapistId = search.get('therapistId')
+    }
+    const pendingTherapistId = sessionStorage.getItem('fiwdee_pending_therapist_id')
+    if (!bookingTherapistId && pendingTherapistId) {
+      bookingTherapistId = pendingTherapistId
+    }
+
     // เข้าถึงหน้าจองคิวได้เฉพาะเมื่อล็อกอินแล้ว ไม่งั้นพาไปหน้าล็อกอิน
     if (isCustomerLoggedIn()) {
-      return { page: 'booking', adminRoute: 'dashboard', therapistId: 1 }
+      return { page: 'booking', adminRoute: 'dashboard', therapistId: 1, bookingTherapistId }
     }
     sessionStorage.setItem('fiwdee_pending_redirect', 'booking')
+    if (bookingTherapistId) {
+      sessionStorage.setItem('fiwdee_pending_therapist_id', String(bookingTherapistId))
+    }
     return { page: 'login', adminRoute: 'dashboard', therapistId: 1 }
   }
   if (hash.startsWith('#login')) {
@@ -193,14 +207,26 @@ export default function App() {
       // CTA จองคิว / โปรไฟล์ / ประวัติการจอง: เช็กสถานะล็อกอินก่อน — ถ้ายังไม่ล็อกอิน
       // พาไปหน้าล็อกอินพร้อมแนบ redirect กลับมาหน้าเดิมหลังล็อกอินสำเร็จ
       const destination = BOOKING_NAV_KEYS.includes(targetKey) ? 'booking' : targetKey
+      const bTherapistId = params?.therapistId || null
       if (!isCustomerLoggedIn()) {
         sessionStorage.setItem('fiwdee_pending_redirect', destination)
+        if (bTherapistId) {
+          sessionStorage.setItem('fiwdee_pending_therapist_id', String(bTherapistId))
+        } else {
+          sessionStorage.removeItem('fiwdee_pending_therapist_id')
+        }
         setNavState({ page: 'login', adminRoute: 'dashboard', therapistId: 1 })
         window.history.pushState(null, '', '#login')
         window.scrollTo({ top: 0, behavior: 'smooth' })
       } else {
-        setNavState({ page: destination, adminRoute: 'dashboard', therapistId: 1 })
-        window.history.pushState(null, '', `#${destination}`)
+        setNavState({
+          page: destination,
+          adminRoute: 'dashboard',
+          therapistId: 1,
+          bookingTherapistId: bTherapistId,
+        })
+        const queryStr = bTherapistId ? `?therapistId=${bTherapistId}` : ''
+        window.history.pushState(null, '', `#${destination}${queryStr}`)
         window.scrollTo({ top: 0, behavior: 'smooth' })
       }
     } else if (targetKey === 'login') {
@@ -314,7 +340,10 @@ export default function App() {
             ) : currentPage === 'about' ? (
               <AboutPage onNavigate={handleNavigate} />
             ) : currentPage === 'booking' ? (
-              <BookingPage onNavigate={handleNavigate} />
+              <BookingPage
+                onNavigate={handleNavigate}
+                initialTherapistId={navState.bookingTherapistId}
+              />
             ) : currentPage === 'profile' ? (
               <CustomerProfilePage onNavigate={handleNavigate} />
             ) : currentPage === 'my-bookings' ? (

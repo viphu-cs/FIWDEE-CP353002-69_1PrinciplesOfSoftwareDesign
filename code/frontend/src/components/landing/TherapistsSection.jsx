@@ -71,7 +71,7 @@ export default function TherapistsSection({ onNavigate }) {
         </FadeIn>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
-          {displayTherapists.map((therapist, index) => (
+          {displayTherapists.slice(0, 3).map((therapist, index) => (
             <FadeIn key={therapist.id} delay={0.12 + index * 0.14} variant="up">
               <article
                 className="card-highlight group cursor-pointer bg-linen-surface rounded-xl overflow-hidden"
@@ -103,7 +103,7 @@ export default function TherapistsSection({ onNavigate }) {
                       {t('therapists.experience', { n: therapist.experienceYears })}
                     </p>
                   </div>
-                  <div className="pt-space-md mt-space-sm flex items-center justify-between">
+                  <div className="pt-space-md mt-space-sm flex items-center justify-between border-t border-sand-warm/30">
                     {/* 🎬 ลิงก์: เส้นใต้วาดจากซ้ายเมื่อ hover */}
                     <button
                       type="button"
@@ -113,6 +113,27 @@ export default function TherapistsSection({ onNavigate }) {
                       className="link-underline font-label-lg text-label-lg text-primary transition-colors duration-200 hover:text-secondary cursor-pointer"
                     >
                       {t('therapists.profile')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onNavigate?.('booking', { therapistId: therapist.id })
+                      }
+                      className="btn-lift inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-primary text-warm-ivory font-label-md text-label-md tracking-wider hover:bg-teak-deep transition-all duration-200 cursor-pointer shadow-sm"
+                    >
+                      <span>{t('therapists.bookNow')}</span>
+                      <svg
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                      </svg>
                     </button>
                   </div>
                 </div>

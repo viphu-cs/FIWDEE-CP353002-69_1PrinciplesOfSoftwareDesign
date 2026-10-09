@@ -25,7 +25,7 @@ const EASE_ENTER = [0.22, 1, 0.36, 1]
  * - OCP: วิธีชำระเงินรองรับการเพิ่มตัวเลือกใหม่ผ่าน Payment Strategies
  * - DIP: ดึงข้อมูลผ่าน bookingService abstraction layer
  */
-export default function BookingPage({ onNavigate, initialStep = 1 }) {
+export default function BookingPage({ onNavigate, initialStep = 1, initialTherapistId = null }) {
   const [step, setStep] = useState(initialStep)
 
   // Dataset states loaded asynchronously from backend with instant fallback
@@ -34,7 +34,22 @@ export default function BookingPage({ onNavigate, initialStep = 1 }) {
   const [dateList, setDateList] = useState(initialDateOptions)
   const [slotsList, setSlotsList] = useState(initialTimeSlots)
 
-  const [selectedTherapist, setSelectedTherapist] = useState(initialTherapists[0])
+  const initialMatchedTherapist = initialTherapistId
+    ? initialTherapists.find(
+        (t) =>
+          String(t.id) === String(initialTherapistId) ||
+          String(t.backendId) === String(initialTherapistId)
+      )
+    : null
+  const anyTherapist =
+    initialTherapists.find((t) => t.id === 'any') || initialTherapists[0]
+
+  const [selectedTherapist, setSelectedTherapist] = useState(
+    initialMatchedTherapist || anyTherapist
+  )
+  const [isDirectTherapistBooking, setIsDirectTherapistBooking] = useState(
+    Boolean(initialMatchedTherapist)
+  )
   const [selectedService, setSelectedService] = useState(initialServices[0])
   const [selectedDuration, setSelectedDuration] = useState(
     initialServices[0]?.durationOptions?.[1] || initialServices[0]?.durationOptions?.[0]
@@ -72,9 +87,21 @@ export default function BookingPage({ onNavigate, initialStep = 1 }) {
     bookingService.getTherapists().then((thps) => {
       if (isMounted && Array.isArray(thps) && thps.length > 0) {
         setTherapistsList(thps)
-        const matchThp = thps.find((t) => t.id === selectedTherapist.id)
-        if (matchThp) {
-          setSelectedTherapist(matchThp)
+        if (initialTherapistId) {
+          const matchThp = thps.find(
+            (t) =>
+              String(t.id) === String(initialTherapistId) ||
+              String(t.backendId) === String(initialTherapistId)
+          )
+          if (matchThp) {
+            setSelectedTherapist(matchThp)
+            setIsDirectTherapistBooking(true)
+          }
+        } else {
+          const matchThp = thps.find((t) => t.id === selectedTherapist.id)
+          if (matchThp) {
+            setSelectedTherapist(matchThp)
+          }
         }
       }
     })
@@ -263,6 +290,8 @@ export default function BookingPage({ onNavigate, initialStep = 1 }) {
                   services={servicesList}
                   selectedTherapist={selectedTherapist}
                   setSelectedTherapist={setSelectedTherapist}
+                  isDirectTherapistBooking={isDirectTherapistBooking}
+                  setIsDirectTherapistBooking={setIsDirectTherapistBooking}
                   selectedService={selectedService}
                   selectedDuration={selectedDuration}
                   handleSelectService={handleSelectService}

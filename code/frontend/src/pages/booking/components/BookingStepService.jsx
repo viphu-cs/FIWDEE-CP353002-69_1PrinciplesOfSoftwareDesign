@@ -1,4 +1,5 @@
-import React, { useRef } from 'react'
+import React, { useRef, useState } from 'react'
+import { useLanguage } from '../../../i18n/useLanguage.js'
 
 /**
  * BookingStepService - ขั้นตอนที่ 1: เลือกหมอนวดและบริการบำบัด (SRP: จัดการเฉพาะ Step 1 UI)
@@ -8,6 +9,8 @@ export default function BookingStepService({
   services,
   selectedTherapist,
   setSelectedTherapist,
+  isDirectTherapistBooking,
+  setIsDirectTherapistBooking,
   selectedService,
   selectedDuration,
   handleSelectService,
@@ -15,7 +18,15 @@ export default function BookingStepService({
   activeService,
   onNext,
 }) {
+  const { t } = useLanguage()
   const carouselRef = useRef(null)
+  const [showChangeList, setShowChangeList] = useState(false)
+
+  const isFeaturedMode =
+    isDirectTherapistBooking &&
+    !showChangeList &&
+    selectedTherapist &&
+    !selectedTherapist.isConcierge
 
   return (
     <>
@@ -38,154 +49,272 @@ export default function BookingStepService({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-lg lg:gap-gutter-desktop items-start">
             {/* Left: 8 Cols */}
             <div className="lg:col-span-8 flex flex-col gap-space-xl">
-              {/* Section 1.1: Therapist Carousel */}
-              <div className="space-y-space-md">
-                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-label-caps text-label-caps uppercase tracking-widest text-primary font-semibold">
-                        ขั้นตอน 1.1 • Master Therapists Roster
+              {/* Section 1.1: Featured Large Therapist Profile OR Selection Roster */}
+              {isFeaturedMode ? (
+                <div className="space-y-space-md">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div>
+                      <span className="font-label-caps text-label-caps uppercase tracking-widest text-secondary font-semibold">
+                        {t('bookingWizard.featuredTherapist')}
                       </span>
-                      <span className="w-1 h-1 rounded-full bg-outline-variant"></span>
-                      <span className="font-body-sm text-body-sm text-secondary">
-                        เลือกผู้บำบัดประจำตัว
-                      </span>
+                      <h2 className="font-headline-md text-headline-md text-on-surface mt-0.5">
+                        {selectedTherapist.name}
+                      </h2>
                     </div>
-                    <h2 className="font-headline-md text-headline-md text-on-surface">
-                      เลือกหมอนวดผู้เชี่ยวชาญ
-                    </h2>
-                    <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
-                      สัมผัสศาสตร์หัตถการเฉพาะตัว ผ่านผู้เชี่ยวชาญที่ผ่านการรับรองมาตรฐานสากล
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
                     <button
-                      className="w-9 h-9 rounded-full border border-outline-variant/50 bg-surface flex items-center justify-center text-on-surface hover:bg-secondary-container transition-colors shadow-sm cursor-pointer"
-                      onClick={() => carouselRef.current?.scrollBy({ left: -320, behavior: 'smooth' })}
-                      title="ก่อนหน้า"
                       type="button"
+                      onClick={() => setShowChangeList(true)}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded border border-primary/30 text-primary hover:bg-secondary-container transition-colors font-label-md text-label-md uppercase tracking-wider cursor-pointer"
                     >
-                      <span className="material-symbols-outlined text-[20px]">chevron_left</span>
-                    </button>
-                    <button
-                      className="w-9 h-9 rounded-full border border-outline-variant/50 bg-surface flex items-center justify-center text-on-surface hover:bg-secondary-container transition-colors shadow-sm cursor-pointer"
-                      onClick={() => carouselRef.current?.scrollBy({ left: 320, behavior: 'smooth' })}
-                      title="ถัดไป"
-                      type="button"
-                    >
-                      <span className="material-symbols-outlined text-[20px]">chevron_right</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Carousel Cards */}
-                <div
-                  ref={carouselRef}
-                  className="flex gap-space-md overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scroll-smooth no-scrollbar"
-                >
-                  {therapists.map((therapist) => {
-                    const isSelected = selectedTherapist.id === therapist.id
-                    return (
-                      <div
-                        key={therapist.id}
-                        onClick={() => setSelectedTherapist(therapist)}
-                        className={`snap-start flex-shrink-0 w-[290px] sm:w-[310px] rounded-lg overflow-hidden bg-surface-container-low transition-all duration-300 cursor-pointer flex flex-col justify-between group relative ${
-                          isSelected
-                            ? 'border-2 border-primary shadow-sm ring-1 ring-primary/20'
-                            : 'border border-outline-variant/40 shadow-sm hover:border-primary/50 hover:shadow-md'
-                        }`}
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                       >
-                        {/* Selection Badge */}
-                        {isSelected && (
-                          <div className="absolute top-3 right-3 z-10 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary text-surface font-label-caps text-label-caps tracking-wider font-semibold shadow-sm">
-                            <span className="material-symbols-outlined text-[14px]">check</span>
-                            <span>เลือกแล้ว</span>
-                          </div>
-                        )}
+                        <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" />
+                      </svg>
+                      <span>{t('bookingWizard.changeTherapist')}</span>
+                    </button>
+                  </div>
 
-                        {/* Media / Concierge representation */}
-                        {therapist.isConcierge ? (
-                          <div className="relative h-[280px] w-full bg-secondary-fixed flex flex-col items-center justify-center p-6 text-center group-hover:bg-secondary-container transition-colors duration-300">
-                            <div className="w-16 h-16 rounded-full bg-surface flex items-center justify-center shadow-sm text-primary mb-3">
-                              <span className="font-headline-md text-headline-md font-normal">F</span>
-                            </div>
-                            <span className="font-label-caps text-label-caps uppercase tracking-widest text-secondary">
-                              Retreat Concierge Choice
+                  {/* Featured Large Therapist Profile Card */}
+                  <div className="bg-linen-surface rounded-xl overflow-hidden border border-sand-warm/50 p-space-md sm:p-space-lg shadow-sm">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-space-lg items-center">
+                      {/* Left: Large Portrait Photo */}
+                      <div className="md:col-span-5 flex justify-center">
+                        <div className="relative w-full max-w-[260px] aspect-[3/4] rounded-lg overflow-hidden bg-sand-warm shadow-sm">
+                          <img
+                            src={selectedTherapist.image || selectedTherapist.avatar}
+                            alt={selectedTherapist.name}
+                            className="w-full h-full object-cover object-top"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-primary/70 via-transparent to-transparent pointer-events-none" />
+                          <div className="absolute bottom-3 left-3 right-3 text-warm-ivory">
+                            <span className="font-label-caps text-label-caps uppercase tracking-wider opacity-90 block">
+                              {selectedTherapist.exp}
                             </span>
-                            <h3 className="font-headline-sm text-headline-sm text-on-surface mt-1">
-                              {therapist.shortName}
-                            </h3>
-                            <p className="font-body-sm text-body-sm text-secondary mt-1 max-w-[200px]">
-                              {therapist.exp}
+                            <p className="font-title-md text-title-md font-medium">
+                              {selectedTherapist.shortName || selectedTherapist.name}
                             </p>
                           </div>
-                        ) : (
-                          <div className="relative h-[280px] w-full overflow-hidden bg-surface-container">
-                            <img
-                              alt={therapist.name}
-                              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                              src={therapist.image}
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-on-surface/90 via-on-surface/20 to-transparent"></div>
-                            <div className="absolute bottom-3 left-4 right-4 text-surface">
-                              <span className="font-label-caps text-label-caps uppercase tracking-widest text-primary-fixed">
-                                {therapist.exp}
-                              </span>
-                              <h3 className="font-headline-sm text-headline-sm text-surface font-medium mt-0.5">
-                                {therapist.name}
-                              </h3>
-                            </div>
-                          </div>
-                        )}
+                        </div>
+                      </div>
 
-                        {/* Bio & Attributes */}
-                        <div className="p-4 flex flex-col justify-between flex-1 space-y-3 bg-surface-container-low">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              {therapist.badges.map((b, i) => (
+                      {/* Right: Narrative, Expertise, Technique Details */}
+                      <div className="md:col-span-7 space-y-space-md">
+                        <div>
+                          <p className="font-body-md text-body-md text-primary font-medium">
+                            {selectedTherapist.role}
+                          </p>
+                          <p className="font-body-sm text-body-sm text-charcoal-soft leading-relaxed mt-2">
+                            {selectedTherapist.bio}
+                          </p>
+                        </div>
+
+                        {selectedTherapist.badges && selectedTherapist.badges.length > 0 && (
+                          <div className="space-y-1.5">
+                            <span className="font-label-caps text-label-caps uppercase text-secondary tracking-wider block">
+                              ความเชี่ยวชาญพิเศษ
+                            </span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {selectedTherapist.badges.map((b, i) => (
                                 <span
                                   key={i}
-                                  className={`font-label-caps text-label-caps px-2 py-0.5 rounded ${
-                                    i === 0
-                                      ? 'bg-secondary-container text-on-secondary-container font-semibold'
-                                      : 'bg-surface text-secondary border border-outline-variant/30'
-                                  }`}
+                                  className="font-label-caps text-label-caps px-2.5 py-1 rounded bg-surface text-charcoal-soft border border-sand-warm/50"
                                 >
                                   {b}
                                 </span>
                               ))}
                             </div>
-                            <p className="font-body-sm text-body-sm text-on-surface-variant line-clamp-2 leading-relaxed">
-                              {therapist.bio}
-                            </p>
                           </div>
+                        )}
 
-                          <div className="pt-2 border-t border-outline-variant/30 space-y-1.5">
-                            <div className="flex items-center justify-between text-secondary">
-                              <span className="font-label-caps text-label-caps uppercase tracking-wider text-secondary">
-                                {therapist.isConcierge ? 'การจัดสรร' : 'น้ำหนักมือ'}
-                              </span>
-                              <span className="font-label-md text-label-md text-primary font-medium">
-                                {therapist.handWeight}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between text-secondary">
-                              <span className="font-label-caps text-label-caps uppercase tracking-wider text-secondary">
-                                {therapist.isConcierge ? 'ความพร้อม' : 'สถานะ'}
-                              </span>
-                              <span className="font-body-sm text-body-sm text-tertiary flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-tertiary inline-block"></span>
-                                {therapist.isConcierge ? 'คิวว่างดีที่สุด' : 'พร้อมให้บริการ'}
-                              </span>
-                            </div>
+                        <div className="pt-2 border-t border-sand-warm/30 grid grid-cols-2 gap-3">
+                          <div>
+                            <span className="font-label-caps text-label-caps uppercase text-secondary block">
+                              น้ำหนักมือ
+                            </span>
+                            <span className="font-body-md text-body-md text-primary font-medium">
+                              {selectedTherapist.handWeight || 'ปรับตามสรีระบุคคล'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="font-label-caps text-label-caps uppercase text-secondary block">
+                              สถานะ
+                            </span>
+                            <span className="font-body-sm text-body-sm text-tertiary flex items-center gap-1.5 mt-0.5">
+                              <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block"></span>
+                              <span>พร้อมให้บริการตามเวลาที่คุณเลือก</span>
+                            </span>
                           </div>
                         </div>
                       </div>
-                    )
-                  })}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-space-md">
+                  <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-label-caps text-label-caps uppercase tracking-widest text-primary font-semibold">
+                          ขั้นตอน 1.1 • Master Therapists Roster
+                        </span>
+                        <span className="w-1 h-1 rounded-full bg-outline-variant"></span>
+                        <span className="font-body-sm text-body-sm text-secondary">
+                          เลือกผู้บำบัดประจำตัว
+                        </span>
+                      </div>
+                      <h2 className="font-headline-md text-headline-md text-on-surface">
+                        เลือกหมอนวดผู้เชี่ยวชาญ
+                      </h2>
+                      <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                        สัมผัสศาสตร์หัตถการเฉพาะตัว ผ่านผู้เชี่ยวชาญที่ผ่านการรับรองมาตรฐานสากล
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {isDirectTherapistBooking && (
+                        <button
+                          type="button"
+                          onClick={() => setShowChangeList(false)}
+                          className="mr-2 text-secondary hover:text-primary font-label-md text-label-md uppercase tracking-wider underline cursor-pointer"
+                        >
+                          {t('bookingWizard.hideTherapistList')}
+                        </button>
+                      )}
+                      <button
+                        className="w-9 h-9 rounded-full border border-outline-variant/50 bg-surface flex items-center justify-center text-on-surface hover:bg-secondary-container transition-colors shadow-sm cursor-pointer"
+                        onClick={() => carouselRef.current?.scrollBy({ left: -320, behavior: 'smooth' })}
+                        title="ก่อนหน้า"
+                        type="button"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+                      </button>
+                      <button
+                        className="w-9 h-9 rounded-full border border-outline-variant/50 bg-surface flex items-center justify-center text-on-surface hover:bg-secondary-container transition-colors shadow-sm cursor-pointer"
+                        onClick={() => carouselRef.current?.scrollBy({ left: 320, behavior: 'smooth' })}
+                        title="ถัดไป"
+                        type="button"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Carousel Cards */}
+                  <div
+                    ref={carouselRef}
+                    className="flex gap-space-md overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scroll-smooth no-scrollbar"
+                  >
+                    {therapists.map((therapist) => {
+                      const isSelected = selectedTherapist.id === therapist.id
+                      return (
+                        <div
+                          key={therapist.id}
+                          onClick={() => {
+                            setSelectedTherapist(therapist)
+                            if (!therapist.isConcierge) {
+                              setIsDirectTherapistBooking?.(true)
+                              setShowChangeList(false)
+                            } else {
+                              setIsDirectTherapistBooking?.(false)
+                            }
+                          }}
+                          className={`snap-start flex-shrink-0 w-[290px] sm:w-[310px] rounded-lg overflow-hidden bg-surface-container-low transition-all duration-300 cursor-pointer flex flex-col justify-between group relative ${
+                            isSelected
+                              ? 'border-2 border-primary shadow-sm ring-1 ring-primary/20'
+                              : 'border border-outline-variant/40 shadow-sm hover:border-primary/50 hover:shadow-md'
+                          }`}
+                        >
+                          {/* Media / Concierge representation */}
+                          {therapist.isConcierge ? (
+                            <div className="relative h-[280px] w-full bg-secondary-fixed flex flex-col items-center justify-center p-6 text-center group-hover:bg-secondary-container transition-colors duration-300">
+                              <div className="w-16 h-16 rounded-full bg-surface flex items-center justify-center shadow-sm text-primary mb-3">
+                                <span className="font-headline-md text-headline-md font-normal">F</span>
+                              </div>
+                              <span className="font-label-caps text-label-caps uppercase tracking-widest text-secondary">
+                                Retreat Concierge Choice
+                              </span>
+                              <h3 className="font-headline-sm text-headline-sm text-on-surface mt-1">
+                                {therapist.shortName}
+                              </h3>
+                              <p className="font-body-sm text-body-sm text-secondary mt-1 max-w-[200px]">
+                                {therapist.exp}
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="relative h-[280px] w-full overflow-hidden bg-surface-container">
+                              <img
+                                alt={therapist.name}
+                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                src={therapist.image}
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-on-surface/90 via-on-surface/20 to-transparent"></div>
+                              <div className="absolute bottom-3 left-4 right-4 text-surface">
+                                <span className="font-label-caps text-label-caps uppercase tracking-widest text-primary-fixed">
+                                  {therapist.exp}
+                                </span>
+                                <h3 className="font-headline-sm text-headline-sm text-surface font-medium mt-0.5">
+                                  {therapist.name}
+                                </h3>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Bio & Attributes */}
+                          <div className="p-4 flex flex-col justify-between flex-1 space-y-3 bg-surface-container-low">
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                {therapist.badges.map((b, i) => (
+                                  <span
+                                    key={i}
+                                    className={`font-label-caps text-label-caps px-2 py-0.5 rounded ${
+                                      i === 0
+                                        ? 'bg-secondary-container text-on-secondary-container font-semibold'
+                                        : 'bg-surface text-secondary border border-outline-variant/30'
+                                    }`}
+                                  >
+                                    {b}
+                                  </span>
+                                ))}
+                              </div>
+                              <p className="font-body-sm text-body-sm text-on-surface-variant line-clamp-2 leading-relaxed">
+                                {therapist.bio}
+                              </p>
+                            </div>
+
+                            <div className="pt-2 border-t border-outline-variant/30 space-y-1.5">
+                              <div className="flex items-center justify-between text-secondary">
+                                <span className="font-label-caps text-label-caps uppercase tracking-wider text-secondary">
+                                  {therapist.isConcierge ? 'การจัดสรร' : 'น้ำหนักมือ'}
+                                </span>
+                                <span className="font-label-md text-label-md text-primary font-medium">
+                                  {therapist.handWeight}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between text-secondary">
+                                <span className="font-label-caps text-label-caps uppercase tracking-wider text-secondary">
+                                  {therapist.isConcierge ? 'ความพร้อม' : 'สถานะ'}
+                                </span>
+                                <span className="font-body-sm text-body-sm text-tertiary flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-tertiary inline-block"></span>
+                                  {therapist.isConcierge ? 'คิวว่างดีที่สุด' : 'พร้อมให้บริการ'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Section 1.2: Treatment Selection */}
               <div className="space-y-space-sm pt-2">

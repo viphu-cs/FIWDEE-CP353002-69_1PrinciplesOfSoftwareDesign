@@ -245,10 +245,7 @@ export default function TherapistsPage({ onNavigate }) {
                       </p>
                     </div>
 
-                    <div className="pt-space-md border-t-0 flex items-center justify-between">
-                      <span className="font-label-md text-label-md tracking-widest text-charcoal-muted uppercase">
-                        {therapist.code}
-                      </span>
+                    <div className="pt-space-md border-t border-sand-warm/30 flex items-center justify-between gap-2">
                       <button
                         type="button"
                         onClick={() =>
@@ -257,6 +254,27 @@ export default function TherapistsPage({ onNavigate }) {
                         className="inline-block font-label-lg text-label-lg text-primary underline underline-offset-8 transition-colors duration-200 hover:text-terracotta-muted cursor-pointer"
                       >
                         {t('therapistsPage.profile')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onNavigate?.('booking', { therapistId: therapist.id })
+                        }
+                        className="btn-lift inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-primary text-warm-ivory font-label-md text-label-md tracking-wider hover:bg-teak-deep transition-all duration-200 cursor-pointer shadow-sm"
+                      >
+                        <span>{t('therapistsPage.bookNow')}</span>
+                        <svg
+                          width="13"
+                          height="13"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
                       </button>
                     </div>
                   </div>

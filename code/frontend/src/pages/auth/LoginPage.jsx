@@ -23,7 +23,13 @@ export default function LoginPage({ onNavigate }) {
   const navigateAfterLogin = (role) => {
     if (pendingRedirect) {
       sessionStorage.removeItem('fiwdee_pending_redirect')
-      onNavigate?.(pendingRedirect)
+      const pendingTherapistId = sessionStorage.getItem('fiwdee_pending_therapist_id')
+      if (pendingTherapistId) {
+        sessionStorage.removeItem('fiwdee_pending_therapist_id')
+        onNavigate?.(pendingRedirect, { therapistId: pendingTherapistId })
+      } else {
+        onNavigate?.(pendingRedirect)
+      }
       return
     }
     if (role === 'THERAPIST') {
