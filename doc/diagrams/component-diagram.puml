@@ -1,0 +1,94 @@
+@startuml component-diagram
+!theme plain
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageBackgroundColor #F8F9FA
+skinparam packageBorderColor #6C757D
+skinparam componentBackgroundColor #E9ECEF
+skinparam componentBorderColor #495057
+
+title FIWDEE Massage Management & Booking System - UML Component Diagram
+
+package "1. Presentation Subsystem (React 19 Frontend)" {
+    [Customer Web Portal] as CustUI
+    [Staff Back-Office Portal] as StaffUI
+    [API Client & State Store] as ApiClient
+
+    CustUI ..> ApiClient : uses
+    StaffUI ..> ApiClient : uses
+}
+
+package "2. Gateway & Security Subsystem" {
+    [Nginx Reverse Proxy / Web Server] as Nginx
+    [Spring Security & JWT Filter] as SecurityGateway
+
+    ApiClient ..> Nginx : HTTP/REST (JSON)
+    Nginx ..> SecurityGateway : proxy /api/*
+}
+
+package "3. Core Business Application Subsystem (Spring Boot)" {
+    package "Presentation Layer (Controllers)" {
+        [AuthController] as AuthCtrl
+        [BookingController] as BookingCtrl
+        [FrontDeskController] as FrontDeskCtrl
+        [TherapistController] as TherapistCtrl
+        [PaymentController] as PaymentCtrl
+        [AdminReportController] as ReportCtrl
+    }
+
+    package "Application Layer (Services)" {
+        [Auth & UserService] as AuthSvc
+        [BookingService (Engine)] as BookingEngine
+        [AvailabilityService (Slot Engine)] as AvailEngine
+        [QueueService] as QueueSvc
+        [TherapistService & Execution] as TherapistSvc
+        [Payment & RefundService] as PaymentSvc
+        [ReportService] as ReportSvc
+    }
+
+    package "Design Pattern Subsystems" {
+        [Booking State Pattern\n(BookingStateFactory, 7 States)] as StateModule
+        [Payment Strategy Engine\n(StrategyFactory, Cash, QR, Card)] as PayStrategyModule
+        [Discount Strategy Engine\n(DiscountFactory, FIWDEE20)] as DiscountModule
+        [Event Observer Subsystem\n(NotificationListener, QueueListener)] as ObserverModule
+    }
+
+    SecurityGateway ..> AuthCtrl
+    SecurityGateway ..> BookingCtrl
+    SecurityGateway ..> FrontDeskCtrl
+    SecurityGateway ..> TherapistCtrl
+    SecurityGateway ..> PaymentCtrl
+    SecurityGateway ..> ReportCtrl
+
+    AuthCtrl ..> AuthSvc
+    BookingCtrl ..> BookingEngine
+    FrontDeskCtrl ..> QueueSvc
+    TherapistCtrl ..> TherapistSvc
+    PaymentCtrl ..> PaymentSvc
+    ReportCtrl ..> ReportSvc
+
+    BookingEngine ..> AvailEngine : calculates slots & buffer
+    BookingEngine ..> StateModule : delegates state transitions
+    BookingEngine ..> ObserverModule : publishes BookingStatusChangedEvent
+    ObserverModule ..> QueueSvc : generates queue item
+    PaymentSvc ..> PayStrategyModule : resolves strategy
+    PaymentSvc ..> DiscountModule : calculates promotion
+}
+
+package "4. Persistence Subsystem (JPA & Database)" {
+    [Spring Data JPA Repositories\n(18 Interfaces)] as Repositories
+    database "PostgreSQL Relational DB\n(18 Tables)" as PostgresDB
+
+    AuthSvc ..> Repositories
+    BookingEngine ..> Repositories
+    AvailEngine ..> Repositories
+    QueueSvc ..> Repositories
+    TherapistSvc ..> Repositories
+    PaymentSvc ..> Repositories
+    ReportSvc ..> Repositories
+
+    Repositories ..> PostgresDB : JDBC / SQL (Port 5432)
+}
+
+@enduml
