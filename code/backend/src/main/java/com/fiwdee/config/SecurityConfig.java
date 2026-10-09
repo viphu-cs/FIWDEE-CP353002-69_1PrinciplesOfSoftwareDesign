@@ -74,8 +74,10 @@ public class SecurityConfig {
                 // Other back-office endpoints: Owner + Receptionist (Therapist self-service rules
                 // are added by their owning modules)
                 .requestMatchers("/api/admin/**").hasAnyRole("OWNER", "RECEPTIONIST")
-                // Payments & Refunds: authenticated staff or customers
+                // Payments & Refunds: staff only for refunds
                 .requestMatchers(HttpMethod.POST, "/api/payments/*/refund").hasAnyRole("OWNER", "RECEPTIONIST")
+                // Staff booking status transition updates
+                .requestMatchers(HttpMethod.PATCH, "/api/bookings/*/status").hasAnyRole("OWNER", "RECEPTIONIST")
                 // Everything else requires a valid token
                 .anyRequest().authenticated());
 
