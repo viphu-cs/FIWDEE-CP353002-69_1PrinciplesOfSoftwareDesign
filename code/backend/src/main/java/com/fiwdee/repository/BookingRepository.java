@@ -25,7 +25,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long>, JpaSpec
     Optional<Booking> findDetailedById(Long id);
 
     /** A customer's bookings newest first, with the relations needed for display. */
-    @EntityGraph(attributePaths = {"service", "therapist", "room", "durationOption"})
+    @EntityGraph(attributePaths = {"service", "therapist", "room", "durationOption", "payment"})
     List<Booking> findDetailedByCustomerIdOrderByStartDateTimeDesc(Long customerId);
 
     List<Booking> findByTherapistIdAndStartDateTimeBetween(
