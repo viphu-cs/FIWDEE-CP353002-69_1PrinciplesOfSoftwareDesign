@@ -177,52 +177,52 @@ export default function AdminDashboard({ onNavigate, onOpenWalkInModal, onOpenAs
       {/* Main Grid: Room Status Grid & Active Queue timeline */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 2 Cols: Real-time Room Status Overview */}
-        <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-stone-200/80 shadow-2xs space-y-4">
+        <div className="lg:col-span-2 bg-surface rounded-2xl p-6 border border-outline-variant/80 shadow-[var(--admin-shadow-sm)] space-y-5">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-headline font-bold text-stone-900 text-lg">
+              <h3 className="font-headline font-bold text-teak-dark text-lg">
                 {lang === 'th' ? 'ผังสถานะห้องนวด (Real-time Room Status)' : 'Real-time Rooms Layout'}
               </h3>
-              <p className="text-xs text-stone-500">
+              <p className="text-xs text-charcoal-muted">
                 {lang === 'th' ? 'คลิกที่ห้องเพื่ออัปเดตสถานะ หรือคลิกไปหน้าจัดการห้องแบบรายละเอียด' : 'Click room card to change status or manage layout'}
               </p>
             </div>
             <button
               onClick={() => onNavigate('rooms')}
-              className="text-xs font-semibold text-amber-900 hover:text-amber-950 hover:underline flex items-center gap-1 cursor-pointer"
+              className="text-xs font-semibold text-secondary hover:text-terracotta-muted link-underline flex items-center gap-1 cursor-pointer"
             >
               <span>{lang === 'th' ? 'ดูรายละเอียดผังห้อง' : 'View All Rooms'}</span>
               <span>→</span>
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {rooms.map((room) => (
               <div
                 key={room.id}
                 onClick={() => onNavigate('rooms')}
-                className={`p-4 rounded-xl border transition-all cursor-pointer hover:shadow-md ${
+                className={`p-4 rounded-xl border transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-[var(--admin-shadow-md)] ${
                   room.status === 'OCCUPIED'
-                    ? 'bg-amber-50/70 border-amber-300 ring-1 ring-amber-300'
+                    ? 'bg-secondary-container/65 border-wood-deep/70 ring-1 ring-wood-deep/35'
                     : room.status === 'AVAILABLE'
-                    ? 'bg-emerald-50/40 border-emerald-200'
+                    ? 'bg-emerald-50/45 border-emerald-200/80'
                     : room.status === 'CLEANING'
-                    ? 'bg-sky-50/40 border-sky-200'
-                    : 'bg-stone-100 border-stone-200'
+                    ? 'bg-tertiary-fixed/35 border-tertiary-fixed-dim/80'
+                    : 'bg-surface-container-low border-outline-variant/80'
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-stone-900 text-sm font-headline">{room.id}</span>
+                  <span className="font-bold text-teak-dark text-sm font-headline">{room.id}</span>
                   <StatusBadge status={room.status} size="sm" />
                 </div>
-                <div className="mt-2 text-xs font-medium text-stone-700">{room.name}</div>
-                <div className="text-[10px] text-stone-500 uppercase">{room.type}</div>
+                <div className="mt-2 text-xs font-medium text-on-surface">{room.name}</div>
+                <div className="text-[10px] text-charcoal-muted uppercase">{room.type}</div>
 
                 {room.status === 'OCCUPIED' && (
-                  <div className="mt-3 pt-2 border-t border-amber-200/60 text-[11px] space-y-0.5 text-stone-800">
+                  <div className="mt-3 pt-2 border-t border-wood-deep/35 text-[11px] space-y-0.5 text-on-surface">
                     <div className="truncate font-semibold">{room.service}</div>
-                    <div className="text-stone-600 truncate">{lang === 'th' ? 'หมอ:' : 'Therapist:'} {room.therapist}</div>
-                    <div className="text-amber-900 font-bold">{room.startTime} - {room.endTime}</div>
+                    <div className="text-on-surface-variant truncate">{lang === 'th' ? 'หมอ:' : 'Therapist:'} {room.therapist}</div>
+                    <div className="text-secondary font-bold">{room.startTime} - {room.endTime}</div>
                   </div>
                 )}
               </div>
