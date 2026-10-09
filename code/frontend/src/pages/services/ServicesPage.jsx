@@ -1,15 +1,58 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLanguage } from '../../i18n/useLanguage.js'
 import FadeIn from '../../components/motion/FadeIn.jsx'
-import { services } from '../../data/mock.js'
+import { services as mockServices } from '../../data/mock.js'
+import api from '../../lib/api.js'
 
 export default function ServicesPage({ onNavigate }) {
   const { t } = useLanguage()
+  const [liveServices, setLiveServices] = useState([])
 
-  const thaiService = services.find((s) => s.id === 1) || { image: '/images/services/service-thai.jpg' }
-  const aromaService = services.find((s) => s.id === 2) || { image: '/images/services/service-aroma.jpg' }
-  const warmOilService = services.find((s) => s.id === 3) || { image: '/images/services/service-warm-oil.jpg' }
-  const footService = services.find((s) => s.id === 4) || { image: '/images/services/service-foot.jpg' }
+  useEffect(() => {
+    let isMounted = true
+    api.get('/services')
+      .then((res) => {
+        if (isMounted && res && res.success && Array.isArray(res.data)) {
+          setLiveServices(res.data)
+        }
+      })
+      .catch(() => {})
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  // Helper to get duration options from live services or mock
+  const getDurations = (serviceCode, fallbackServiceId) => {
+    const live = liveServices.find((s) => s.serviceCode === serviceCode)
+    if (live && live.durationOptions && live.durationOptions.length > 0) {
+      return live.durationOptions.map((opt) => ({
+        minutes: opt.durationMinutes,
+        price: Number(opt.price).toLocaleString('en-US'),
+      }))
+    }
+    const mock = mockServices.find((s) => s.id === fallbackServiceId)
+    if (mock && mock.durationOptions) {
+      return mock.durationOptions.map((opt) => ({
+        minutes: opt.durationMinutes,
+        price: Number(opt.price).toLocaleString('en-US'),
+      }))
+    }
+    return [
+      { minutes: 60, price: '600' },
+      { minutes: 90, price: '850' },
+    ]
+  }
+
+  const thaiDurations = getDurations('THAI', 1)
+  const aromaDurations = getDurations('AROMA', 2)
+  const warmOilDurations = getDurations('HOT_OIL', 3)
+  const footDurations = getDurations('FOOT', 4)
+
+  const thaiService = mockServices.find((s) => s.id === 1) || { image: '/images/services/service-thai.jpg' }
+  const aromaService = mockServices.find((s) => s.id === 2) || { image: '/images/services/service-aroma.jpg' }
+  const warmOilService = mockServices.find((s) => s.id === 3) || { image: '/images/services/service-warm-oil.jpg' }
+  const footService = mockServices.find((s) => s.id === 4) || { image: '/images/services/service-foot.jpg' }
 
   const [formData, setFormData] = useState({
     name: '',
@@ -134,30 +177,16 @@ export default function ServicesPage({ onNavigate }) {
                       {t('servicesPage.t1Desc')}
                     </p>
                     <div className="py-4 space-y-3">
-                      <div className="flex items-baseline justify-between py-1.5">
-                        <span className="font-body-md text-body-md text-on-surface">
-                          {t('servicesPage.minuteUnit', { n: 60 })}
-                        </span>
-                        <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
-                          {t('servicesPage.bahtUnit', { price: '600' })}
-                        </span>
-                      </div>
-                      <div className="flex items-baseline justify-between py-1.5">
-                        <span className="font-body-md text-body-md text-on-surface">
-                          {t('servicesPage.minuteUnit', { n: 90 })}
-                        </span>
-                        <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
-                          {t('servicesPage.bahtUnit', { price: '850' })}
-                        </span>
-                      </div>
-                      <div className="flex items-baseline justify-between py-1.5">
-                        <span className="font-body-md text-body-md text-on-surface">
-                          {t('servicesPage.minuteUnit', { n: 120 })}
-                        </span>
-                        <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
-                          {t('servicesPage.bahtUnit', { price: '1,100' })}
-                        </span>
-                      </div>
+                      {thaiDurations.map((d, i) => (
+                        <div key={i} className="flex items-baseline justify-between py-1.5">
+                          <span className="font-body-md text-body-md text-on-surface">
+                            {t('servicesPage.minuteUnit', { n: d.minutes })}
+                          </span>
+                          <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
+                            {t('servicesPage.bahtUnit', { price: d.price })}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                     <div className="pt-2 flex items-center gap-6">
                       <button
@@ -199,30 +228,16 @@ export default function ServicesPage({ onNavigate }) {
                       {t('servicesPage.t2Desc')}
                     </p>
                     <div className="py-4 space-y-3">
-                      <div className="flex items-baseline justify-between py-1.5">
-                        <span className="font-body-md text-body-md text-on-surface">
-                          {t('servicesPage.minuteUnit', { n: 60 })}
-                        </span>
-                        <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
-                          {t('servicesPage.bahtUnit', { price: '800' })}
-                        </span>
-                      </div>
-                      <div className="flex items-baseline justify-between py-1.5">
-                        <span className="font-body-md text-body-md text-on-surface">
-                          {t('servicesPage.minuteUnit', { n: 90 })}
-                        </span>
-                        <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
-                          {t('servicesPage.bahtUnit', { price: '1,100' })}
-                        </span>
-                      </div>
-                      <div className="flex items-baseline justify-between py-1.5">
-                        <span className="font-body-md text-body-md text-on-surface">
-                          {t('servicesPage.minuteUnit', { n: 120 })}
-                        </span>
-                        <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
-                          {t('servicesPage.bahtUnit', { price: '1,400' })}
-                        </span>
-                      </div>
+                      {aromaDurations.map((d, i) => (
+                        <div key={i} className="flex items-baseline justify-between py-1.5">
+                          <span className="font-body-md text-body-md text-on-surface">
+                            {t('servicesPage.minuteUnit', { n: d.minutes })}
+                          </span>
+                          <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
+                            {t('servicesPage.bahtUnit', { price: d.price })}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                     <div className="pt-2">
                       <button
@@ -278,22 +293,16 @@ export default function ServicesPage({ onNavigate }) {
                   </div>
                   <div className="pt-8 space-y-4">
                     <div className="bg-surface rounded-lg p-5 space-y-2.5">
-                      <div className="flex items-baseline justify-between">
-                        <span className="font-body-md text-body-md text-on-surface">
-                          {t('servicesPage.minuteUnit', { n: 60 })}
-                        </span>
-                        <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
-                          {t('servicesPage.bahtUnit', { price: '750' })}
-                        </span>
-                      </div>
-                      <div className="flex items-baseline justify-between">
-                        <span className="font-body-md text-body-md text-on-surface">
-                          {t('servicesPage.minuteUnit', { n: 90 })}
-                        </span>
-                        <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
-                          {t('servicesPage.bahtUnit', { price: '1,000' })}
-                        </span>
-                      </div>
+                      {warmOilDurations.map((d, i) => (
+                        <div key={i} className="flex items-baseline justify-between">
+                          <span className="font-body-md text-body-md text-on-surface">
+                            {t('servicesPage.minuteUnit', { n: d.minutes })}
+                          </span>
+                          <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
+                            {t('servicesPage.bahtUnit', { price: d.price })}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                     <div>
                       <button
@@ -335,22 +344,16 @@ export default function ServicesPage({ onNavigate }) {
                   </div>
                   <div className="pt-8 space-y-4">
                     <div className="bg-surface rounded-lg p-5 space-y-2.5">
-                      <div className="flex items-baseline justify-between">
-                        <span className="font-body-md text-body-md text-on-surface">
-                          {t('servicesPage.minuteUnit', { n: 60 })}
-                        </span>
-                        <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
-                          {t('servicesPage.bahtUnit', { price: '500' })}
-                        </span>
-                      </div>
-                      <div className="flex items-baseline justify-between">
-                        <span className="font-body-md text-body-md text-on-surface">
-                          {t('servicesPage.minuteUnit', { n: 90 })}
-                        </span>
-                        <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
-                          {t('servicesPage.bahtUnit', { price: '700' })}
-                        </span>
-                      </div>
+                      {footDurations.map((d, i) => (
+                        <div key={i} className="flex items-baseline justify-between">
+                          <span className="font-body-md text-body-md text-on-surface">
+                            {t('servicesPage.minuteUnit', { n: d.minutes })}
+                          </span>
+                          <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
+                            {t('servicesPage.bahtUnit', { price: d.price })}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                     <div>
                       <button

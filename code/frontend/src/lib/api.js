@@ -52,3 +52,6 @@ export const api = {
     apiClient(endpoint, { method: 'PATCH', body: JSON.stringify(body), headers }),
   delete: (endpoint, headers) => apiClient(endpoint, { method: 'DELETE', headers }),
 }
+
+export default api
+

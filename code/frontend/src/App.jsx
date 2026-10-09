@@ -15,7 +15,8 @@ import CustomerProfilePage from './pages/profile/CustomerProfilePage.jsx'
 import BookingHistoryPage from './pages/booking/BookingHistoryPage.jsx'
 import { LanguageProvider } from './i18n/LanguageContext.jsx'
 import { CustomerAuthProvider } from './context/CustomerAuthContext.jsx'
-import { therapists } from './data/mock.js'
+import { therapists as mockTherapists } from './data/mock.js'
+import api from './lib/api.js'
 
 // Admin Portal Imports
 import AdminLayout from './admin/layouts/AdminLayout.jsx'
@@ -221,9 +222,53 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  // หาหมอนวดที่เลือกอยู่ สำหรับหน้าโปรไฟล์
+  // โหลดรายชื่อผู้บำบัดจริงจาก API (พร้อม fallback จาก mock)
+  const [allTherapists, setAllTherapists] = useState(mockTherapists)
+
+  useEffect(() => {
+    let isMounted = true
+    api.get('/therapists')
+      .then((res) => {
+        if (isMounted && res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+          const merged = res.data.map((bt, idx) => {
+            const matchedMock =
+              mockTherapists.find((mt) => mt.nickname.toLowerCase() === bt.nickname.toLowerCase()) ||
+              mockTherapists[idx % mockTherapists.length]
+
+            const backendSkills = bt.skills || []
+            const specialties = []
+            backendSkills.forEach((s) => {
+              const lower = s.toLowerCase()
+              if (lower.includes('thai')) specialties.push('thai')
+              if (lower.includes('aroma')) specialties.push('aroma')
+              if (lower.includes('oil')) specialties.push('oil')
+              if (lower.includes('foot')) specialties.push('foot')
+            })
+
+            return {
+              ...matchedMock,
+              id: bt.id,
+              nickname: bt.nickname,
+              specialties: specialties.length > 0 ? specialties : matchedMock.specialties,
+              rating: bt.averageRating > 0 ? Number(bt.averageRating) : matchedMock.rating,
+              bio: bt.bio || matchedMock.bio,
+            }
+          })
+          setAllTherapists(merged)
+        }
+      })
+      .catch(() => {})
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  // หาหมอนวดที่เลือกอยู่ สำหรับหน้าโปรไฟล์ (รองรับทั้ง id ตัวเลขและ string)
   const activeTherapist =
-    therapists.find((t) => t.id === selectedTherapistId) || therapists[0]
+    allTherapists.find((t) => String(t.id) === String(selectedTherapistId)) ||
+    allTherapists[0] ||
+    therapists[0]
 
   return (
     <MotionConfig reducedMotion="user">

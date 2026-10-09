@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLanguage } from '../../i18n/useLanguage.js'
-import { therapists } from '../../data/mock.js'
+import { therapists as mockTherapists } from '../../data/mock.js'
 import FadeIn from '../../components/motion/FadeIn.jsx'
+import api from '../../lib/api.js'
 
 const filterCategories = [
   { key: 'all', labelKey: 'therapistsPage.filterAll' },
@@ -13,12 +14,57 @@ const filterCategories = [
 
 export default function TherapistsPage({ onNavigate }) {
   const { t } = useLanguage()
+  const [therapistsList, setTherapistsList] = useState(mockTherapists)
   const [activeFilter, setActiveFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [hasLoadedMore, setHasLoadedMore] = useState(false)
 
+  useEffect(() => {
+    let isMounted = true
+    api.get('/therapists')
+      .then((res) => {
+        if (isMounted && res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+          const merged = res.data.map((bt, idx) => {
+            // Find existing mock therapist by nickname or index for rich imagery & narrative
+            const matchedMock =
+              mockTherapists.find((mt) => mt.nickname.toLowerCase() === bt.nickname.toLowerCase()) ||
+              mockTherapists[idx % mockTherapists.length]
+
+            // Normalize backend skills into filter categories: thai, aroma, oil, foot
+            const backendSkills = bt.skills || []
+            const specialties = []
+            backendSkills.forEach((s) => {
+              const lower = s.toLowerCase()
+              if (lower.includes('thai')) specialties.push('thai')
+              if (lower.includes('aroma')) specialties.push('aroma')
+              if (lower.includes('oil')) specialties.push('oil')
+              if (lower.includes('foot')) specialties.push('foot')
+            })
+            if (specialties.length === 0 && matchedMock.specialties) {
+              specialties.push(...matchedMock.specialties)
+            }
+
+            return {
+              ...matchedMock,
+              id: bt.id,
+              nickname: bt.nickname,
+              specialties,
+              rating: bt.averageRating > 0 ? Number(bt.averageRating) : matchedMock.rating,
+              bio: bt.bio || matchedMock.bio,
+            }
+          })
+          setTherapistsList(merged)
+        }
+      })
+      .catch(() => {})
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
   // กรองตามหมวดหมู่และคำค้นหา
-  const filteredTherapists = therapists.filter((therapist) => {
+  const filteredTherapists = therapistsList.filter((therapist) => {
     const matchesCategory =
       activeFilter === 'all' || therapist.specialties.includes(activeFilter)
 
@@ -37,7 +83,7 @@ export default function TherapistsPage({ onNavigate }) {
     return matchesCategory && matchesSearch
   })
 
-  const totalPossible = therapists.length * 3 // สอดคล้องกับดีไซน์ 9 ผู้เชี่ยวชาญ
+  const totalPossible = therapistsList.length * 3 // สอดคล้องกับดีไซน์ผู้เชี่ยวชาญ
 
   return (
     <main className="w-full pt-20 bg-surface min-h-[calc(100vh-80px)]">

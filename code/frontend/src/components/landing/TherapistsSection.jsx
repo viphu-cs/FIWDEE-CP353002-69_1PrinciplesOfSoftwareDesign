@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react'
 import FadeIn from '../motion/FadeIn.jsx'
 import { useLanguage } from '../../i18n/useLanguage.js'
-import { therapists } from '../../data/mock.js'
+import { therapists as mockTherapists } from '../../data/mock.js'
+import api from '../../lib/api.js'
 
 // 🎬 Micro-interaction: การ์ดเอียงตามตำแหน่งเมาส์ (เขียน transform ตรงทุก mousemove —
 // เรียลไทม์ 1:1 ไม่มี transition ค้าง จึงลื่นไม่แลค) / เงา+ขอบจัดการโดย .card-highlight แยกกัน
@@ -20,6 +22,35 @@ function resetTilt(event) {
 
 export default function TherapistsSection({ onNavigate }) {
   const { t } = useLanguage()
+  const [displayTherapists, setDisplayTherapists] = useState(mockTherapists)
+
+  useEffect(() => {
+    let isMounted = true
+    api.get('/therapists')
+      .then((res) => {
+        if (isMounted && res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+          const merged = res.data.map((bt, idx) => {
+            const matchedMock =
+              mockTherapists.find((mt) => mt.nickname.toLowerCase() === bt.nickname.toLowerCase()) ||
+              mockTherapists[idx % mockTherapists.length]
+
+            return {
+              ...matchedMock,
+              id: bt.id,
+              nickname: bt.nickname,
+              rating: bt.averageRating > 0 ? Number(bt.averageRating) : matchedMock.rating,
+              bio: bt.bio || matchedMock.bio,
+            }
+          })
+          setDisplayTherapists(merged)
+        }
+      })
+      .catch(() => {})
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   return (
     <section className="w-full py-space-2xl bg-surface" id="therapists">
@@ -40,7 +71,7 @@ export default function TherapistsSection({ onNavigate }) {
         </FadeIn>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
-          {therapists.map((therapist, index) => (
+          {displayTherapists.map((therapist, index) => (
             <FadeIn key={therapist.id} delay={0.12 + index * 0.14} variant="up">
               <article
                 className="card-highlight group cursor-pointer bg-linen-surface rounded-xl overflow-hidden"

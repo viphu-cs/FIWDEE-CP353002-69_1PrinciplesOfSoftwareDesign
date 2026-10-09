@@ -33,32 +33,43 @@ export const shop = {
 export const services = [
   {
     id: 1,
+    serviceCode: 'THAI',
     image: '/images/services/service-thai.jpg',
     durationOptions: [
-      { durationMinutes: 60, price: 600 },
-      { durationMinutes: 90, price: 850 },
+      { durationMinutes: 60, price: 500 },
+      { durationMinutes: 90, price: 700 },
+      { durationMinutes: 120, price: 900 },
     ],
   },
   {
     id: 2,
+    serviceCode: 'AROMA',
     image: '/images/services/service-aroma.jpg',
     durationOptions: [
-      { durationMinutes: 60, price: 800 },
-      { durationMinutes: 90, price: 1100 },
+      { durationMinutes: 60, price: 700 },
+      { durationMinutes: 90, price: 950 },
+      { durationMinutes: 120, price: 1200 },
     ],
   },
   {
     id: 3,
+    serviceCode: 'HOT_OIL',
     image: '/images/services/service-warm-oil.jpg',
     durationOptions: [
-      { durationMinutes: 60, price: 750 },
-      { durationMinutes: 90, price: 1000 },
+      { durationMinutes: 60, price: 800 },
+      { durationMinutes: 90, price: 1100 },
+      { durationMinutes: 120, price: 1400 },
     ],
   },
   {
     id: 4,
+    serviceCode: 'FOOT',
     image: '/images/services/service-foot.jpg',
-    durationOptions: [{ durationMinutes: 60, price: 500 }],
+    durationOptions: [
+      { durationMinutes: 60, price: 400 },
+      { durationMinutes: 90, price: 550 },
+      { durationMinutes: 120, price: 700 },
+    ],
   },
 ]
 
