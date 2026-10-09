@@ -19,6 +19,8 @@ export default function BookingStepPayment({
   promoState,
   onPrev,
   onConfirm,
+  isSubmitting = false,
+  submitError = null,
 }) {
   const { promoApplied, finalPrice, finalPriceLabel, discountLabel, promoInfo } =
     promoState
@@ -327,23 +329,47 @@ export default function BookingStepPayment({
                       ยอดรวมสุทธิ
                     </span>
                     <p className="font-headline-md text-headline-md text-on-surface font-semibold tracking-tight">
-                      {paymentMethod === 'deposit' ? '฿300 (มัดจำ)' : finalPriceLabel}
+                      {finalPriceLabel}
                     </p>
                   </div>
                   <span className="font-label-caps text-label-caps text-secondary">
-                    {paymentMethod === 'deposit' ? 'ยอดมัดจำออนไลน์' : 'สุทธิ (Net Price)'}
+                    {paymentMethod === 'counter' || paymentMethod === 'deposit'
+                      ? 'ชำระที่เคาน์เตอร์'
+                      : 'สุทธิ (Net Price)'}
                   </span>
                 </div>
+
+                {(paymentMethod === 'counter' || paymentMethod === 'deposit') && (
+                  <div className="pt-2 text-xs text-secondary border-t border-outline-variant/20 flex justify-between">
+                    <span>ยอดชำระออนไลน์ตอนนี้</span>
+                    <span className="font-semibold text-primary">฿0 (ชำระเต็มจำนวนหน้าร้าน)</span>
+                  </div>
+                )}
               </div>
+
+              {submitError && (
+                <div className="p-3 bg-red-50 text-red-700 text-xs rounded border border-red-200">
+                  {submitError}
+                </div>
+              )}
 
               <div className="pt-space-xs">
                 <button
                   type="button"
+                  disabled={isSubmitting}
                   onClick={onConfirm}
-                  className="w-full bg-primary hover:opacity-90 active:scale-[0.99] text-on-primary py-3.5 px-space-md rounded font-label-md text-label-md tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all duration-200 cursor-pointer"
+                  className={`w-full bg-primary hover:opacity-90 active:scale-[0.99] text-on-primary py-3.5 px-space-md rounded font-label-md text-label-md tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all duration-200 cursor-pointer ${
+                    isSubmitting ? 'opacity-60 cursor-not-allowed' : ''
+                  }`}
                 >
-                  <span className="material-symbols-outlined text-base">verified</span>
-                  ยืนยันการจองและชำระเงิน ({paymentMethod === 'deposit' ? '฿300' : finalPriceLabel})
+                  <span className="material-symbols-outlined text-base">
+                    {isSubmitting ? 'sync' : 'verified'}
+                  </span>
+                  {isSubmitting
+                    ? 'กำลังประมวลผลการจอง...'
+                    : paymentMethod === 'counter' || paymentMethod === 'deposit'
+                    ? 'ยืนยันการจอง (ชำระเงินที่หน้าร้าน)'
+                    : `ยืนยันการจองและชำระเงิน (${finalPriceLabel})`}
                 </button>
               </div>
 

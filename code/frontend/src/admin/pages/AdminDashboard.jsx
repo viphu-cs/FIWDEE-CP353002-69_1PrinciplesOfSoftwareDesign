@@ -1,11 +1,36 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useAdminAuth } from '../context/AdminAuthContext.jsx'
 import { useLanguage } from '../../i18n/useLanguage.js'
 import StatusBadge from '../components/StatusBadge.jsx'
+import { api } from '../../lib/api.js'
 
 export default function AdminDashboard({ onNavigate, onOpenWalkInModal, onOpenAssignModal }) {
   const { user, rooms, queueItems, therapists, bookings, updateQueueStatus } = useAdminAuth()
   const { lang, t } = useLanguage()
+
+  // Real Executive Report from backend (Role OWNER)
+  const [reportData, setReportData] = useState(null)
+  const [reportLoading, setReportLoading] = useState(false)
+
+  const isOwner = user?.role === 'OWNER'
+
+  useEffect(() => {
+    let isMounted = true
+    if (isOwner) {
+      setReportLoading(true)
+      api.get('/admin/reports/dashboard')
+        .then((res) => {
+          if (isMounted && res.success && res.data) {
+            setReportData(res.data)
+          }
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (isMounted) setReportLoading(false)
+        })
+    }
+    return () => { isMounted = false }
+  }, [isOwner])
 
   const handleStartService = (q) => {
     if (!q.therapistName || q.therapistName === 'ไม่ระบุ' || !q.roomNo) {
@@ -18,180 +43,275 @@ export default function AdminDashboard({ onNavigate, onOpenWalkInModal, onOpenAs
       try {
         updateQueueStatus(q.queueNo, 'IN_SERVICE')
       } catch (err) {
-        alert(err.message || 'ไม่สามารถเริ่มนวดได้')
+        alert(err.message || (lang === 'th' ? 'ไม่สามารถเริ่มนวดได้' : 'Cannot start treatment'))
       }
     }
   }
 
-  // Stats calculation
+  // Fallback stats calculation from real/mock state
   const totalQueuesToday = queueItems.length
   const waitingQueues = queueItems.filter(q => q.status === 'WAITING' || q.status === 'PENDING' || q.status === 'CHECKED_IN').length
   const inServiceQueues = queueItems.filter(q => q.status === 'IN_SERVICE').length
   const occupiedRoomsCount = rooms.filter(r => r.status === 'OCCUPIED').length
-  const totalRoomsCount = rooms.length
+  const cleaningRoomsCount = rooms.filter(r => r.status === 'CLEANING').length
+  const totalRoomsCount = rooms.length || 6
   const roomOccupancyRate = Math.round((occupiedRoomsCount / totalRoomsCount) * 100)
   const activeTherapistsCount = therapists.filter(t => t.status === 'ON_DUTY' || t.status === 'IN_SERVICE').length
-  const todayEstimatedRevenue = bookings.reduce((sum, b) => sum + (b.price || 0), 0)
+
+  // Revenue metrics (prioritize backend reportData when available)
+  const displayTodayRevenue = reportData?.todayRevenue ?? bookings.reduce((sum, b) => sum + (b.price || 0), 0)
+  const displayMonthlyRevenue = reportData?.monthlyRevenue ?? (displayTodayRevenue * 14)
+  const displayTodayBookings = reportData?.todayBookingsCount ?? totalQueuesToday
+  const displayMonthlyBookings = reportData?.monthlyBookingsCount ?? (bookings.length * 3)
+
+  const formattedDate = new Intl.DateTimeFormat(lang === 'th' ? 'th-TH' : 'en-US', {
+    dateStyle: 'full'
+  }).format(new Date())
 
   return (
-    <div className="space-y-6 font-body-md text-stone-800">
-      {/* Top Banner / Welcome */}
-      <div className="bg-gradient-to-r from-stone-900 via-amber-950 to-stone-900 rounded-3xl p-6 text-stone-100 shadow-lg relative overflow-hidden">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold border border-amber-500/30 mb-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>LIVE OPERATIONS CENTER</span>
+    <div className="space-y-6 font-body-md text-on-surface">
+      {/* Top Banner / Welcome - Refined Serene Thai Sanctuary Styling */}
+      <div className="bg-teak-deep text-warm-ivory rounded-2xl p-6 sm:p-7 border border-wood-deep/30 shadow-[var(--admin-shadow-sm)] relative overflow-hidden">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-container/80 text-sand-warm text-[11px] font-medium border border-wood-deep/30 tracking-wider">
+              <span>{t('admin.liveOperations')}</span>
               <span>•</span>
-              <span>2 Oct 2026</span>
+              <span className="capitalize">{formattedDate}</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-headline font-bold text-white tracking-wide">
-              {lang === 'th' ? 'ภาพรวมการดำเนินงานวันนี้' : 'Daily Operations Overview'}
-            </h2>
-            <p className="text-stone-300 text-xs sm:text-sm mt-1 max-w-xl">
-              {lang === 'th'
-                ? 'ระบบจัดการคิว ผังห้องนวด และบุคลากรฝั่งบริหารจัดการ FIWDEE Massage & Wellness'
-                : 'Management dashboard for queueing, room layouts, and therapists staff at FIWDEE Massage & Wellness'}
+            <h1 className="text-2xl sm:text-3xl font-headline font-normal text-warm-ivory tracking-tight">
+              {t('admin.dashboardTitle')}
+            </h1>
+            <p className="text-sand-warm text-xs sm:text-sm max-w-2xl leading-relaxed">
+              {t('admin.dashboardDesc')}
             </p>
           </div>
-          <div className="flex items-center gap-3">
+
+          <div className="flex items-center gap-2.5 flex-wrap">
             <button
               onClick={onOpenWalkInModal}
-              className="px-5 py-2.5 rounded-2xl bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs sm:text-sm shadow-md transition-all flex items-center gap-2 cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-surface text-teak-deep hover:bg-warm-ivory font-semibold text-xs shadow-xs transition-all flex items-center gap-2 cursor-pointer"
             >
-              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+              <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
               <span>{t('admin.addQueue')}</span>
             </button>
             <button
               onClick={() => onNavigate('queue')}
-              className="px-4 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-stone-200 font-medium text-xs sm:text-sm transition-all cursor-pointer border border-white/10"
+              className="px-4 py-2 rounded-xl bg-primary-container hover:bg-teak-dark text-warm-ivory font-medium text-xs transition-all border border-wood-deep/35 cursor-pointer"
             >
               {t('admin.queue')}
             </button>
+            {isOwner && (
+              <button
+                onClick={() => onNavigate('users')}
+                className="px-3.5 py-2 rounded-xl bg-primary-container/50 hover:bg-primary-container text-sand-warm hover:text-warm-ivory font-medium text-xs transition-all border border-wood-deep/20 cursor-pointer"
+              >
+                {t('admin.users')}
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* KPI Cards Grid */}
+      {/* KPI Cards Grid - Clean, Restrained, Unified */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Total Queues Today */}
-        <div className="bg-surface rounded-2xl p-5 border border-outline-variant/80 shadow-[var(--admin-shadow-sm)] hover:border-wood-deep/60 hover:shadow-[var(--admin-shadow-md)] hover:-translate-y-0.5 transition-all duration-200">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-on-surface-variant text-xs font-semibold">
-              <span className="grid h-8 w-8 place-items-center rounded-xl bg-secondary-container text-secondary">
-                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-              </span>
-              <span>{lang === 'th' ? 'จำนวนคิวทั้งหมดวันนี้' : 'Total Queues Today'}</span>
+        {/* Card 1: Revenue (Owner) or Today Queues (Receptionist) */}
+        {isOwner ? (
+          <div className="bg-surface rounded-2xl p-5 border border-outline-variant shadow-[var(--admin-shadow-sm)] hover:border-outline transition-all">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-charcoal-muted text-xs font-medium">
+                <span className="grid h-8 w-8 place-items-center rounded-xl bg-surface-container text-teak-deep">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.7 0-3 .8-3 2s1.3 2 3 2 3 .8 3 2-1.3 2-3 2m0-8V6m0 10v2m9-6a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </span>
+                <span>{t('admin.monthlyRevenue')}</span>
+              </div>
+              <span className="text-charcoal-muted text-[10px] font-semibold uppercase tracking-wider">MONTH</span>
             </div>
-            <span className="text-secondary bg-secondary-container px-2 py-0.5 rounded-full font-bold text-[10px]">Today</span>
-          </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <div className="text-3xl font-bold font-headline text-teak-dark">{totalQueuesToday} {lang === 'th' ? 'คิว' : 'Queues'}</div>
-            <div className="text-xs text-secondary font-semibold">
-              {lang === 'th' ? 'รอเรียก/เช็คอิน' : 'Waiting'}: {waitingQueues}
+            <div className="mt-3 flex items-baseline justify-between">
+              <div className="text-2xl sm:text-3xl font-headline font-bold text-teak-deep">
+                ฿{Number(displayMonthlyRevenue).toLocaleString()}
+              </div>
+            </div>
+            <div className="mt-2 text-[11px] text-charcoal-muted flex items-center justify-between">
+              <span>{t('admin.todayRevenue')}: <strong className="text-on-surface font-semibold">฿{Number(displayTodayRevenue).toLocaleString()}</strong></span>
+              <span className="text-charcoal-muted">{displayMonthlyBookings} {lang === 'th' ? 'รอบ' : 'bookings'}</span>
             </div>
           </div>
-          <div className="mt-2 text-[11px] text-charcoal-muted">
-            {lang === 'th' ? `กำลังให้บริการอยู่ ${inServiceQueues} คิว` : `${inServiceQueues} active in-service`}
+        ) : (
+          <div className="bg-surface rounded-2xl p-5 border border-outline-variant shadow-[var(--admin-shadow-sm)] hover:border-outline transition-all">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-charcoal-muted text-xs font-medium">
+                <span className="grid h-8 w-8 place-items-center rounded-xl bg-surface-container text-teak-deep">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </span>
+                <span>{t('admin.todayBookings')}</span>
+              </div>
+              <span className="text-charcoal-muted text-[10px] font-semibold uppercase tracking-wider">TODAY</span>
+            </div>
+            <div className="mt-3 flex items-baseline justify-between">
+              <div className="text-3xl font-headline font-bold text-teak-deep">
+                {totalQueuesToday} <span className="text-xs font-normal text-charcoal-muted">{lang === 'th' ? 'คิว' : 'Queues'}</span>
+              </div>
+              <div className="text-xs text-charcoal-muted font-medium">
+                {t('admin.waiting')}: {waitingQueues}
+              </div>
+            </div>
+            <div className="mt-2 text-[11px] text-charcoal-muted">
+              {lang === 'th' ? `กำลังให้บริการ ${inServiceQueues} คิว` : `${inServiceQueues} in active treatment`}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Card 2: Room Occupancy Rate */}
-        <div className="bg-surface rounded-2xl p-5 border border-outline-variant/80 shadow-[var(--admin-shadow-sm)] hover:border-wood-deep/60 hover:shadow-[var(--admin-shadow-md)] hover:-translate-y-0.5 transition-all duration-200">
+        {/* Card 2: Room Occupancy Rate (Dynamic) */}
+        <div className="bg-surface rounded-2xl p-5 border border-outline-variant shadow-[var(--admin-shadow-sm)] hover:border-outline transition-all">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-on-surface-variant text-xs font-semibold">
-              <span className="grid h-8 w-8 place-items-center rounded-xl bg-tertiary-fixed text-on-tertiary-fixed-variant">
-                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-5h6v5" /></svg>
+            <div className="flex items-center gap-2 text-charcoal-muted text-xs font-medium">
+              <span className="grid h-8 w-8 place-items-center rounded-xl bg-surface-container text-teak-deep">
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0v-5a2 2 0 012-2h2a2 2 0 012 2v5m-6 0h6" />
+                </svg>
               </span>
-              <span>{lang === 'th' ? 'อัตราการใช้งานห้องนวด' : 'Room Occupancy Rate'}</span>
+              <span>{t('admin.occupancyRate')}</span>
             </div>
-            <span className="text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full font-bold text-[10px]">Occupancy</span>
+            <span className="text-charcoal-muted text-[10px] font-semibold uppercase tracking-wider">
+              {occupiedRoomsCount}/{totalRoomsCount} ROOMS
+            </span>
           </div>
           <div className="mt-3 flex items-baseline justify-between">
-            <div className="text-3xl font-bold font-headline text-teak-dark">{roomOccupancyRate}%</div>
-            <div className="text-xs text-on-surface-variant font-medium">
-              {occupiedRoomsCount} / {totalRoomsCount} {lang === 'th' ? 'ห้อง' : 'Rooms'}
+            <div className="text-3xl font-headline font-bold text-teak-deep">{roomOccupancyRate}%</div>
+            <div className="text-xs text-charcoal-muted">
+              {cleaningRoomsCount > 0 ? `${cleaningRoomsCount} ${lang === 'th' ? 'ห้องทำความสะอาด' : 'cleaning'}` : t('admin.roomOccupancyDesc')}
             </div>
           </div>
-          <div className="mt-2 w-full bg-surface-container rounded-full h-2 overflow-hidden">
+          <div className="mt-2 w-full bg-surface-container rounded-full h-1.5 overflow-hidden">
             <div
-              className="bg-terracotta-muted h-full rounded-full transition-all duration-500"
-              style={{ width: `${roomOccupancyRate}%` }}
+              className="bg-teak-deep h-full rounded-full transition-all duration-500"
+              style={{ width: `${Math.min(100, Math.max(0, roomOccupancyRate))}%` }}
             />
           </div>
         </div>
 
         {/* Card 3: Active Therapists */}
-        <div className="bg-surface rounded-2xl p-5 border border-outline-variant/80 shadow-[var(--admin-shadow-sm)] hover:border-wood-deep/60 hover:shadow-[var(--admin-shadow-md)] hover:-translate-y-0.5 transition-all duration-200">
+        <div className="bg-surface rounded-2xl p-5 border border-outline-variant shadow-[var(--admin-shadow-sm)] hover:border-outline transition-all">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-on-surface-variant text-xs font-semibold">
-              <span className="grid h-8 w-8 place-items-center rounded-xl bg-primary-fixed text-on-primary-fixed-variant">
-                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2m17-10a4 4 0 010 8m3 2v-2a4 4 0 00-3-3.87M9 11a4 4 0 100-8 4 4 0 000 8z" /></svg>
+            <div className="flex items-center gap-2 text-charcoal-muted text-xs font-medium">
+              <span className="grid h-8 w-8 place-items-center rounded-xl bg-surface-container text-teak-deep">
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
               </span>
-              <span>{lang === 'th' ? 'หมอนวดปฏิบัติงาน' : 'Active Therapists'}</span>
+              <span>{t('admin.therapists')}</span>
             </div>
-            <span className="text-indigo-800 bg-indigo-50 px-2 py-0.5 rounded-full font-bold text-[10px]">Duty</span>
+            <span className="text-charcoal-muted text-[10px] font-semibold uppercase tracking-wider">STAFF</span>
           </div>
           <div className="mt-3 flex items-baseline justify-between">
-            <div className="text-3xl font-bold font-headline text-teak-dark">{activeTherapistsCount} {lang === 'th' ? 'ท่าน' : 'Staff'}</div>
-            <div className="text-xs text-charcoal-muted">{lang === 'th' ? `จากทั้งหมด ${therapists.length}` : `of ${therapists.length} total`}</div>
+            <div className="text-3xl font-headline font-bold text-teak-deep">
+              {activeTherapistsCount} <span className="text-xs font-normal text-charcoal-muted">/ {therapists.length}</span>
+            </div>
+            <div className="text-xs text-charcoal-muted">
+              {t('admin.onDuty')}: {therapists.filter(t => t.status === 'ON_DUTY').length}
+            </div>
           </div>
-          <div className="mt-2 text-[11px] text-emerald-800 font-medium">
-            {lang === 'th' ? `พร้อมรับคิว: ${therapists.filter(t => t.status === 'ON_DUTY').length} ท่าน` : `Ready: ${therapists.filter(t => t.status === 'ON_DUTY').length}`}
+          <div className="mt-2 text-[11px] text-charcoal-muted">
+            {lang === 'th' ? `กำลังนวด: ${therapists.filter(t => t.status === 'IN_SERVICE').length} ท่าน` : `In service: ${therapists.filter(t => t.status === 'IN_SERVICE').length}`}
           </div>
         </div>
 
-        {/* Card 4: Estimated Revenue (Restricted to OWNER) */}
-        <div className="bg-surface rounded-2xl p-5 border border-outline-variant/80 shadow-[var(--admin-shadow-sm)] hover:border-wood-deep/60 hover:shadow-[var(--admin-shadow-md)] hover:-translate-y-0.5 transition-all duration-200">
+        {/* Card 4: Completed Services / Active Operations */}
+        <div className="bg-surface rounded-2xl p-5 border border-outline-variant shadow-[var(--admin-shadow-sm)] hover:border-outline transition-all">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-on-surface-variant text-xs font-semibold">
-              <span className="grid h-8 w-8 place-items-center rounded-xl bg-secondary-container text-secondary">
-                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.7 0-3 .8-3 2s1.3 2 3 2 3 .8 3 2-1.3 2-3 2m0-8V6m0 10v2m9-6a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <div className="flex items-center gap-2 text-charcoal-muted text-xs font-medium">
+              <span className="grid h-8 w-8 place-items-center rounded-xl bg-surface-container text-teak-deep">
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </span>
-              <span>{lang === 'th' ? 'ประมาณการรายได้วันนี้' : 'Est. Revenue Today'}</span>
+              <span>{t('admin.completedServices')}</span>
             </div>
-            <span className="text-secondary bg-secondary-container px-2 py-0.5 rounded-full font-bold text-[10px]">THB</span>
+            <span className="text-charcoal-muted text-[10px] font-semibold uppercase tracking-wider">DONE</span>
           </div>
-
-          {user.role === 'OWNER' ? (
-            <>
-              <div className="mt-3 flex items-baseline justify-between">
-                <div className="text-2xl sm:text-3xl font-bold font-headline text-teak-dark">
-                  ฿{todayEstimatedRevenue.toLocaleString()}
-                </div>
-              </div>
-              <div className="mt-2 text-[11px] text-charcoal-muted">
-                {lang === 'th' ? `ชำระเงินเรียบร้อยแล้ว ${bookings.filter(b => b.paymentStatus === 'PAID').length} รายการ` : `${bookings.filter(b => b.paymentStatus === 'PAID').length} paid bookings`}
-              </div>
-            </>
-          ) : (
-            <div className="mt-3 p-3 bg-surface-container-low rounded-xl border border-outline-variant text-charcoal-muted text-xs text-center font-medium">
-              🔒 {lang === 'th' ? 'เฉพาะสิทธิ์ผู้จัดการ (OWNER)' : 'Restricted to OWNER'}
+          <div className="mt-3 flex items-baseline justify-between">
+            <div className="text-3xl font-headline font-bold text-teak-deep">
+              {reportData?.completedBookingsCount ?? queueItems.filter(q => q.status === 'COMPLETED').length}
             </div>
-          )}
+            <div className="text-xs text-charcoal-muted">
+              {lang === 'th' ? 'รอบที่สมบูรณ์' : 'Success sessions'}
+            </div>
+          </div>
+          <div className="mt-2 text-[11px] text-charcoal-muted flex items-center justify-between">
+            <span>{lang === 'th' ? 'ยกเลิก' : 'Cancelled'}: {reportData?.cancelledBookingsCount ?? 0}</span>
+            {isOwner && reportData?.totalDiscountGiven > 0 && (
+              <span className="text-charcoal-muted font-medium">Promo: -฿{Number(reportData.totalDiscountGiven).toLocaleString()}</span>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Main Grid: Room Status Grid & Active Queue timeline */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: Real-time Room Status Overview */}
-        <div className="lg:col-span-2 bg-surface rounded-2xl p-6 border border-outline-variant/80 shadow-[var(--admin-shadow-sm)] space-y-5">
+      {/* Executive Report Insights (Visible to OWNER) */}
+      {isOwner && reportData?.topServices && reportData.topServices.length > 0 && (
+        <div className="bg-surface rounded-2xl p-6 border border-outline-variant shadow-[var(--admin-shadow-sm)] space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-headline font-bold text-teak-dark text-lg">
-                {lang === 'th' ? 'ผังสถานะห้องนวด (Real-time Room Status)' : 'Real-time Rooms Layout'}
-              </h3>
+              <h2 className="font-headline font-semibold text-teak-dark text-base sm:text-lg">
+                {t('admin.topServices')}
+              </h2>
               <p className="text-xs text-charcoal-muted">
-                {lang === 'th' ? 'คลิกที่ห้องเพื่ออัปเดตสถานะ หรือคลิกไปหน้าจัดการห้องแบบรายละเอียด' : 'Click room card to change status or manage layout'}
+                {lang === 'th' ? 'วิเคราะห์ความนิยมและรายได้จากแต่ละหัตถการ' : 'Revenue and booking breakdown by treatment type'}
+              </p>
+            </div>
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-secondary-container text-secondary">
+              Executive Analytics
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {reportData.topServices.map((svc, idx) => (
+              <div key={idx} className="p-4 rounded-xl bg-surface-container-low border border-outline-variant space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-xs text-teak-dark">{svc.serviceName}</span>
+                  <span className="text-[11px] font-bold text-secondary">{svc.bookingCount} {lang === 'th' ? 'ครั้ง' : 'times'}</span>
+                </div>
+                <div className="text-sm font-bold text-teak-dark">
+                  ฿{Number(svc.totalRevenue).toLocaleString()}
+                </div>
+                <div className="w-full bg-surface-container rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className="bg-secondary h-full rounded-full"
+                    style={{ width: `${Math.min(100, Math.max(15, (svc.bookingCount / (reportData.monthlyBookingsCount || 1)) * 100))}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Main Operational Split: Real-time Room Layout & Upcoming Queue Timeline */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left 2 Cols: Real-time Rooms Floor Plan */}
+        <div className="lg:col-span-2 bg-surface rounded-2xl p-6 border border-outline-variant shadow-[var(--admin-shadow-sm)] space-y-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-headline font-semibold text-teak-dark text-lg">
+                {t('admin.rooms')}
+              </h2>
+              <p className="text-xs text-charcoal-muted">
+                {lang === 'th'
+                  ? 'ผังห้องนวด 6 ห้อง พร้อมระบบนับเวลาทำความสะอาด 15 นาทีอัตโนมัติ'
+                  : 'Floor plan monitoring with 15-minute sanitization turnaround buffers'}
               </p>
             </div>
             <button
               onClick={() => onNavigate('rooms')}
-              className="text-xs font-semibold text-secondary hover:text-terracotta-muted link-underline flex items-center gap-1 cursor-pointer"
+              className="text-xs font-semibold text-secondary hover:text-terracotta-muted flex items-center gap-1 cursor-pointer"
             >
-              <span>{lang === 'th' ? 'ดูรายละเอียดผังห้อง' : 'View All Rooms'}</span>
+              <span>{lang === 'th' ? 'จัดการผังห้อง' : 'Manage Rooms'}</span>
               <span>→</span>
             </button>
           </div>
@@ -201,28 +321,27 @@ export default function AdminDashboard({ onNavigate, onOpenWalkInModal, onOpenAs
               <div
                 key={room.id}
                 onClick={() => onNavigate('rooms')}
-                className={`p-4 rounded-xl border transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-[var(--admin-shadow-md)] ${
-                  room.status === 'OCCUPIED'
-                    ? 'bg-secondary-container/65 border-wood-deep/70 ring-1 ring-wood-deep/35'
-                    : room.status === 'AVAILABLE'
-                    ? 'bg-emerald-50/45 border-emerald-200/80'
-                    : room.status === 'CLEANING'
-                    ? 'bg-tertiary-fixed/35 border-tertiary-fixed-dim/80'
-                    : 'bg-surface-container-low border-outline-variant/80'
-                }`}
+                className="p-4 rounded-xl border border-outline-variant bg-surface-container-low hover:border-outline transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-[var(--admin-shadow-sm)]"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-teak-dark text-sm font-headline">{room.id}</span>
+                  <span className="font-bold text-teak-deep text-sm">{room.id}</span>
                   <StatusBadge status={room.status} size="sm" />
                 </div>
-                <div className="mt-2 text-xs font-medium text-on-surface">{room.name}</div>
-                <div className="text-[10px] text-charcoal-muted uppercase">{room.type}</div>
+                <div className="mt-2 text-xs font-medium text-teak-deep">{room.name}</div>
+                <div className="text-[10px] text-charcoal-muted uppercase tracking-wider">{room.type}</div>
 
                 {room.status === 'OCCUPIED' && (
-                  <div className="mt-3 pt-2 border-t border-wood-deep/35 text-[11px] space-y-0.5 text-on-surface">
-                    <div className="truncate font-semibold">{room.service}</div>
-                    <div className="text-on-surface-variant truncate">{lang === 'th' ? 'หมอ:' : 'Therapist:'} {room.therapist}</div>
-                    <div className="text-secondary font-bold">{room.startTime} - {room.endTime}</div>
+                  <div className="mt-3 pt-2 border-t border-outline-variant text-[11px] space-y-0.5 text-on-surface">
+                    <div className="truncate font-medium text-teak-deep">{room.service}</div>
+                    <div className="text-charcoal-muted truncate">{lang === 'th' ? 'หมอ:' : 'Therapist:'} {room.therapist}</div>
+                    <div className="text-charcoal-muted">{room.startTime} - {room.endTime} น.</div>
+                  </div>
+                )}
+
+                {room.status === 'CLEANING' && (
+                  <div className="mt-3 pt-2 border-t border-outline-variant text-[11px] text-amber-900 font-medium flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    <span>{lang === 'th' ? 'กำลังทำความสะอาดห้อง' : 'Sanitizing in progress'}</span>
                   </div>
                 )}
               </div>
@@ -230,20 +349,20 @@ export default function AdminDashboard({ onNavigate, onOpenWalkInModal, onOpenAs
           </div>
         </div>
 
-        {/* Right 1 Col: Live Queue Timeline */}
-        <div className="bg-surface rounded-2xl p-6 border border-outline-variant/80 shadow-[var(--admin-shadow-sm)] space-y-5">
+        {/* Right 1 Col: Live Queue Board Preview */}
+        <div className="bg-surface rounded-2xl p-6 border border-outline-variant shadow-[var(--admin-shadow-sm)] space-y-5">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-headline font-bold text-teak-dark text-lg">
-                {lang === 'th' ? 'คิวถัดไปวันนี้' : 'Upcoming Queue'}
-              </h3>
-              <p className="text-xs text-charcoal-muted">{lang === 'th' ? 'รายการคิวล่าสุด' : 'Recent active queue items'}</p>
+              <h2 className="font-headline font-semibold text-teak-dark text-lg">
+                {t('admin.queue')}
+              </h2>
+              <p className="text-xs text-charcoal-muted">{lang === 'th' ? 'ลำดับคิวรับบริการสด' : 'Live treatment queue'}</p>
             </div>
             <button
               onClick={() => onNavigate('queue')}
-              className="text-xs font-semibold text-secondary hover:text-terracotta-muted link-underline cursor-pointer"
+              className="text-xs font-semibold text-secondary hover:text-terracotta-muted cursor-pointer"
             >
-              {lang === 'th' ? `ดูคิวทั้งหมด (${queueItems.length})` : `View All (${queueItems.length})`}
+              {lang === 'th' ? `ดูทั้งหมด (${queueItems.length})` : `View All (${queueItems.length})`}
             </button>
           </div>
 
@@ -251,30 +370,36 @@ export default function AdminDashboard({ onNavigate, onOpenWalkInModal, onOpenAs
             {queueItems.slice(0, 5).map((q) => (
               <div
                 key={q.queueNo}
-                className="p-4 rounded-xl border border-outline-variant/75 hover:border-wood-deep/60 bg-surface-container-low/70 hover:bg-surface-container-low transition-all duration-200 flex items-center justify-between"
+                className="p-3.5 rounded-xl border border-outline-variant hover:border-wood-deep/60 bg-surface-container-low hover:bg-surface-container transition-all flex items-center justify-between"
               >
-                <div>
+                <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-secondary text-xs px-2 py-0.5 rounded bg-secondary-container">{q.queueNo}</span>
                     <span className="text-xs font-semibold text-on-surface">{q.customerName}</span>
                   </div>
-                  <div className="text-[11px] text-on-surface-variant mt-1">{q.serviceName} ({q.durationMinutes} {lang === 'th' ? 'นาที' : 'Mins'})</div>
+                  <div className="text-[11px] text-on-surface-variant">{q.serviceName} ({q.durationMinutes} {lang === 'th' ? 'นาที' : 'mins'})</div>
                   <div className="text-[10px] text-charcoal-muted">{lang === 'th' ? 'เวลา:' : 'Time:'} {q.time} • {q.type}</div>
                 </div>
 
-                <div className="flex flex-col items-end gap-1">
+                <div className="flex flex-col items-end gap-1.5">
                   <StatusBadge status={q.status} size="sm" />
-                  {q.status === 'WAITING' || q.status === 'CHECKED_IN' ? (
+                  {(q.status === 'WAITING' || q.status === 'CHECKED_IN') && (
                     <button
                       onClick={() => handleStartService(q)}
-                      className="px-2.5 py-1.5 text-[10px] rounded-lg bg-teak-dark text-on-primary hover:bg-teak-deep transition-colors font-semibold cursor-pointer"
+                      className="px-2.5 py-1 text-[11px] rounded-lg bg-teak-dark text-on-primary hover:bg-teak-deep transition-colors font-semibold cursor-pointer"
                     >
-                      {lang === 'th' ? 'เข้าห้องนวด →' : 'Start Service →'}
+                      {lang === 'th' ? 'เข้าห้องนวด →' : 'Start →'}
                     </button>
-                  ) : null}
+                  )}
                 </div>
               </div>
             ))}
+
+            {queueItems.length === 0 && (
+              <div className="py-8 text-center text-xs text-charcoal-muted">
+                {t('admin.noMatchingRecords')}
+              </div>
+            )}
           </div>
         </div>
       </div>

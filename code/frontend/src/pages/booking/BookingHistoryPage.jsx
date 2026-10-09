@@ -162,7 +162,20 @@ export default function BookingHistoryPage({ onNavigate }) {
                         {booking.roomNumber || '—'} · {t('history.durationMinutes', { n: booking.durationMinutes })}
                       </td>
                       <td className={`${bodyCellClass} text-right font-semibold whitespace-nowrap`}>
-                        {formatPrice(booking.totalPrice)}
+                        {booking.discountAmount && Number(booking.discountAmount) > 0 ? (
+                          <div className="inline-flex items-baseline justify-end gap-1.5">
+                            <span className="text-on-surface font-semibold text-sm">
+                              {formatPrice(booking.netAmount ?? booking.totalPrice)}
+                            </span>
+                            <span className="text-[11px] text-on-surface-variant/60 line-through font-normal tabular-nums">
+                              {formatPrice(booking.totalPrice)}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-on-surface font-semibold text-sm">
+                            {formatPrice(booking.netAmount ?? booking.totalPrice)}
+                          </span>
+                        )}
                       </td>
                       <td className={bodyCellClass}>
                         <span

@@ -76,6 +76,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/services/**", "/api/therapists/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/bookings/availability").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/payments/promotions/validate").permitAll()
                 // Admin user & financial reports management: Owner only
                 .requestMatchers("/api/admin/users/**").hasRole("OWNER")
                 .requestMatchers("/api/admin/reports/**").hasRole("OWNER")

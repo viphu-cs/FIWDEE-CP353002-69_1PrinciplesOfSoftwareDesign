@@ -19,11 +19,25 @@ export default function LoginPage({ onNavigate }) {
   const pendingRedirect = sessionStorage.getItem('fiwdee_pending_redirect')
 
   // หลังล็อกอินสำเร็จ: ถ้ามี redirect ที่แนบมาให้กลับไปหน้านั้น (เช่น หน้าจองคิว)
-  // ไม่งั้นกลับไปหน้าแรกก่อนเสมอ
-  const navigateAfterLogin = () => {
+  // ถ้าเป็นทีมงาน (OWNER/RECEPTIONIST/THERAPIST) นำทางเข้าหลังบ้านตามสิทธิ์ทันที
+  const navigateAfterLogin = (role) => {
     if (pendingRedirect) {
       sessionStorage.removeItem('fiwdee_pending_redirect')
-      onNavigate?.(pendingRedirect)
+      const pendingTherapistId = sessionStorage.getItem('fiwdee_pending_therapist_id')
+      if (pendingTherapistId) {
+        sessionStorage.removeItem('fiwdee_pending_therapist_id')
+        onNavigate?.(pendingRedirect, { therapistId: pendingTherapistId })
+      } else {
+        onNavigate?.(pendingRedirect)
+      }
+      return
+    }
+    if (role === 'THERAPIST') {
+      onNavigate?.('admin', { subRoute: 'therapist-queue' })
+      return
+    }
+    if (role === 'OWNER' || role === 'RECEPTIONIST') {
+      onNavigate?.('admin', { subRoute: 'dashboard' })
       return
     }
     onNavigate?.('home')
@@ -63,14 +77,14 @@ export default function LoginPage({ onNavigate }) {
       return
     }
 
-    // บันทึก token + โปรไฟล์ผ่าน CustomerAuthContext (fiwdee_token + fiwdee_customer_auth)
+    // บันทึก token + โปรไฟล์ผ่าน CustomerAuthContext (fiwdee_token + fiwdee_customer_auth + fiwdee_admin_user)
     login(res.data, rememberMe)
     setFeedback(
       `${pendingRedirect ? t('auth.loginSuccessRedirect') : t('auth.loginSuccess')}`
     )
     setTimeout(() => {
       setSubmitting(false)
-      navigateAfterLogin()
+      navigateAfterLogin(res.data?.role)
     }, 700)
   }
 

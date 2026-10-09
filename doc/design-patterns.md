@@ -792,7 +792,7 @@ classDiagram
 ```
 
 ### How it is applied in FIWDEE
-* **Security & Single Source of Truth:** ฝั่ง Client ส่งมาเพียงรหัสโปรโมชั่น `promoCode` (เช่น `"FIWDEE20"`) ผ่าน `PaymentRequestDTO` ระบบ Backend จะนำยอดเต็ม `grossAmount` มาจาก `Booking.totalPrice` ในฐานข้อมูลจริง แล้วส่งให้ `DiscountStrategy` ทำการคำนวณ `discountAmount` อย่างถูกต้อง ปลอดภัย ไม่ให้ผู้ใช้ดัดแปลงราคาได้
+* **Security & Single Source of Truth:** ฝั่ง Client ส่งมาเพียงรหัสโปรโมชั่น `promoCode` (เช่น `"FIWDEE20"`) ผ่าน `PaymentRequestDTO` หรือเรียกตรวจสอบผ่าน `POST /api/payments/promotions/validate` โดยระบบ Backend จะเป็นผู้คำนวณส่วนลดทั้งหมดผ่าน `DiscountStrategy` ห้ามมีการคำนวณทางคณิตศาสตร์เรื่องส่วนลดบน Frontend เด็ดขาด เพื่อป้องกันการถูกแทรกแซงราคา (Tampering)
 * **Open-Closed Principle (OCP):** ในอนาคตหากทางร้านต้องการเพิ่มโปรโมชั่นใหม่ (เช่น ส่วนลดเทศกาลสงกรานต์) สามารถสร้าง Concrete Class ใหม่ที่ Implement `DiscountStrategy` ขึ้นมาเป็น Spring Bean ได้ทันทีโดยไม่ต้องแก้ไขหรือกระทบโค้ดใน `PaymentService` เลย
 * **Zero Collision:** โครงสร้างคลาสส่วนลดนี้อยู่ในแพ็กเกจ `com.fiwdee.pattern.strategy.discount` ภายใต้ความรับผิดชอบของ Dev 5 จึงไม่กระทบกับโมดูลของเพื่อนในทีม
 

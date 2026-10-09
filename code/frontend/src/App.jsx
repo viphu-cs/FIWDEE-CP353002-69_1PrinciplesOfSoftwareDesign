@@ -15,7 +15,8 @@ import CustomerProfilePage from './pages/profile/CustomerProfilePage.jsx'
 import BookingHistoryPage from './pages/booking/BookingHistoryPage.jsx'
 import { LanguageProvider } from './i18n/LanguageContext.jsx'
 import { CustomerAuthProvider } from './context/CustomerAuthContext.jsx'
-import { therapists } from './data/mock.js'
+import { therapists as mockTherapists } from './data/mock.js'
+import api from './lib/api.js'
 
 // Admin Portal Imports
 import AdminLayout from './admin/layouts/AdminLayout.jsx'
@@ -26,6 +27,9 @@ import AdminTherapists from './admin/pages/AdminTherapists.jsx'
 import AdminRooms from './admin/pages/AdminRooms.jsx'
 import AdminServices from './admin/pages/AdminServices.jsx'
 import AdminUsers from './admin/pages/AdminUsers.jsx'
+import AdminTherapistQueue from './admin/pages/AdminTherapistQueue.jsx'
+import AdminTherapistSchedule from './admin/pages/AdminTherapistSchedule.jsx'
+import AdminTherapistEarnings from './admin/pages/AdminTherapistEarnings.jsx'
 
 // สถานะล็อกอิน = มีทั้ง JWT token และโปรไฟล์ (เช็คแค่โปรไฟล์ไม่พอ — ข้อมูลเก่าค้างจากยุค mock
 // ต้องไม่นับเป็นล็อกอิน ให้ตรงกับเงื่อนไขของ CustomerAuthContext)
@@ -41,13 +45,44 @@ const BOOKING_NAV_KEYS = ['booking', 'book', 'booking-flow', 'direct-booking']
 // หน้าที่ต้องล็อกอินก่อน (โปรไฟล์ / ประวัติการจอง รวมอยู่ด้วย)
 const LOGIN_REQUIRED_KEYS = [...BOOKING_NAV_KEYS, 'profile', 'my-bookings']
 
+const getStoredUserRole = () => {
+  try {
+    const raw = localStorage.getItem('fiwdee_admin_user') || localStorage.getItem('fiwdee_customer_auth') || sessionStorage.getItem('fiwdee_customer_auth')
+    return raw ? JSON.parse(raw)?.role : null
+  } catch {
+    return null
+  }
+}
+
 function getInitialNavigation() {
   if (typeof window === 'undefined') return { page: 'home', adminRoute: 'dashboard', therapistId: 1 }
   const hash = window.location.hash.toLowerCase()
 
   if (hash.startsWith('#admin')) {
+    const token = localStorage.getItem('fiwdee_token')
+    const role = getStoredUserRole()
+
+    // หากยังไม่ล็อกอิน หรือเป็นลูกค้าทั่วไป (CUSTOMER) ห้ามเข้าหลังบ้าน ให้กลับหน้าแรกทันที
+    if (!token || !role || role === 'CUSTOMER') {
+      window.location.hash = '#top'
+      return { page: 'home', adminRoute: 'dashboard', therapistId: 1 }
+    }
+
     const parts = hash.split('/')
-    const subRoute = parts[1] || 'dashboard'
+    let subRoute = parts[1] || (role === 'THERAPIST' ? 'therapist-queue' : 'dashboard')
+
+    // ตรวจสอบสิทธิ์เฉพาะของแต่ละบทบาท
+    if (role === 'THERAPIST') {
+      const allowedTherapist = ['therapist-queue', 'therapist-schedule', 'therapist-earnings']
+      if (!allowedTherapist.includes(subRoute)) {
+        subRoute = 'therapist-queue'
+      }
+    } else if (role === 'RECEPTIONIST') {
+      if (subRoute === 'users') {
+        subRoute = 'dashboard'
+      }
+    }
+
     return { page: 'admin', adminRoute: subRoute, therapistId: 1 }
   }
 
@@ -82,11 +117,25 @@ function getInitialNavigation() {
     return { page: 'login', adminRoute: 'dashboard', therapistId: 1 }
   }
   if (hash.startsWith('#booking') || hash.startsWith('#book-flow')) {
+    let bookingTherapistId = null
+    const queryIdx = hash.indexOf('?')
+    if (queryIdx !== -1) {
+      const search = new URLSearchParams(hash.substring(queryIdx))
+      bookingTherapistId = search.get('therapistId')
+    }
+    const pendingTherapistId = sessionStorage.getItem('fiwdee_pending_therapist_id')
+    if (!bookingTherapistId && pendingTherapistId) {
+      bookingTherapistId = pendingTherapistId
+    }
+
     // เข้าถึงหน้าจองคิวได้เฉพาะเมื่อล็อกอินแล้ว ไม่งั้นพาไปหน้าล็อกอิน
     if (isCustomerLoggedIn()) {
-      return { page: 'booking', adminRoute: 'dashboard', therapistId: 1 }
+      return { page: 'booking', adminRoute: 'dashboard', therapistId: 1, bookingTherapistId }
     }
     sessionStorage.setItem('fiwdee_pending_redirect', 'booking')
+    if (bookingTherapistId) {
+      sessionStorage.setItem('fiwdee_pending_therapist_id', String(bookingTherapistId))
+    }
     return { page: 'login', adminRoute: 'dashboard', therapistId: 1 }
   }
   if (hash.startsWith('#login')) {
@@ -123,9 +172,15 @@ export default function App() {
 
   const handleNavigate = (targetKey, params) => {
     if (targetKey === 'admin') {
-      const sub = params?.subRoute || 'dashboard'
+      const role = getStoredUserRole()
+      const defaultSub = role === 'THERAPIST' ? 'therapist-queue' : 'dashboard'
+      const sub = params?.subRoute || defaultSub
       setNavState({ page: 'admin', adminRoute: sub, therapistId: 1 })
       window.history.pushState(null, '', `#admin/${sub}`)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else if (targetKey === 'admin-therapist') {
+      setNavState({ page: 'admin', adminRoute: 'therapist-queue', therapistId: 1 })
+      window.history.pushState(null, '', '#admin/therapist-queue')
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } else if (targetKey === 'therapist-profile') {
       const id = params?.therapistId || 1
@@ -152,14 +207,26 @@ export default function App() {
       // CTA จองคิว / โปรไฟล์ / ประวัติการจอง: เช็กสถานะล็อกอินก่อน — ถ้ายังไม่ล็อกอิน
       // พาไปหน้าล็อกอินพร้อมแนบ redirect กลับมาหน้าเดิมหลังล็อกอินสำเร็จ
       const destination = BOOKING_NAV_KEYS.includes(targetKey) ? 'booking' : targetKey
+      const bTherapistId = params?.therapistId || null
       if (!isCustomerLoggedIn()) {
         sessionStorage.setItem('fiwdee_pending_redirect', destination)
+        if (bTherapistId) {
+          sessionStorage.setItem('fiwdee_pending_therapist_id', String(bTherapistId))
+        } else {
+          sessionStorage.removeItem('fiwdee_pending_therapist_id')
+        }
         setNavState({ page: 'login', adminRoute: 'dashboard', therapistId: 1 })
         window.history.pushState(null, '', '#login')
         window.scrollTo({ top: 0, behavior: 'smooth' })
       } else {
-        setNavState({ page: destination, adminRoute: 'dashboard', therapistId: 1 })
-        window.history.pushState(null, '', `#${destination}`)
+        setNavState({
+          page: destination,
+          adminRoute: 'dashboard',
+          therapistId: 1,
+          bookingTherapistId: bTherapistId,
+        })
+        const queryStr = bTherapistId ? `?therapistId=${bTherapistId}` : ''
+        window.history.pushState(null, '', `#${destination}${queryStr}`)
         window.scrollTo({ top: 0, behavior: 'smooth' })
       }
     } else if (targetKey === 'login') {
@@ -181,9 +248,53 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  // หาหมอนวดที่เลือกอยู่ สำหรับหน้าโปรไฟล์
+  // โหลดรายชื่อผู้บำบัดจริงจาก API (พร้อม fallback จาก mock)
+  const [allTherapists, setAllTherapists] = useState(mockTherapists)
+
+  useEffect(() => {
+    let isMounted = true
+    api.get('/therapists')
+      .then((res) => {
+        if (isMounted && res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+          const merged = res.data.map((bt, idx) => {
+            const matchedMock =
+              mockTherapists.find((mt) => mt.nickname.toLowerCase() === bt.nickname.toLowerCase()) ||
+              mockTherapists[idx % mockTherapists.length]
+
+            const backendSkills = bt.skills || []
+            const specialties = []
+            backendSkills.forEach((s) => {
+              const lower = s.toLowerCase()
+              if (lower.includes('thai')) specialties.push('thai')
+              if (lower.includes('aroma')) specialties.push('aroma')
+              if (lower.includes('oil')) specialties.push('oil')
+              if (lower.includes('foot')) specialties.push('foot')
+            })
+
+            return {
+              ...matchedMock,
+              id: bt.id,
+              nickname: bt.nickname,
+              specialties: specialties.length > 0 ? specialties : matchedMock.specialties,
+              rating: bt.averageRating > 0 ? Number(bt.averageRating) : matchedMock.rating,
+              bio: bt.bio || matchedMock.bio,
+            }
+          })
+          setAllTherapists(merged)
+        }
+      })
+      .catch(() => {})
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  // หาหมอนวดที่เลือกอยู่ สำหรับหน้าโปรไฟล์ (รองรับทั้ง id ตัวเลขและ string)
   const activeTherapist =
-    therapists.find((t) => t.id === selectedTherapistId) || therapists[0]
+    allTherapists.find((t) => String(t.id) === String(selectedTherapistId)) ||
+    allTherapists[0] ||
+    therapists[0]
 
   return (
     <MotionConfig reducedMotion="user">
@@ -203,6 +314,12 @@ export default function App() {
               <AdminServices />
             ) : adminRoute === 'users' ? (
               <AdminUsers />
+            ) : adminRoute === 'therapist-queue' ? (
+              <AdminTherapistQueue />
+            ) : adminRoute === 'therapist-schedule' ? (
+              <AdminTherapistSchedule />
+            ) : adminRoute === 'therapist-earnings' ? (
+              <AdminTherapistEarnings />
             ) : (
               <AdminDashboard />
             )}
@@ -223,7 +340,10 @@ export default function App() {
             ) : currentPage === 'about' ? (
               <AboutPage onNavigate={handleNavigate} />
             ) : currentPage === 'booking' ? (
-              <BookingPage onNavigate={handleNavigate} />
+              <BookingPage
+                onNavigate={handleNavigate}
+                initialTherapistId={navState.bookingTherapistId}
+              />
             ) : currentPage === 'profile' ? (
               <CustomerProfilePage onNavigate={handleNavigate} />
             ) : currentPage === 'my-bookings' ? (

@@ -2,9 +2,19 @@ import React, { useState } from 'react'
 import { useAdminAuth } from '../context/AdminAuthContext.jsx'
 import { useLanguage } from '../../i18n/useLanguage.js'
 
+const serviceSkillMap = {
+  'นวดแผนไทยโบราณ': 'Traditional Thai Massage',
+  'นวดอโรมาสุคนธบำบัด': 'Aroma Therapy Massage',
+  'นวดเท้าคลายตึง': 'Foot Reflexology',
+  'FIWDEE Royal Herbal Spa': 'FIWDEE Royal Herbal Spa'
+}
+
 export default function QuickActionModal({ isOpen, onClose, modalType = 'walkin', initialData = null }) {
   const { services, therapists, rooms, addWalkInQueue, updateRoomStatus, assignAndStartService } = useAdminAuth()
   const { lang, t } = useLanguage()
+
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const nowTimeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
 
   // Registration Mode: 'WALK_IN' or 'PHONE_BOOKING'
   const [bookingType, setBookingType] = useState('WALK_IN')
@@ -16,8 +26,8 @@ export default function QuickActionModal({ isOpen, onClose, modalType = 'walkin'
   const [durationMinutes, setDurationMinutes] = useState(60)
   const [selectedTherapist, setSelectedTherapist] = useState('')
   const [selectedRoom, setSelectedRoom] = useState('')
-  const [bookingDate, setBookingDate] = useState('2026-10-02')
-  const [bookingTime, setBookingTime] = useState('14:30')
+  const [bookingDate, setBookingDate] = useState(todayStr)
+  const [bookingTime, setBookingTime] = useState(nowTimeStr || '14:30')
   const [errorMsg, setErrorMsg] = useState('')
 
   // Form State for Room Status Edit
@@ -114,11 +124,11 @@ export default function QuickActionModal({ isOpen, onClose, modalType = 'walkin'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs font-body-md">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full border border-stone-200 overflow-hidden transform transition-all">
+      <div className="bg-surface rounded-2xl shadow-2xl max-w-lg w-full border border-outline-variant overflow-hidden transform transition-all">
         {/* Modal Header */}
-        <div className="bg-stone-900 text-stone-100 px-6 py-4 flex items-center justify-between">
+        <div className="bg-teak-deep text-warm-ivory px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="text-amber-500">
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="text-terracotta">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
             <h3 className="font-semibold text-lg font-headline tracking-wide">
@@ -132,7 +142,7 @@ export default function QuickActionModal({ isOpen, onClose, modalType = 'walkin'
           <button
             onClick={onClose}
             type="button"
-            className="text-stone-400 hover:text-white text-xl leading-none p-1 transition-colors cursor-pointer"
+            className="text-warm-ivory/70 hover:text-warm-ivory text-xl leading-none p-1 transition-colors cursor-pointer"
           >
             ✕
           </button>
@@ -148,28 +158,28 @@ export default function QuickActionModal({ isOpen, onClose, modalType = 'walkin'
                 onClick={() => setBookingType('WALK_IN')}
                 className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   bookingType === 'WALK_IN'
-                    ? 'bg-amber-900 text-white shadow-xs'
+                    ? 'bg-teak-dark text-warm-ivory shadow-xs'
                     : 'text-stone-600 hover:text-stone-900'
                 }`}
               >
-                🚶🏻‍♀️ Walk-in หน้าร้าน
+                {lang === 'th' ? 'ลูกค้า Walk-in หน้าร้าน' : 'Walk-in Customer'}
               </button>
               <button
                 type="button"
                 onClick={() => setBookingType('PHONE_BOOKING')}
                 className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   bookingType === 'PHONE_BOOKING'
-                    ? 'bg-amber-900 text-white shadow-xs'
+                    ? 'bg-teak-dark text-warm-ivory shadow-xs'
                     : 'text-stone-600 hover:text-stone-900'
                 }`}
               >
-                📞 โทรเข้ามาจองนัดหมาย (Phone)
+                {lang === 'th' ? 'โทรจองนัดหมาย (Phone)' : 'Phone Booking'}
               </button>
             </div>
 
             {errorMsg && (
-              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold">
-                ⚠️ {errorMsg}
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium">
+                {errorMsg}
               </div>
             )}
 
@@ -278,15 +288,17 @@ export default function QuickActionModal({ isOpen, onClose, modalType = 'walkin'
                   <option value="">{lang === 'th' ? 'ไม่ระบุ (หมอนวดคิวถัดไป)' : 'Auto Assign'}</option>
                   {therapists.map((t) => {
                     const isAvail = t.status === 'ON_DUTY'
+                    const reqSkill = serviceSkillMap[selectedService]
+                    const hasSkill = reqSkill ? t.skills?.includes(reqSkill) : true
                     return (
                       <option key={t.id} value={t.fullName} disabled={!isAvail}>
-                        {t.nickname} - {t.fullName} ({isAvail ? (lang === 'th' ? 'พร้อม' : 'Ready') : (lang === 'th' ? `ไม่ว่าง: ${t.status}` : `Busy: ${t.status}`)})
+                        {t.nickname} - {t.fullName} ({isAvail ? (lang === 'th' ? 'พร้อมให้บริการ' : 'Ready') : (lang === 'th' ? 'ไม่ว่าง' : 'Busy')}){reqSkill ? (hasSkill ? ' · มีทักษะตรง' : ' · ทักษะไม่ตรง') : ''}
                       </option>
                     )
                   })}
                 </select>
                 {availableTherapists.length === 0 && (
-                  <p className="text-[11px] text-amber-800 mt-1 font-medium">⚠️ ขณะนี้ไม่มีหมอนวดว่าง</p>
+                  <p className="text-[11px] text-stone-500 mt-1 font-medium">ขณะนี้ไม่มีหมอนวดว่าง</p>
                 )}
               </div>
 
@@ -304,7 +316,7 @@ export default function QuickActionModal({ isOpen, onClose, modalType = 'walkin'
                     const isAvail = r.status === 'AVAILABLE'
                     return (
                       <option key={r.id} value={r.id} disabled={!isAvail}>
-                        {r.id} - {r.name} ({isAvail ? (lang === 'th' ? 'ห้องว่าง' : 'Available') : (lang === 'th' ? `ไม่พร้อม: ${r.status}` : `Unavailable: ${r.status}`)})
+                        {r.id} - {r.name} ({isAvail ? (lang === 'th' ? 'ห้องว่าง' : 'Available') : (lang === 'th' ? 'ไม่ว่าง' : 'Unavailable')})
                       </option>
                     )
                   })}
@@ -322,7 +334,7 @@ export default function QuickActionModal({ isOpen, onClose, modalType = 'walkin'
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-amber-900 text-stone-100 hover:bg-amber-950 text-sm font-semibold shadow-sm transition-all cursor-pointer"
+                className="px-5 py-2 rounded-xl bg-teak-dark text-warm-ivory hover:bg-teak-deep text-sm font-semibold shadow-xs transition-all cursor-pointer"
               >
                 {t('admin.save')}
               </button>
@@ -389,18 +401,20 @@ export default function QuickActionModal({ isOpen, onClose, modalType = 'walkin'
                 required
                 className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-amber-800/40 text-sm bg-stone-50 font-medium"
               >
-                <option value="">-- เลือกหมอนวด (เฉพาะผู้ที่เข้ากะและว่างอยู่) --</option>
+                <option value="">-- {lang === 'th' ? 'เลือกหมอนวด (เฉพาะผู้ที่เข้ากะและว่างอยู่)' : 'Select Therapist (On Duty)'} --</option>
                 {therapists.map((t) => {
                   const isAvailable = t.status === 'ON_DUTY' || t.fullName === assignTherapist || t.nickname === assignTherapist
+                  const reqSkill = serviceSkillMap[assignService]
+                  const hasSkill = reqSkill ? t.skills?.includes(reqSkill) : true
                   return (
                     <option key={t.id} value={t.fullName} disabled={!isAvailable}>
-                      {t.nickname} ({t.fullName}) - {isAvailable ? '🟢 พร้อมรับงาน (ON DUTY)' : `🔴 ไม่ว่าง (${t.status})`}
+                      {t.nickname} ({t.fullName}) - {isAvailable ? (lang === 'th' ? 'พร้อมรับงาน' : 'On Duty') : (lang === 'th' ? 'ไม่ว่าง' : 'Busy')}{reqSkill ? (hasSkill ? ' · มีทักษะตรง' : ' · ทักษะไม่ตรง') : ''}
                     </option>
                   )
                 })}
               </select>
               {availableTherapists.length === 0 && (
-                <p className="text-[11px] text-rose-600 mt-1 font-semibold">⚠️ ไม่มีหมอนวดว่างในขณะนี้ กรุณาเปลี่ยนกะหมอนวดหรือรอหมอนวดทำบริการเสร็จ</p>
+                <p className="text-[11px] text-stone-500 mt-1 font-medium">ไม่มีหมอนวดว่างในขณะนี้ กรุณาเปลี่ยนกะหมอนวดหรือรอหมอนวดทำบริการเสร็จ</p>
               )}
             </div>
 
@@ -415,18 +429,18 @@ export default function QuickActionModal({ isOpen, onClose, modalType = 'walkin'
                 required
                 className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-amber-800/40 text-sm bg-stone-50 font-medium"
               >
-                <option value="">-- เลือกห้องนวด (เฉพาะห้องว่าง AVAILABLE) --</option>
+                <option value="">-- {lang === 'th' ? 'เลือกห้องนวด (เฉพาะห้องว่าง)' : 'Select Available Room'} --</option>
                 {rooms.map((r) => {
                   const isAvailable = r.status === 'AVAILABLE' || r.id === assignRoom
                   return (
                     <option key={r.id} value={r.id} disabled={!isAvailable}>
-                      {r.id} - {r.name} ({r.type}) - {isAvailable ? '🟢 ห้องว่าง' : `🔴 ไม่ว่าง (${r.status})`}
+                      {r.id} - {r.name} ({r.type}) - {isAvailable ? (lang === 'th' ? 'ห้องว่าง' : 'Available') : (lang === 'th' ? 'ไม่ว่าง' : 'Unavailable')}
                     </option>
                   )
                 })}
               </select>
               {availableRooms.length === 0 && (
-                <p className="text-[11px] text-rose-600 mt-1 font-semibold">⚠️ ไม่มีห้องนวดว่างในขณะนี้ กรุณารอทำความสะอาดห้องนวดก่อน</p>
+                <p className="text-[11px] text-stone-500 mt-1 font-medium">ไม่มีห้องนวดว่างในขณะนี้ กรุณารอทำความสะอาดห้องนวดก่อน</p>
               )}
             </div>
 
@@ -440,12 +454,12 @@ export default function QuickActionModal({ isOpen, onClose, modalType = 'walkin'
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-emerald-800 text-white hover:bg-emerald-900 text-sm font-semibold shadow-sm transition-all cursor-pointer flex items-center gap-1.5"
+                className="px-5 py-2 rounded-xl bg-teak-dark text-warm-ivory hover:bg-teak-deep text-sm font-semibold shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
               >
                 <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
-                ยืนยันและเริ่มนวดทันที
+                {lang === 'th' ? 'ยืนยันและเริ่มบริการ' : 'Confirm & Start'}
               </button>
             </div>
           </form>
@@ -498,7 +512,7 @@ export default function QuickActionModal({ isOpen, onClose, modalType = 'walkin'
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-amber-900 text-stone-100 hover:bg-amber-950 text-sm font-semibold shadow-sm transition-all cursor-pointer"
+                className="px-5 py-2 rounded-xl bg-teak-dark text-warm-ivory hover:bg-teak-deep text-sm font-semibold shadow-xs transition-all cursor-pointer"
               >
                 {t('admin.save')}
               </button>

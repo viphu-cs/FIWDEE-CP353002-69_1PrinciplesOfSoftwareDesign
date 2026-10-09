@@ -3,12 +3,11 @@ import AdminSidebar from '../components/AdminSidebar.jsx'
 import AdminTopbar from '../components/AdminTopbar.jsx'
 import QuickActionModal from '../components/QuickActionModal.jsx'
 import { AdminAuthProvider, useAdminAuth } from '../context/AdminAuthContext.jsx'
-import AdminLoginPage from '../pages/AdminLoginPage.jsx'
 import { RenderIcon, getNavLinks } from '../components/AdminSidebar.jsx'
 import { useLanguage } from '../../i18n/useLanguage.js'
 
 function AdminLayoutContent({ currentRoute = 'dashboard', onNavigate, children }) {
-  const { isAuthenticated } = useAdminAuth()
+  const { isAuthenticated, user, queueItems } = useAdminAuth()
   const { t } = useLanguage()
   const [modalState, setModalState] = useState({
     isOpen: false,
@@ -16,9 +15,28 @@ function AdminLayoutContent({ currentRoute = 'dashboard', onNavigate, children }
     initialData: null
   })
 
-  // If not authenticated, force render Admin Login Page
-  if (!isAuthenticated) {
-    return <AdminLoginPage />
+  // หากไม่มีสิทธิ์เข้าถึงหลังบ้าน (ไม่ได้ล็อกอิน หรือเป็น CUSTOMER) ให้กลับหน้าแรกทันที
+  React.useEffect(() => {
+    if (!isAuthenticated || user?.role === 'CUSTOMER') {
+      window.location.hash = '#top'
+      return
+    }
+
+    // Role-based route guard
+    if (user?.role === 'THERAPIST') {
+      const allowedTherapistRoutes = ['therapist-queue', 'therapist-schedule', 'therapist-earnings']
+      if (!allowedTherapistRoutes.includes(currentRoute)) {
+        onNavigate('therapist-queue')
+      }
+    } else if (user?.role === 'RECEPTIONIST') {
+      if (currentRoute === 'users') {
+        onNavigate('dashboard')
+      }
+    }
+  }, [isAuthenticated, user?.role, currentRoute, onNavigate])
+
+  if (!isAuthenticated || user?.role === 'CUSTOMER') {
+    return null
   }
 
   const openWalkInModal = () => {
@@ -49,7 +67,8 @@ function AdminLayoutContent({ currentRoute = 'dashboard', onNavigate, children }
     setModalState(prev => ({ ...prev, isOpen: false }))
   }
 
-  const navLinks = getNavLinks(t)
+  const waitingCount = queueItems?.filter(q => q.status === 'WAITING' || q.status === 'PENDING' || q.status === 'CHECKED_IN').length || 0
+  const navLinks = getNavLinks(t, waitingCount, user?.role)
 
   return (
     <div className="admin-theme min-h-screen bg-[var(--admin-page)] font-body-md text-on-surface antialiased flex flex-col">
@@ -84,15 +103,15 @@ function AdminLayoutContent({ currentRoute = 'dashboard', onNavigate, children }
         </main>
 
         {/* Bottom Navigation for Mobile & Tablet */}
-        <nav aria-label="Mobile Navigation Bar" className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-stone-900 text-stone-200 border-t border-stone-800 px-2 py-2 flex items-center justify-around shadow-2xl">
+        <nav aria-label="Mobile Navigation Bar" className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-teak-deep text-warm-ivory border-t border-wood-deep/30 px-2 py-2 flex items-center justify-around shadow-2xl">
           {navLinks.slice(0, 5).map((item) => (
             <button
               key={item.key}
               onClick={() => onNavigate(item.key)}
               className={`flex flex-col items-center gap-1 px-3 py-1 rounded-xl text-[10px] font-semibold transition-colors cursor-pointer ${
                 currentRoute === item.key
-                  ? 'text-amber-300 font-bold bg-stone-800'
-                  : 'text-stone-400 hover:text-stone-200'
+                  ? 'text-wood-light font-bold bg-primary-container'
+                  : 'text-sand-warm hover:text-warm-ivory'
               }`}
             >
               <RenderIcon type={item.iconType} />
