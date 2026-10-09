@@ -44,21 +44,21 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
   })
 
   return (
-    <div className="space-y-6 text-stone-800">
+    <div className="space-y-6 text-on-surface">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-headline font-bold text-stone-900">
+          <h2 className="text-2xl font-headline font-bold text-teak-deep">
             จัดการคิวสด (Live Queue Board)
           </h2>
-          <p className="text-xs sm:text-sm text-stone-500 mt-0.5">
+          <p className="text-xs sm:text-sm text-charcoal-muted mt-0.5">
             จัดการเรียกคิว เช็คอินลูกค้านวดไทย-อโรมา และส่งเข้าห้องนวดแบบ Real-time
           </p>
         </div>
 
         <button
           onClick={onOpenWalkInModal}
-          className="px-5 py-2.5 rounded-2xl bg-amber-900 text-stone-100 hover:bg-amber-950 font-semibold text-xs sm:text-sm shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+          className="px-5 py-2.5 rounded-2xl bg-teak-dark text-on-primary hover:bg-teak-deep font-semibold text-xs sm:text-sm shadow-[var(--admin-shadow-sm)] transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
           <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -68,7 +68,7 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
       </div>
 
       {/* Control Bar: Tabs & Search */}
-      <div className="bg-white rounded-2xl p-4 border border-stone-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-surface rounded-2xl p-4 border border-outline-variant shadow-[var(--admin-shadow-sm)] flex flex-col md:flex-row md:items-center justify-between gap-4">
         {/* Status Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-2 md:pb-0 scrollbar-none">
           {[
@@ -83,12 +83,12 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
               onClick={() => setActiveTab(tab.key)}
               className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeTab === tab.key
-                  ? 'bg-amber-900 text-white shadow-xs'
-                  : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                  ? 'bg-teak-dark text-on-primary shadow-xs'
+                  : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
               }`}
             >
               <span>{tab.label}</span>
-              <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${activeTab === tab.key ? 'bg-amber-800 text-amber-100' : 'bg-stone-200 text-stone-700'}`}>
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${activeTab === tab.key ? 'bg-wood-deep text-warm-ivory' : 'bg-surface-container text-on-surface-variant'}`}>
                 {tab.count}
               </span>
             </button>
@@ -102,9 +102,9 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
             placeholder="ค้นหาเลขคิว / ชื่อลูกค้า / เบอร์โทร..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-xl border border-stone-300 text-xs focus:outline-none focus:ring-2 focus:ring-amber-800/40"
+            className="w-full pl-9 pr-4 py-2 rounded-xl border border-outline-variant bg-surface-container-low text-on-surface text-xs placeholder:text-charcoal-muted hover:border-wood-deep"
           />
-          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="absolute left-3 top-3 text-stone-400">
+          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="absolute left-3 top-3 text-charcoal-muted">
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
@@ -113,29 +113,29 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
       {/* Queue Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredItems.length === 0 ? (
-          <div className="col-span-full bg-white rounded-2xl p-12 text-center border border-stone-200 text-stone-500">
+          <div className="col-span-full bg-surface rounded-2xl p-12 text-center border border-outline-variant text-charcoal-muted shadow-[var(--admin-shadow-sm)]">
             <p className="font-medium text-sm">ไม่พบข้อมูลคิวในหมวดหมู่นี้</p>
           </div>
         ) : (
           filteredItems.map((item) => (
             <div
               key={item.queueNo}
-              className={`bg-white rounded-2xl border transition-all p-5 flex flex-col justify-between space-y-4 shadow-2xs hover:shadow-md ${
+              className={`bg-surface rounded-2xl border transition-all p-5 flex flex-col justify-between space-y-4 shadow-[var(--admin-shadow-sm)] hover:-translate-y-0.5 hover:shadow-[var(--admin-shadow-md)] ${
                 item.status === 'IN_SERVICE'
                   ? 'border-emerald-300 ring-1 ring-emerald-300/50 bg-emerald-50/10'
                   : item.status === 'CHECKED_IN'
                   ? 'border-indigo-300 bg-indigo-50/10'
-                  : 'border-stone-200/80'
+                  : 'border-outline-variant'
               }`}
             >
               {/* Card Top Header */}
               <div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="text-xl font-bold font-headline px-3 py-1 bg-amber-900 text-amber-100 rounded-xl shadow-xs">
+                    <span className="text-xl font-bold font-headline px-3 py-1 bg-teak-dark text-warm-ivory rounded-xl shadow-xs">
                       {item.queueNo}
                     </span>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${item.type === 'WALK_IN' ? 'bg-amber-100 text-amber-900' : 'bg-sky-100 text-sky-900'}`}>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${item.type === 'WALK_IN' ? 'bg-terracotta-soft text-terracotta-deep' : 'bg-sky-100 text-sky-900'}`}>
                       {item.type}
                     </span>
                   </div>
@@ -144,8 +144,8 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
 
                 {/* Customer Details */}
                 <div className="mt-3 space-y-1">
-                  <h3 className="font-bold text-stone-900 text-base">{item.customerName}</h3>
-                  <div className="text-xs text-stone-600 flex items-center gap-2">
+                  <h3 className="font-bold text-teak-deep text-base">{item.customerName}</h3>
+                  <div className="text-xs text-charcoal-muted flex items-center gap-2">
                     <span>โทร: {item.phone}</span>
                     <span>•</span>
                     <span>เวลา: {item.time} น.</span>
@@ -153,38 +153,38 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
                 </div>
 
                 {/* Service Details */}
-                <div className="mt-3 p-3 bg-stone-50 rounded-xl border border-stone-200/60 text-xs space-y-1">
-                  <div className="font-semibold text-stone-800 flex items-center justify-between">
+                <div className="mt-3 p-3 bg-surface-container-low rounded-xl border border-outline-variant text-xs space-y-1">
+                  <div className="font-semibold text-on-surface flex items-center justify-between">
                     <span>บริการ: {item.serviceName}</span>
-                    <span className="font-bold text-amber-900">฿{item.price}</span>
+                    <span className="font-bold text-wood-deep">฿{item.price}</span>
                   </div>
-                  <div className="text-stone-500 text-[11px]">ระยะเวลา: {item.durationMinutes} นาที</div>
-                  <div className="text-stone-600 text-[11px]">หมอนวด: <strong className="text-stone-800">{item.therapistName}</strong></div>
-                  <div className="text-stone-600 text-[11px]">ห้องนวด: <strong className="text-stone-800">{item.roomNo || 'ยังไม่ได้ระบุ'}</strong></div>
+                  <div className="text-charcoal-muted text-[11px]">ระยะเวลา: {item.durationMinutes} นาที</div>
+                  <div className="text-on-surface-variant text-[11px]">หมอนวด: <strong className="text-on-surface">{item.therapistName}</strong></div>
+                  <div className="text-on-surface-variant text-[11px]">ห้องนวด: <strong className="text-on-surface">{item.roomNo || 'ยังไม่ได้ระบุ'}</strong></div>
                 </div>
               </div>
 
               {/* Action Buttons for Queue */}
-              <div className="pt-2 border-t border-stone-100 flex flex-wrap items-center gap-2">
+              <div className="pt-2 border-t border-outline-variant flex flex-wrap items-center gap-2">
                 {item.status === 'WAITING' || item.status === 'PENDING' ? (
                   <>
                     <button
                       onClick={() => {
                         alert(`เรียกคิว [${item.queueNo}] คุณ${item.customerName} เข้าจุดต้อนรับ`)
                       }}
-                      className="px-3 py-1.5 rounded-xl bg-amber-100 text-amber-900 hover:bg-amber-200 text-xs font-semibold transition-colors cursor-pointer"
+                      className="px-3 py-1.5 rounded-xl bg-terracotta-soft text-terracotta-deep hover:bg-terracotta/15 text-xs font-semibold transition-colors cursor-pointer"
                     >
                       เรียกคิว
                     </button>
                     <button
                       onClick={() => updateQueueStatus(item.queueNo, 'CHECKED_IN')}
-                      className="px-3 py-1.5 rounded-xl bg-indigo-700 text-white hover:bg-indigo-800 text-xs font-semibold transition-colors cursor-pointer"
+                      className="px-3 py-1.5 rounded-xl bg-teak-dark text-on-primary hover:bg-teak-deep text-xs font-semibold transition-colors cursor-pointer"
                     >
                       เช็คอิน
                     </button>
                     <button
                       onClick={() => updateQueueStatus(item.queueNo, 'CANCELLED')}
-                      className="px-2.5 py-1.5 rounded-xl bg-stone-100 text-stone-500 hover:bg-rose-50 hover:text-rose-700 text-xs font-medium transition-colors cursor-pointer ml-auto"
+                      className="px-2.5 py-1.5 rounded-xl bg-surface-container-low text-charcoal-muted hover:bg-rose-50 hover:text-rose-700 text-xs font-medium transition-colors cursor-pointer ml-auto"
                     >
                       ยกเลิก
                     </button>
@@ -202,13 +202,13 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
                   <>
                     <button
                       onClick={() => updateQueueStatus(item.queueNo, 'COMPLETED')}
-                      className="w-full px-3 py-2 rounded-xl bg-stone-900 text-white hover:bg-black text-xs font-semibold transition-colors cursor-pointer text-center"
+                      className="w-full px-3 py-2 rounded-xl bg-teak-deep text-on-primary hover:bg-wood-deep text-xs font-semibold transition-colors cursor-pointer text-center"
                     >
                       นวดเสร็จสิ้น (Complete Service)
                     </button>
                   </>
                 ) : (
-                  <div className="text-[11px] text-stone-400 font-medium italic">
+                  <div className="text-[11px] text-charcoal-muted font-medium italic">
                     สถานะเสร็จสิ้นสมบูรณ์
                   </div>
                 )}
