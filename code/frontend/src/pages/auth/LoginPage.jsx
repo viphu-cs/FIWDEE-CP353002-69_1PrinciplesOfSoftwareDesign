@@ -13,6 +13,7 @@ export default function LoginPage({ onNavigate }) {
   const [submitting, setSubmitting] = useState(false)
   const [feedback, setFeedback] = useState('')
   const [feedbackError, setFeedbackError] = useState(false)
+  const [passwordError, setPasswordError] = useState('')
 
   // redirect path ที่แนบมาตอนถูกส่งมาจากปุ่มจองคิว/โปรไฟล์ (เก็บใน sessionStorage)
   const pendingRedirect = sessionStorage.getItem('fiwdee_pending_redirect')
@@ -35,6 +36,7 @@ export default function LoginPage({ onNavigate }) {
     setSubmitting(true)
     setFeedback('')
     setFeedbackError(false)
+    setPasswordError('')
 
     const res = await api.post('/auth/login', {
       identifier: identifier.trim(),
@@ -44,7 +46,20 @@ export default function LoginPage({ onNavigate }) {
     if (!res.success) {
       setSubmitting(false)
       setFeedbackError(true)
-      setFeedback(res.message || t('auth.errLoginFailed'))
+      if (res.status === 401) {
+        // รหัสผ่าน/บัญชีไม่ถูกต้อง (หรือบัญชีถูกระงับ) — ใช้ข้อความจาก backend ถ้ามี
+        const msg = res.message && !res.message.startsWith('Request failed')
+          ? res.message
+          : t('auth.errWrongCredentials')
+        setPasswordError(msg)
+        setFeedback(msg)
+        setPassword('')
+        document.getElementById('password')?.focus()
+      } else if (!res.status) {
+        setFeedback(t('auth.errNetwork'))
+      } else {
+        setFeedback(res.message || t('auth.errLoginFailed'))
+      }
       return
     }
 
@@ -223,14 +238,20 @@ export default function LoginPage({ onNavigate }) {
                   </div>
                   <div className="relative">
                     <input
-                      className="w-full px-space-md py-3.5 rounded bg-surface-container-low text-on-surface font-body-md text-body-md placeholder:text-outline/60 focus:outline-none focus:bg-surface-container transition-colors"
+                      className={`w-full px-space-md py-3.5 rounded bg-surface-container-low text-on-surface font-body-md text-body-md placeholder:text-outline/60 focus:outline-none focus:bg-surface-container transition-colors ${
+                        passwordError ? 'ring-2 ring-error' : ''
+                      }`}
                       id="password"
                       name="password"
                       placeholder="กรอกรหัสผ่าน 8 ตัวอักษรขึ้นไป"
                       required
+                      aria-invalid={!!passwordError}
                       type={showPassword ? 'text' : 'password'}
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => {
+                        setPassword(e.target.value)
+                        if (passwordError) setPasswordError('')
+                      }}
                     />
                     <button
                       aria-label="Toggle password view"
@@ -243,6 +264,12 @@ export default function LoginPage({ onNavigate }) {
                       </span>
                     </button>
                   </div>
+                  {passwordError && (
+                    <p role="alert" className="flex items-center gap-1 font-body-sm text-body-sm text-error">
+                      <span className="material-symbols-outlined text-base">error</span>
+                      {passwordError}
+                    </p>
+                  )}
                 </div>
 
                 {/* Remember me & Security badge */}
