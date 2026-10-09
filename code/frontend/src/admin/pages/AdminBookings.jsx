@@ -30,21 +30,21 @@ export default function AdminBookings() {
   })
 
   return (
-    <div className="space-y-6 text-stone-800">
+    <div className="space-y-6 text-on-surface">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-headline font-bold text-stone-900">
+          <h2 className="text-2xl font-headline font-bold text-teak-deep">
             ตารางจัดการนัดหมายและการจองคิว (Bookings)
           </h2>
-          <p className="text-xs sm:text-sm text-stone-500 mt-0.5">
+          <p className="text-xs sm:text-sm text-charcoal-muted mt-0.5">
             ค้นหา ตรวจสอบสถานะการชำระเงิน และอัปเดตนัดหมายล่วงหน้าของลูกค้า
           </p>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white rounded-2xl p-4 border border-stone-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-surface rounded-2xl p-4 border border-outline-variant shadow-[var(--admin-shadow-sm)] flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-none">
           {['ALL', 'PENDING', 'CONFIRMED', 'CHECKED_IN', 'IN_SERVICE', 'COMPLETED', 'CANCELLED'].map((st) => (
             <button
@@ -52,8 +52,8 @@ export default function AdminBookings() {
               onClick={() => setStatusFilter(st)}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all ${
                 statusFilter === st
-                  ? 'bg-amber-900 text-white'
-                  : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                  ? 'bg-teak-dark text-on-primary'
+                  : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
               }`}
             >
               {st === 'ALL' ? 'ทั้งหมด' : st}
@@ -67,20 +67,20 @@ export default function AdminBookings() {
             placeholder="ค้นหารหัสจอง BKG- / ชื่อ / เบอร์..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-xl border border-stone-300 text-xs focus:outline-none focus:ring-2 focus:ring-amber-800/40"
+            className="w-full pl-9 pr-4 py-2 rounded-xl border border-outline-variant bg-surface-container-low text-on-surface text-xs placeholder:text-charcoal-muted hover:border-wood-deep"
           />
-          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="absolute left-3 top-3 text-stone-400">
+          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="absolute left-3 top-3 text-charcoal-muted">
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
       </div>
 
       {/* Table Section */}
-      <div className="bg-white rounded-2xl border border-stone-200/80 shadow-2xs overflow-hidden">
+      <div className="bg-surface rounded-2xl border border-outline-variant shadow-[var(--admin-shadow-sm)] overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full min-w-[960px] text-left border-collapse">
             <thead>
-              <tr className="bg-stone-900 text-stone-200 text-xs uppercase tracking-wider font-semibold border-b border-stone-800">
+              <tr className="bg-teak-deep text-warm-ivory text-xs uppercase tracking-wider font-semibold border-b border-teak-dark">
                 <th className="py-3.5 px-4">รหัสการจอง / คิว</th>
                 <th className="py-3.5 px-4">ลูกค้า & เบอร์โทร</th>
                 <th className="py-3.5 px-4">รายการบริการ</th>
@@ -91,43 +91,43 @@ export default function AdminBookings() {
                 <th className="py-3.5 px-4 text-right">จัดการ</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-stone-100 text-xs text-stone-700">
+            <tbody className="divide-y divide-outline-variant text-xs text-on-surface">
               {filteredBookings.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="py-8 text-center text-stone-500">
+                  <td colSpan="8" className="py-8 text-center text-charcoal-muted">
                     ไม่พบข้อมูลรายการจอง
                   </td>
                 </tr>
               ) : (
                 filteredBookings.map((b) => (
-                  <tr key={b.id} className="hover:bg-amber-50/20 transition-colors">
-                    <td className="py-3.5 px-4 font-mono font-bold text-amber-900">
+                  <tr key={b.id} className="admin-table-row transition-colors">
+                    <td className="py-3.5 px-4 font-mono font-bold text-wood-deep">
                       <div>{b.id}</div>
-                      <div className="text-[10px] text-stone-500 font-sans font-normal">คิว: {b.queueNo} ({b.channel})</div>
+                      <div className="text-[10px] text-charcoal-muted font-sans font-normal">คิว: {b.queueNo} ({b.channel})</div>
                     </td>
                     <td className="py-3.5 px-4">
-                      <div className="font-bold text-stone-900">{b.customerName}</div>
-                      <div className="text-stone-500 text-[11px]">{b.phone}</div>
+                      <div className="font-bold text-teak-deep">{b.customerName}</div>
+                      <div className="text-charcoal-muted text-[11px]">{b.phone}</div>
                     </td>
                     <td className="py-3.5 px-4">
-                      <div className="font-medium text-stone-800">{b.serviceName}</div>
-                      <div className="text-stone-500 text-[10px]">{b.durationMinutes} นาที • ฿{b.price}</div>
+                      <div className="font-medium text-on-surface">{b.serviceName}</div>
+                      <div className="text-charcoal-muted text-[10px]">{b.durationMinutes} นาที • ฿{b.price}</div>
                     </td>
                     <td className="py-3.5 px-4">
-                      <div className="font-semibold text-stone-800">{b.time} น.</div>
-                      <div className="text-stone-500 text-[10px]">{b.date}</div>
+                      <div className="font-semibold text-on-surface">{b.time} น.</div>
+                      <div className="text-charcoal-muted text-[10px]">{b.date}</div>
                     </td>
                     <td className="py-3.5 px-4">
-                      <div className="text-stone-800 font-medium">หมอ: {b.therapistName}</div>
-                      <div className="text-stone-500 text-[10px]">ห้อง: {b.roomNo || 'ไม่ระบุ'}</div>
+                      <div className="text-on-surface font-medium">หมอ: {b.therapistName}</div>
+                      <div className="text-charcoal-muted text-[10px]">ห้อง: {b.roomNo || 'ไม่ระบุ'}</div>
                     </td>
                     <td className="py-3.5 px-4">
                       <button
                         onClick={() => handleTogglePayment(b.id)}
                         className={`px-2.5 py-1 rounded-full text-[10px] font-bold border transition-colors cursor-pointer ${
                           b.paymentStatus === 'PAID'
-                            ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                            : 'bg-rose-50 text-rose-800 border-rose-300'
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
+                            : 'bg-terracotta-soft text-terracotta-deep border-terracotta/30 hover:bg-terracotta/15'
                         }`}
                       >
                         {b.paymentStatus === 'PAID' ? 'ชำระแล้ว' : 'ยังไม่ชำระ'}
@@ -140,7 +140,7 @@ export default function AdminBookings() {
                       <select
                         value={b.status}
                         onChange={(e) => handleUpdateStatus(b.id, e.target.value)}
-                        className="px-2 py-1 rounded-lg border border-stone-300 bg-stone-50 text-[11px] font-semibold text-stone-800 focus:outline-none cursor-pointer"
+                        className="px-2.5 py-1.5 rounded-lg border border-outline-variant bg-surface-container-low text-[11px] font-semibold text-on-surface hover:border-wood-deep cursor-pointer"
                       >
                         <option value="PENDING">PENDING</option>
                         <option value="CONFIRMED">CONFIRMED</option>

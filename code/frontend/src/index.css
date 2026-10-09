@@ -394,3 +394,159 @@ select:focus-visible {
   --color-primary: #110703;
   --color-on-primary: #ffffff;
 }
+
+/* ===================================================================
+   FIWDEE Admin foundation
+   Scope all admin-only design tokens beneath .admin-theme so the public
+   customer site retains its existing visual treatment. Page-level adoption
+   happens incrementally as each admin screen is refreshed.
+   =================================================================== */
+.admin-theme {
+  --admin-page: #f7f5f0;
+  --admin-surface: #ffffff;
+  --admin-surface-muted: #f0eee9;
+  --admin-surface-subtle: #f5f3ee;
+  --admin-ink: #1b1c19;
+  --admin-ink-muted: #4e4540;
+  --admin-border: #d8d0c5;
+  --admin-border-strong: #c9a97c;
+  --admin-brand: #2b1e16;
+  --admin-brand-strong: #1c140e;
+  --admin-accent: #b86a4c;
+  --admin-accent-soft: #ece1d5;
+  --admin-focus-ring: rgba(184, 106, 76, 0.22);
+  --admin-font-heading: 'Noto Serif', 'Noto Serif Thai', serif;
+  --admin-font-body: 'Inter', 'Noto Sans Thai', sans-serif;
+  --admin-font-label: 'Manrope', 'Inter', 'Noto Sans Thai', sans-serif;
+  --admin-radius-sm: 0.5rem;
+  --admin-radius-md: 0.75rem;
+  --admin-radius-lg: 1rem;
+  --admin-shadow-sm: 0 1px 2px rgba(43, 30, 22, 0.06);
+  --admin-shadow-md: 0 12px 28px rgba(43, 30, 22, 0.1);
+  --admin-space-1: 0.375rem;
+  --admin-space-2: 0.75rem;
+  --admin-space-3: 1.25rem;
+  --admin-space-4: 2.25rem;
+  --admin-space-5: 4rem;
+  background-color: var(--admin-page);
+  color: var(--admin-ink);
+  font-family: var(--admin-font-body);
+}
+
+/* Typography hierarchy mirrors the public FIWDEE experience: calm serif
+   headings paired with highly legible sans-serif operational text. */
+.admin-theme :is(h1, h2, h3, h4, h5, h6),
+.admin-theme .admin-heading {
+  font-family: var(--admin-font-heading);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.admin-theme h1 {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  line-height: 1.18;
+}
+
+.admin-theme h2 {
+  font-size: clamp(1.625rem, 3vw, 2.125rem);
+  line-height: 1.25;
+}
+
+.admin-theme h3 {
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  line-height: 1.35;
+}
+
+.admin-theme :is(p, button, input, select, textarea, table) {
+  font-family: var(--admin-font-body);
+}
+
+.admin-theme :is(label, th, .admin-eyebrow) {
+  font-family: var(--admin-font-label);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.admin-theme th,
+.admin-theme .admin-eyebrow {
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  text-transform: uppercase;
+}
+
+.admin-theme :where(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid var(--admin-accent);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px var(--admin-focus-ring);
+}
+
+.admin-theme :where(input, select, textarea):focus-visible {
+  border-color: var(--admin-accent);
+}
+
+/* Reusable primitives for the staged Admin refresh. */
+.admin-theme .admin-surface {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-lg);
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.admin-theme .admin-surface-muted {
+  background: var(--admin-surface-muted);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+}
+
+.admin-theme .admin-eyebrow {
+  color: var(--admin-accent);
+  font-family: 'Manrope', 'Inter', 'Noto Sans Thai', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  line-height: 1rem;
+  text-transform: uppercase;
+}
+
+.admin-theme .admin-heading {
+  color: var(--admin-brand);
+  font-family: 'Noto Serif', 'Noto Serif Thai', serif;
+  font-weight: 500;
+}
+
+.admin-theme .admin-table-row {
+  border-color: color-mix(in srgb, var(--admin-border) 65%, transparent);
+  transition: background-color 180ms ease;
+}
+
+.admin-theme .admin-table-row:hover {
+  background: var(--admin-surface-subtle);
+}
+
+/* Keep operational screens comfortable on narrow touch devices without
+   changing their data layout or interaction model. */
+.admin-theme main,
+.admin-theme .overflow-x-auto {
+  min-width: 0;
+}
+
+.admin-theme .overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-color: var(--admin-border) transparent;
+}
+
+@media (max-width: 639px) {
+  .admin-theme :is(button, input, select) {
+    min-height: 2.5rem;
+  }
+
+  .admin-theme .admin-table-row:hover {
+    background: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-theme .admin-table-row {
+    transition: none;
+  }
+}

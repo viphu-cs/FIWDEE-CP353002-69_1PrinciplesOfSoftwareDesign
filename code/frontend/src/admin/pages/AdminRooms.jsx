@@ -14,31 +14,31 @@ export default function AdminRooms({ onOpenRoomModal }) {
   })
 
   return (
-    <div className="space-y-6 text-stone-800">
+    <div className="space-y-6 text-on-surface">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-headline font-bold text-stone-900">
+          <h2 className="text-2xl font-headline font-bold text-teak-deep">
             ผังห้องนวด Real-time (Rooms Management)
           </h2>
-          <p className="text-xs sm:text-sm text-stone-500 mt-0.5">
+          <p className="text-xs sm:text-sm text-charcoal-muted mt-0.5">
             ติดตามการใช้งานห้องนวด (Single / Couple / VIP / Foot Massage) และสถานะทำความสะอาด
           </p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-2xl p-4 border border-stone-200/80 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="bg-surface rounded-2xl p-4 border border-outline-variant shadow-[var(--admin-shadow-sm)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold text-stone-500 uppercase">สถานะห้อง:</span>
+          <span className="text-xs font-semibold text-charcoal-muted uppercase">สถานะห้อง:</span>
           {['ALL', 'AVAILABLE', 'OCCUPIED', 'CLEANING', 'MAINTENANCE'].map((st) => (
             <button
               key={st}
               onClick={() => setStatusFilter(st)}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all ${
                 statusFilter === st
-                  ? 'bg-amber-900 text-white'
-                  : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                  ? 'bg-teak-dark text-on-primary'
+                  : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
               }`}
             >
               {st}
@@ -47,11 +47,11 @@ export default function AdminRooms({ onOpenRoomModal }) {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-stone-500 uppercase">ประเภทห้อง:</span>
+          <span className="text-xs font-semibold text-charcoal-muted uppercase">ประเภทห้อง:</span>
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-3 py-1.5 rounded-xl border border-stone-300 bg-stone-50 text-xs font-semibold text-stone-800 focus:outline-none cursor-pointer"
+            className="px-3 py-1.5 rounded-xl border border-outline-variant bg-surface-container-low text-xs font-semibold text-on-surface hover:border-wood-deep cursor-pointer"
           >
             <option value="ALL">ทุกประเภทห้อง</option>
             <option value="SINGLE">SINGLE (เดี่ยว)</option>
@@ -67,35 +67,35 @@ export default function AdminRooms({ onOpenRoomModal }) {
         {filteredRooms.map((room) => (
           <div
             key={room.id}
-            className={`bg-white rounded-2xl border p-5 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4 ${
+            className={`bg-surface rounded-2xl border p-5 shadow-[var(--admin-shadow-sm)] hover:-translate-y-0.5 hover:shadow-[var(--admin-shadow-md)] transition-all flex flex-col justify-between space-y-4 ${
               room.status === 'OCCUPIED'
                 ? 'border-amber-300 bg-amber-50/20'
                 : room.status === 'AVAILABLE'
                 ? 'border-emerald-200'
                 : room.status === 'CLEANING'
                 ? 'border-sky-200'
-                : 'border-stone-300 bg-stone-50'
+                : 'border-outline-variant bg-surface-container-low'
             }`}
           >
             <div>
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-lg font-bold font-headline text-stone-900">{room.id}</span>
-                  <span className="ml-2 px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-stone-100 text-stone-600 border border-stone-200">
+                  <span className="text-lg font-bold font-headline text-teak-deep">{room.id}</span>
+                  <span className="ml-2 px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-surface-container-low text-on-surface-variant border border-outline-variant">
                     {room.type}
                   </span>
                 </div>
                 <StatusBadge status={room.status} size="sm" />
               </div>
 
-              <h3 className="font-bold text-stone-800 text-base mt-2">{room.name}</h3>
+              <h3 className="font-bold text-on-surface text-base mt-2">{room.name}</h3>
 
               {room.status === 'OCCUPIED' ? (
-                <div className="mt-4 p-3.5 bg-amber-100/60 rounded-xl border border-amber-200/80 space-y-1.5 text-xs">
-                  <div className="font-bold text-amber-950 text-sm">บริการ: {room.service}</div>
-                  <div className="text-stone-700">หมอนวด: <strong>{room.therapist}</strong></div>
-                  <div className="text-stone-600 text-[11px]">รหัสการจอง: {room.currentBooking}</div>
-                  <div className="text-amber-900 font-semibold text-[11px]">เวลาใช้งาน: {room.startTime} - {room.endTime} น. ({room.duration} นาที)</div>
+                <div className="mt-4 p-3.5 bg-terracotta-soft rounded-xl border border-terracotta/30 space-y-1.5 text-xs">
+                  <div className="font-bold text-terracotta-deep text-sm">บริการ: {room.service}</div>
+                  <div className="text-on-surface-variant">หมอนวด: <strong>{room.therapist}</strong></div>
+                  <div className="text-charcoal-muted text-[11px]">รหัสการจอง: {room.currentBooking}</div>
+                  <div className="text-wood-deep font-semibold text-[11px]">เวลาใช้งาน: {room.startTime} - {room.endTime} น. ({room.duration} นาที)</div>
                 </div>
               ) : room.status === 'CLEANING' ? (
                 <div className="mt-4 p-3.5 bg-sky-50 rounded-xl border border-sky-200 text-xs text-sky-900 space-y-1">
@@ -103,7 +103,7 @@ export default function AdminRooms({ onOpenRoomModal }) {
                   <div className="text-[11px] text-sky-700">คาดว่าพร้อมใช้ภายใน 10 นาที</div>
                 </div>
               ) : room.status === 'MAINTENANCE' ? (
-                <div className="mt-4 p-3.5 bg-stone-100 rounded-xl border border-stone-200 text-xs text-stone-600">
+                <div className="mt-4 p-3.5 bg-surface-container-low rounded-xl border border-outline-variant text-xs text-on-surface-variant">
                   {room.note || 'งดให้บริการชั่วคราว'}
                 </div>
               ) : (
@@ -114,13 +114,13 @@ export default function AdminRooms({ onOpenRoomModal }) {
             </div>
 
             {/* Status Quick Actions */}
-            <div className="pt-3 border-t border-stone-100 space-y-2">
-              <div className="text-[11px] font-semibold text-stone-500 uppercase">อัปเดตสถานะห้องสด:</div>
+            <div className="pt-3 border-t border-outline-variant space-y-2">
+              <div className="text-[11px] font-semibold text-charcoal-muted uppercase">อัปเดตสถานะห้องสด:</div>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => updateRoomStatus(room.id, 'AVAILABLE')}
                   className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer border ${
-                    room.status === 'AVAILABLE' ? 'bg-emerald-800 text-white border-emerald-800' : 'bg-stone-50 text-stone-700 hover:bg-emerald-50'
+                    room.status === 'AVAILABLE' ? 'bg-emerald-800 text-white border-emerald-800' : 'bg-surface-container-low text-on-surface-variant border-outline-variant hover:bg-emerald-50'
                   }`}
                 >
                   ตั้งเป็น พร้อมใช้
@@ -128,14 +128,14 @@ export default function AdminRooms({ onOpenRoomModal }) {
                 <button
                   onClick={() => updateRoomStatus(room.id, 'CLEANING')}
                   className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer border ${
-                    room.status === 'CLEANING' ? 'bg-sky-700 text-white border-sky-700' : 'bg-stone-50 text-stone-700 hover:bg-sky-50'
+                    room.status === 'CLEANING' ? 'bg-sky-700 text-white border-sky-700' : 'bg-surface-container-low text-on-surface-variant border-outline-variant hover:bg-sky-50'
                   }`}
                 >
                   ทำความสะอาด
                 </button>
                 <button
                   onClick={() => onOpenRoomModal(room)}
-                  className="col-span-2 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-stone-900 text-stone-100 hover:bg-stone-800 transition-colors cursor-pointer text-center"
+                  className="col-span-2 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-teak-deep text-on-primary hover:bg-wood-deep transition-colors cursor-pointer text-center"
                 >
                   แก้ไขสถานะ / จัดคิวเข้าห้อง
                 </button>

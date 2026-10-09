@@ -52,7 +52,7 @@ function AdminLayoutContent({ currentRoute = 'dashboard', onNavigate, children }
   const navLinks = getNavLinks(t)
 
   return (
-    <div className="min-h-screen bg-stone-100/70 font-body-md text-stone-900 antialiased flex flex-col">
+    <div className="admin-theme min-h-screen bg-[var(--admin-page)] font-body-md text-on-surface antialiased flex flex-col">
       {/* Desktop Fixed Sidebar */}
       <AdminSidebar
         currentRoute={currentRoute}

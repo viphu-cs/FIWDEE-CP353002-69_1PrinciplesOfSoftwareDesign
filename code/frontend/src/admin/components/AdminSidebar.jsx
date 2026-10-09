@@ -76,10 +76,10 @@ export default function AdminSidebar({ currentRoute = 'dashboard', onNavigate })
   }
 
   return (
-    <aside className="hidden lg:flex fixed top-0 bottom-0 left-0 z-40 w-64 bg-stone-900 text-stone-200 border-r border-stone-800 flex-col justify-between font-body-md">
+    <aside className="hidden lg:flex fixed top-0 bottom-0 left-0 z-40 w-64 bg-teak-deep text-warm-ivory border-r border-wood-deep/30 flex-col justify-between font-body-md">
       <div>
         {/* Header Branding Matching #top Navbar (No F icon circle) */}
-        <div className="h-20 px-6 flex items-center justify-between border-b border-stone-800">
+        <div className="h-20 px-6 flex items-center justify-between border-b border-wood-deep/30">
           <a
             href="#top"
             onClick={(e) => {
@@ -88,27 +88,27 @@ export default function AdminSidebar({ currentRoute = 'dashboard', onNavigate })
             }}
             className="flex flex-col transition-opacity duration-200 hover:opacity-80 cursor-pointer"
           >
-            <span className="font-headline-sm text-headline-sm text-amber-200 font-normal tracking-widest leading-none text-xl">
+            <span className="font-headline-sm text-headline-sm text-wood-light font-normal tracking-widest leading-none text-xl">
               {shop.name}
             </span>
-            <span className="font-label-md text-[10px] text-amber-500 uppercase tracking-widest mt-1 font-semibold">
+            <span className="font-label-md text-[10px] text-terracotta-muted uppercase tracking-widest mt-1 font-semibold">
               ADMIN MANAGEMENT
             </span>
           </a>
         </div>
 
         {/* Clean User Profile Banner (No avatar picture frame/ring) */}
-        <div className="px-4 py-3 mx-3 my-4 bg-stone-800/80 rounded-2xl border border-stone-700/60 flex items-center justify-between">
+        <div className="px-4 py-3 mx-3 my-4 bg-primary-container/70 rounded-2xl border border-wood-deep/35 flex items-center justify-between">
           <div className="overflow-hidden">
-            <div className="text-xs font-bold text-stone-100 truncate">{user.name}</div>
-            <div className="text-[10px] text-stone-400 uppercase font-medium">{user.role}</div>
+            <div className="text-xs font-bold text-warm-ivory truncate">{user.name}</div>
+            <div className="text-[10px] text-sand-warm uppercase font-medium">{user.role}</div>
           </div>
           <StatusBadge status={user.role} size="sm" />
         </div>
 
         {/* Navigation Links */}
         <nav className="px-3 space-y-1">
-          <div className="px-3 text-[11px] font-semibold uppercase text-stone-400 tracking-wider mb-2">
+          <div className="px-3 text-[11px] font-semibold uppercase text-sand-warm tracking-wider mb-2">
             MAIN MENU
           </div>
           {navLinks.map((link) => {
@@ -120,8 +120,8 @@ export default function AdminSidebar({ currentRoute = 'dashboard', onNavigate })
                 onClick={() => onNavigate(link.key)}
                 className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all duration-200 cursor-pointer ${
                   isActive
-                    ? 'bg-amber-900/80 text-amber-100 font-semibold shadow-sm border border-amber-700/40'
-                    : 'text-stone-300 hover:bg-stone-800 hover:text-stone-100'
+                    ? 'bg-terracotta-muted/20 text-warm-ivory font-semibold shadow-sm border border-terracotta-muted/45'
+                    : 'text-sand-warm hover:bg-primary-container hover:text-warm-ivory'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -129,7 +129,7 @@ export default function AdminSidebar({ currentRoute = 'dashboard', onNavigate })
                   <span>{link.label}</span>
                 </div>
                 {link.badge && (
-                  <span className="px-2 py-0.5 text-[10px] rounded-full bg-amber-600/80 text-white font-bold">
+                  <span className="px-2 py-0.5 text-[10px] rounded-full bg-terracotta-muted text-white font-bold">
                     {link.badge}
                   </span>
                 )}
@@ -140,10 +140,10 @@ export default function AdminSidebar({ currentRoute = 'dashboard', onNavigate })
       </div>
 
       {/* Footer Navigation Switcher & Logout */}
-      <div className="p-4 border-t border-stone-800 bg-stone-950/50 space-y-2">
+      <div className="p-4 border-t border-wood-deep/30 bg-primary-container/40 space-y-2">
         <button
           onClick={handleGoToCustomer}
-          className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-semibold transition-colors border border-stone-700 cursor-pointer"
+          className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-primary-container hover:bg-teak-dark text-warm-ivory text-xs font-semibold transition-colors border border-wood-deep/40 cursor-pointer"
         >
           <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -153,7 +153,7 @@ export default function AdminSidebar({ currentRoute = 'dashboard', onNavigate })
 
         <button
           onClick={logout}
-          className="w-full flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-stone-900 hover:bg-rose-950/80 hover:text-rose-200 text-stone-400 hover:text-rose-200 text-xs font-medium transition-colors border border-stone-800 cursor-pointer"
+          className="w-full flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-teak-deep hover:bg-rose-950/80 hover:text-rose-200 text-sand-warm hover:text-rose-200 text-xs font-medium transition-colors border border-wood-deep/25 cursor-pointer"
         >
           <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
