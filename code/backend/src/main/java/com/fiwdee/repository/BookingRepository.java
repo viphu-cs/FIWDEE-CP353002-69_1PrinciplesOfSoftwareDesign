@@ -50,4 +50,17 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime,
             @Param("excludedStatuses") Collection<BookingStatus> excludedStatuses);
+
+    default List<Booking> findConflictingRoomBookingsWithCleaningBuffer(
+            Long roomId,
+            LocalDateTime startTime,
+            LocalDateTime endTime,
+            int cleaningBufferMinutes,
+            Collection<BookingStatus> excludedStatuses) {
+        return findConflictingRoomBookings(
+                roomId,
+                startTime.minusMinutes(cleaningBufferMinutes),
+                endTime.plusMinutes(cleaningBufferMinutes),
+                excludedStatuses);
+    }
 }
