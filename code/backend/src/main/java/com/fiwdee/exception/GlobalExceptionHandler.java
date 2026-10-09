@@ -65,6 +65,15 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("Invalid request body or parameter value: Please verify your JSON format and enum values."));
     }
 
+    @ExceptionHandler(org.springframework.web.bind.MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMissingServletRequestParameterException(
+            org.springframework.web.bind.MissingServletRequestParameterException ex) {
+        log.warn("Missing request parameter: {}", ex.getParameterName());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(String.format("Required query parameter '%s' is missing", ex.getParameterName())));
+    }
+
     @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleNoResourceFoundException(org.springframework.web.servlet.resource.NoResourceFoundException ex) {
         log.warn("Resource/endpoint not found: {}", ex.getResourcePath());

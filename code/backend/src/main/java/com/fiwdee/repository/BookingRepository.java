@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -33,6 +35,41 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("startOfDay") LocalDateTime startOfDay,
             @Param("endOfDay") LocalDateTime endOfDay);
 
+    /**
+     * Paginated and sorted query for administrative booking overview with optional date, status, and keyword search filters.
+     */
+    @EntityGraph(attributePaths = {"customer", "therapist", "room", "service", "durationOption"})
+    @Query(value = "SELECT b FROM Booking b "
+            + "LEFT JOIN b.customer c "
+            + "LEFT JOIN b.service s "
+            + "WHERE (:startOfDay IS NULL OR b.startDateTime >= :startOfDay) "
+            + "AND (:endOfDay IS NULL OR b.startDateTime <= :endOfDay) "
+            + "AND (:status IS NULL OR b.status = :status) "
+            + "AND (:search IS NULL OR ("
+            + "    LOWER(b.bookingReferenceCode) LIKE LOWER(CONCAT('%', :search, '%')) "
+            + "    OR LOWER(c.fullName) LIKE LOWER(CONCAT('%', :search, '%')) "
+            + "    OR LOWER(c.phoneNumber) LIKE LOWER(CONCAT('%', :search, '%')) "
+            + "    OR LOWER(s.serviceName) LIKE LOWER(CONCAT('%', :search, '%'))"
+            + "))",
+            countQuery = "SELECT count(b) FROM Booking b "
+            + "LEFT JOIN b.customer c "
+            + "LEFT JOIN b.service s "
+            + "WHERE (:startOfDay IS NULL OR b.startDateTime >= :startOfDay) "
+            + "AND (:endOfDay IS NULL OR b.startDateTime <= :endOfDay) "
+            + "AND (:status IS NULL OR b.status = :status) "
+            + "AND (:search IS NULL OR ("
+            + "    LOWER(b.bookingReferenceCode) LIKE LOWER(CONCAT('%', :search, '%')) "
+            + "    OR LOWER(c.fullName) LIKE LOWER(CONCAT('%', :search, '%')) "
+            + "    OR LOWER(c.phoneNumber) LIKE LOWER(CONCAT('%', :search, '%')) "
+            + "    OR LOWER(s.serviceName) LIKE LOWER(CONCAT('%', :search, '%'))"
+            + "))")
+    Page<Booking> findAdminBookings(
+            @Param("startOfDay") LocalDateTime startOfDay,
+            @Param("endOfDay") LocalDateTime endOfDay,
+            @Param("status") BookingStatus status,
+            @Param("search") String search,
+            Pageable pageable);
+
     @Query("SELECT b FROM Booking b WHERE b.room.id = :roomId "
             + "AND b.status NOT IN :excludedStatuses "
             + "AND ((b.startDateTime < :endTime) AND (b.endDateTime > :startTime))")
@@ -50,4 +87,17 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime,
             @Param("excludedStatuses") Collection<BookingStatus> excludedStatuses);
+
+    default List<Booking> findConflictingRoomBookingsWithCleaningBuffer(
+            Long roomId,
+            LocalDateTime startTime,
+            LocalDateTime endTime,
+            int cleaningBufferMinutes,
+            Collection<BookingStatus> excludedStatuses) {
+        return findConflictingRoomBookings(
+                roomId,
+                startTime.minusMinutes(cleaningBufferMinutes),
+                endTime.plusMinutes(cleaningBufferMinutes),
+                excludedStatuses);
+    }
 }

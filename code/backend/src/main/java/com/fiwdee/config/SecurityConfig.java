@@ -61,6 +61,14 @@ public class SecurityConfig {
 
             // 7. Role-based access rules
             .authorizeHttpRequests(auth -> auth
+                // Swagger UI & OpenAPI documentation (Public)
+                .requestMatchers(
+                    "/swagger-ui.html",
+                    "/swagger-ui/**",
+                    "/v3/api-docs/**",
+                    "/swagger-resources/**",
+                    "/webjars/**"
+                ).permitAll()
                 // Public: authentication + public shop catalog
                 // (me ต้องมี token — ประกาศก่อน permitAll ของ /api/auth/** เพราะ first match wins)
                 .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
@@ -74,8 +82,10 @@ public class SecurityConfig {
                 // Other back-office endpoints: Owner + Receptionist (Therapist self-service rules
                 // are added by their owning modules)
                 .requestMatchers("/api/admin/**").hasAnyRole("OWNER", "RECEPTIONIST")
-                // Payments & Refunds: authenticated staff or customers
+                // Payments & Refunds: staff only for refunds
                 .requestMatchers(HttpMethod.POST, "/api/payments/*/refund").hasAnyRole("OWNER", "RECEPTIONIST")
+                // Staff booking status transition updates
+                .requestMatchers(HttpMethod.PATCH, "/api/bookings/*/status").hasAnyRole("OWNER", "RECEPTIONIST")
                 // Everything else requires a valid token
                 .anyRequest().authenticated());
 

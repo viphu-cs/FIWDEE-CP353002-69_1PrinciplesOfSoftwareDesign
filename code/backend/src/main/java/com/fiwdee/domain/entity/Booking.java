@@ -1,6 +1,8 @@
 package com.fiwdee.domain.entity;
 
 import com.fiwdee.domain.enums.BookingStatus;
+import com.fiwdee.pattern.state.BookingState;
+import com.fiwdee.pattern.state.BookingStateFactory;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -16,6 +18,7 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import jakarta.persistence.Version;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -134,5 +137,34 @@ public class Booking {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    @Transient
+    public BookingState getCurrentState() {
+        return BookingStateFactory.getState(this.status);
+    }
+
+    public void confirm() {
+        getCurrentState().confirm(this);
+    }
+
+    public void checkIn() {
+        getCurrentState().checkIn(this);
+    }
+
+    public void startService() {
+        getCurrentState().startService(this);
+    }
+
+    public void complete() {
+        getCurrentState().complete(this);
+    }
+
+    public void cancel() {
+        getCurrentState().cancel(this);
+    }
+
+    public void markNoShow() {
+        getCurrentState().markNoShow(this);
     }
 }

@@ -12,11 +12,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Controller for Owner financial reports, business statistics and dashboards (UC-21, UC-22).
  */
+@Tag(name = "Admin Reports", description = "รายงานสรุปรายได้ รายงานค่าคอมมิชชันหมอนวด และแดชบอร์ดภาพรวม (สิทธิ์ OWNER)")
 @RestController
 @RequestMapping("/api/admin/reports")
 @RequiredArgsConstructor

@@ -72,9 +72,18 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public List<UserResponseDTO> getOnlineUsers() {
         return userRepository.findAll().stream()
-                .filter(user -> userSessionService.isOnline(user.getId()))
-                .map(this::toResponse)
-                .toList();
+            .filter(user -> userSessionService.isOnline(user.getId()))
+            .map(this::toResponse)
+            .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<UserResponseDTO> getUsersPage(
+            com.fiwdee.domain.enums.UserRole role, String search, org.springframework.data.domain.Pageable pageable) {
+        String trimmedSearch = (search != null && !search.isBlank()) ? search.trim() : null;
+        org.springframework.data.domain.Page<User> page = userRepository.findUsersPage(role, trimmedSearch, pageable);
+        return page.map(this::toResponse);
     }
 
     @Override

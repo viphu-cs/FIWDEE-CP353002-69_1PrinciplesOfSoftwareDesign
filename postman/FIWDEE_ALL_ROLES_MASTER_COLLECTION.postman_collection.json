@@ -1,0 +1,2076 @@
+{
+  "info": {
+    "_postman_id": "fiwdee-5roles-master-collection-2026",
+    "name": "FIWDEE - Master API Collection (All 5 Roles / Persons 1-5)",
+    "description": "Complete Postman Master Collection for CP353002-69 Principles of Software Design course project (FIWDEE Massage Management & Booking System).\nCovers Person 1 (Dev 1 Auth & Users), Person 2 (Dev 2 Catalog & Master Data), Person 3 (Dev 3 Booking Engine & State Pattern), Person 4 (Dev 4 Queue, Execution & Observer Pattern), and Person 5 (Dev 5 Payment Strategy, Refunds & Reports).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080/api",
+      "type": "string"
+    },
+    {
+      "key": "customer_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "owner_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "staff_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "therapist_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "customer_user_id",
+      "value": "13",
+      "type": "string"
+    },
+    {
+      "key": "service_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "therapist_id",
+      "value": "5",
+      "type": "string"
+    },
+    {
+      "key": "room_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "booking_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "queue_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "payment_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "booking_date",
+      "value": "2026-10-15",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Person 1 (Dev 1) - Auth, Security & User Management",
+      "description": "UC-01 (Register), UC-02 (Login), UC-03 (Profile), UC-28 (Admin Users & Online Session Management)",
+      "item": [
+        {
+          "name": "1.1 Register New Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Public registration for new customer. BCrypt hashes password and immediately returns JWT token.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"สมคิด สุขใจ\",\n  \"phoneNumber\": \"0891234567\",\n  \"email\": \"somkid@test.com\",\n  \"password\": \"somkidPassword123\",\n  \"healthNotes\": \"ปวดหลังส่วนล่างเรื้อรัง\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.token) {",
+                  "    pm.collectionVariables.set('customer_token', jsonData.data.token);",
+                  "    if (jsonData.data.userId) {",
+                  "        pm.collectionVariables.set('customer_user_id', jsonData.data.userId);",
+                  "    }",
+                  "    console.log('Customer token & userId saved');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.2 Login as Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Logs in as seeded customer and saves `customer_token` and `customer_user_id`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"customer@test.com\",\n  \"password\": \"customer1234\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.token) {",
+                  "    pm.collectionVariables.set('customer_token', jsonData.data.token);",
+                  "    if (jsonData.data.userId) {",
+                  "        pm.collectionVariables.set('customer_user_id', jsonData.data.userId);",
+                  "    }",
+                  "    console.log('Customer token saved to collection variable');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.3 Login as Owner",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Logs in as Owner and saves `owner_token`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"owner\",\n  \"password\": \"pass123\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.token) {",
+                  "    pm.collectionVariables.set('owner_token', jsonData.data.token);",
+                  "    console.log('Owner token saved to collection variable');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.4 Login as Receptionist",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Logs in as Receptionist and saves `staff_token`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"receptionist\",\n  \"password\": \"pass123\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.token) {",
+                  "    pm.collectionVariables.set('staff_token', jsonData.data.token);",
+                  "    console.log('Receptionist token saved to collection variable');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.5 Login as Therapist",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Logs in as Therapist 1 (Mali) and saves `therapist_token` and `therapist_id`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"therapist1\",\n  \"password\": \"pass123\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.token) {",
+                  "    pm.collectionVariables.set('therapist_token', jsonData.data.token);",
+                  "    if (jsonData.data.userId) {",
+                  "        pm.collectionVariables.set('therapist_id', jsonData.data.userId);",
+                  "    }",
+                  "    console.log('Therapist token saved to collection variable');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.6 Get Current User Profile (Customer)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Retrieves the logged-in customer's profile including health notes and preferred pressure."
+          }
+        },
+        {
+          "name": "1.7 Update Current User Profile (Customer)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customer_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Updates the logged-in customer's profile details.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"สมหญิง รักสุขภาพ (อัปเดต)\",\n  \"email\": \"customer@test.com\",\n  \"phoneNumber\": \"081-000-3333\",\n  \"healthNotes\": \"มีอาการปวดไหล่และบั้นเอวเพิ่มเติม\",\n  \"preferredPressure\": \"MEDIUM\"\n}"
+            }
+          }
+        },
+        {
+          "name": "1.8 Admin - Get Users Summary (Owner)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "users"
+              ]
+            },
+            "description": "Owner overview of total registered users, active today, new this month, and online counts."
+          }
+        },
+        {
+          "name": "1.9 Admin - Get Online Users (Owner)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users/online",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "users",
+                "online"
+              ]
+            },
+            "description": "Lists all users active within the configured online window (15 mins)."
+          }
+        },
+        {
+          "name": "1.10 Admin - Force Logout User (Owner)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users/{{customer_user_id}}/force-logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "users",
+                "{{customer_user_id}}",
+                "force-logout"
+              ]
+            },
+            "description": "Owner forcefully terminates a user session."
+          }
+        },
+        {
+          "name": "1.11 Admin - Get Users with Pagination & Sorting (Owner)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users/page?page=0&size=5&sort=createdAt,desc",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "users",
+                "page"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Page index (0-based)"
+                },
+                {
+                  "key": "size",
+                  "value": "5",
+                  "description": "Number of records per page"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt,desc",
+                  "description": "Dynamic sorting property and direction"
+                },
+                {
+                  "key": "role",
+                  "value": "CUSTOMER",
+                  "disabled": true,
+                  "description": "Optional role filter (CUSTOMER, THERAPIST, RECEPTIONIST, OWNER)"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Optional search keyword"
+                }
+              ]
+            },
+            "description": "Paginated and sorted user accounts endpoint (meets course project rubric: Pagination & Sorting requirement)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Person 2 (Dev 2) - Catalog, Rooms, Therapists & Shop",
+      "description": "UC-04/05/06 (Public Catalog), UC-23 (Shop Info), UC-24 (Services CRUD), UC-25 (Rooms CRUD & Status), UC-26/27 (Therapists CRUD & Schedules)",
+      "item": [
+        {
+          "name": "2.1 Public - Get Active Services with Duration Options",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/services",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "services"
+              ]
+            },
+            "description": "Public endpoint returning active services with duration options for booking."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.length > 0) {",
+                  "    pm.collectionVariables.set('service_id', jsonData.data[0].id);",
+                  "    console.log('Saved service_id:', jsonData.data[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.2 Public - Get Service Details by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/services/{{service_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "services",
+                "{{service_id}}"
+              ]
+            },
+            "description": "Public endpoint returning a single service and its pricing/durations."
+          }
+        },
+        {
+          "name": "2.3 Public - Get Therapists with Skills",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/therapists",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "therapists"
+              ]
+            },
+            "description": "Public endpoint returning active therapists and their skill certifications."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.length > 0) {",
+                  "    pm.collectionVariables.set('therapist_id', jsonData.data[0].id);",
+                  "    console.log('Saved therapist_id:', jsonData.data[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.4 Admin - Get All Services (Staff)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/services",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "services"
+              ]
+            },
+            "description": "Back-office listing of all services (both active and inactive)."
+          }
+        },
+        {
+          "name": "2.5 Admin - Create New Service (Owner)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/services",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "services"
+              ]
+            },
+            "description": "Owner creates a new massage service with multiple duration pricing options.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceCode\": \"HERBAL-01\",\n  \"serviceName\": \"นวดประคบสมุนไพร\",\n  \"description\": \"นวดประคบด้วยลูกประคบสมุนไพรร้อนช่วยคลายกล้ามเนื้อและความเมื่อยล้า\",\n  \"category\": \"MASSAGE\",\n  \"requiredRoomType\": \"SINGLE\",\n  \"durationOptions\": [\n    {\n      \"durationMinutes\": 60,\n      \"price\": 550.0\n    },\n    {\n      \"durationMinutes\": 90,\n      \"price\": 750.0\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.id) {",
+                  "    pm.collectionVariables.set('service_id', jsonData.data.id);",
+                  "    console.log('Saved newly created service_id:', jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.6 Admin - Update Service (Owner)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/services/{{service_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "services",
+                "{{service_id}}"
+              ]
+            },
+            "description": "Owner updates service information and pricing options.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceCode\": \"HERBAL-01\",\n  \"serviceName\": \"นวดประคบสมุนไพรสด\",\n  \"description\": \"นวดประคบด้วยลูกประคบสมุนไพรสดสูตรโบราณ กลิ่นหอมผ่อนคลาย\",\n  \"category\": \"MASSAGE\",\n  \"requiredRoomType\": \"SINGLE\",\n  \"durationOptions\": [\n    {\n      \"durationMinutes\": 60,\n      \"price\": 600.0\n    },\n    {\n      \"durationMinutes\": 90,\n      \"price\": 800.0\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "2.7 Admin - Deactivate Service (Owner)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/services/{{service_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "services",
+                "{{service_id}}"
+              ]
+            },
+            "description": "Owner soft-deactivates a massage service."
+          }
+        },
+        {
+          "name": "2.8 Admin - Get All Rooms (Staff)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/rooms",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "rooms"
+              ]
+            },
+            "description": "Back-office listing of massage rooms with current occupancy and maintenance statuses."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.length > 0) {",
+                  "    pm.collectionVariables.set('room_id', jsonData.data[0].id);",
+                  "    console.log('Saved room_id:', jsonData.data[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.9 Admin - Get Room Details (Staff)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/rooms/{{room_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "rooms",
+                "{{room_id}}"
+              ]
+            },
+            "description": "Retrieves single room details by ID."
+          }
+        },
+        {
+          "name": "2.10 Admin - Create Room (Owner)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/rooms",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "rooms"
+              ]
+            },
+            "description": "Owner adds a new massage room with required cleaning buffer time.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomNumber\": \"302\",\n  \"roomType\": \"VIP\",\n  \"capacity\": 2,\n  \"cleaningBufferMinutes\": 15\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.id) {",
+                  "    pm.collectionVariables.set('room_id', jsonData.data.id);",
+                  "    console.log('Saved newly created room_id:', jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.11 Admin - Update Room (Owner)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/rooms/{{room_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "rooms",
+                "{{room_id}}"
+              ]
+            },
+            "description": "Owner updates room capacity or specifications.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomNumber\": \"302\",\n  \"roomType\": \"VIP\",\n  \"capacity\": 3,\n  \"cleaningBufferMinutes\": 15\n}"
+            }
+          }
+        },
+        {
+          "name": "2.12 Admin - Update Room Status (Staff)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/rooms/{{room_id}}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "rooms",
+                "{{room_id}}",
+                "status"
+              ]
+            },
+            "description": "Staff updates room status: AVAILABLE, OCCUPIED, CLEANING, or MAINTENANCE.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomStatus\": \"AVAILABLE\"\n}"
+            }
+          }
+        },
+        {
+          "name": "2.13 Admin - Deactivate Room (Owner)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/rooms/{{room_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "rooms",
+                "{{room_id}}"
+              ]
+            },
+            "description": "Owner deactivates a room from the system."
+          }
+        },
+        {
+          "name": "2.14 Admin - Get All Therapists (Staff)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/therapists",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "therapists"
+              ]
+            },
+            "description": "Back-office listing of therapists with employment status and commission rates."
+          }
+        },
+        {
+          "name": "2.15 Admin - Get Therapist Details (Staff)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/therapists/{{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "therapists",
+                "{{therapist_id}}"
+              ]
+            },
+            "description": "Retrieves single therapist profile by ID."
+          }
+        },
+        {
+          "name": "2.16 Admin - Create Therapist (Owner)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/therapists",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "therapists"
+              ]
+            },
+            "description": "Owner hires and registers a new therapist with skills.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"therapist7\",\n  \"fullName\": \"มาลัย ชื่นบาน\",\n  \"email\": \"lai@fiwdee.local\",\n  \"phoneNumber\": \"0800000007\",\n  \"nickname\": \"Lai\",\n  \"bio\": \"ผู้เชี่ยวชาญการนวดอโรม่าและนวดหินร้อน ประสบการณ์ 5 ปี\",\n  \"commissionRate\": 35.0,\n  \"serviceIds\": [\n    1,\n    2\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "2.17 Admin - Update Therapist (Owner)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/therapists/{{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "therapists",
+                "{{therapist_id}}"
+              ]
+            },
+            "description": "Owner updates therapist bio, commission rate, and certified skills.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"therapist1\",\n  \"fullName\": \"Therapist One (Senior)\",\n  \"email\": \"therapist1@fiwdee.local\",\n  \"phoneNumber\": \"0800000001\",\n  \"nickname\": \"Mali\",\n  \"bio\": \"หัวหน้าหมอนวดประจำร้าน ประสบการณ์กว่า 10 ปี เชี่ยวชาญการแก้อาการ\",\n  \"commissionRate\": 40.0,\n  \"serviceIds\": [\n    1,\n    2\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "2.18 Admin - Deactivate Therapist (Owner)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/therapists/{{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "therapists",
+                "{{therapist_id}}"
+              ]
+            },
+            "description": "Owner deactivates a therapist account."
+          }
+        },
+        {
+          "name": "2.19 Admin - Get Therapist Schedules (Staff)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/therapists/{{therapist_id}}/schedules",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "therapists",
+                "{{therapist_id}}",
+                "schedules"
+              ]
+            },
+            "description": "Retrieves shift schedules and days off for a therapist."
+          }
+        },
+        {
+          "name": "2.20 Admin - Update Therapist Schedule (Owner)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/therapists/{{therapist_id}}/schedules",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "therapists",
+                "{{therapist_id}}",
+                "schedules"
+              ]
+            },
+            "description": "Sets or updates work shifts for a therapist on a specific date.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scheduleDate\": \"2026-10-15\",\n  \"dayOff\": false,\n  \"leaveReason\": null,\n  \"notes\": \"กะเช้าบริการมาตรฐาน\",\n  \"shifts\": [\n    {\n      \"shiftName\": \"Morning Shift\",\n      \"startTime\": \"10:00:00\",\n      \"endTime\": \"18:00:00\",\n      \"shiftStatus\": \"ACTIVE\"\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "2.21 Admin - Get Shop Profile & Hours (Staff)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/shop",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "shop"
+              ]
+            },
+            "description": "Retrieves shop address, phone, and weekly business hours."
+          }
+        },
+        {
+          "name": "2.22 Admin - Update Shop Profile & Hours (Owner)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/shop",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "shop"
+              ]
+            },
+            "description": "Owner updates shop contact info and weekly operating hours schedule.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shopName\": \"FIWDEE Massage & Wellness\",\n  \"address\": \"123 ถนนมิตรภาพ ตำบลในเมือง อำเภอเมือง ขอนแก่น 40000\",\n  \"phoneNumber\": \"043-000-0000\",\n  \"description\": \"สถานพักผ่อนและนวดบำบัดกลางเมืองขอนแก่น บริการระดับพรีเมียม\",\n  \"businessHours\": [\n    {\n      \"dayOfWeek\": \"MONDAY\",\n      \"openTime\": \"10:00:00\",\n      \"closeTime\": \"20:00:00\",\n      \"closed\": false\n    },\n    {\n      \"dayOfWeek\": \"TUESDAY\",\n      \"openTime\": \"10:00:00\",\n      \"closeTime\": \"20:00:00\",\n      \"closed\": false\n    },\n    {\n      \"dayOfWeek\": \"WEDNESDAY\",\n      \"openTime\": \"10:00:00\",\n      \"closeTime\": \"20:00:00\",\n      \"closed\": false\n    },\n    {\n      \"dayOfWeek\": \"THURSDAY\",\n      \"openTime\": \"10:00:00\",\n      \"closeTime\": \"20:00:00\",\n      \"closed\": true\n    },\n    {\n      \"dayOfWeek\": \"FRIDAY\",\n      \"openTime\": \"10:00:00\",\n      \"closeTime\": \"21:00:00\",\n      \"closed\": false\n    },\n    {\n      \"dayOfWeek\": \"SATURDAY\",\n      \"openTime\": \"09:00:00\",\n      \"closeTime\": \"21:00:00\",\n      \"closed\": false\n    },\n    {\n      \"dayOfWeek\": \"SUNDAY\",\n      \"openTime\": \"09:00:00\",\n      \"closeTime\": \"21:00:00\",\n      \"closed\": false\n    }\n  ]\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Person 3 (Dev 3) - Core Booking Engine & State Pattern",
+      "description": "UC-07 (Availability Engine with 15-min Cleaning Buffer), UC-08 (Create Booking & Auto-allocation), UC-09 (State Pattern Status Updates), UC-10 (Cancellation with 2-hour policy & optimistic lock)",
+      "item": [
+        {
+          "name": "3.1 Check Availability Slots (15-min Cleaning Buffer)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/bookings/availability?serviceId={{service_id}}&date={{booking_date}}&durationMinutes=60",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookings",
+                "availability"
+              ],
+              "query": [
+                {
+                  "key": "serviceId",
+                  "value": "{{service_id}}"
+                },
+                {
+                  "key": "date",
+                  "value": "{{booking_date}}"
+                },
+                {
+                  "key": "durationMinutes",
+                  "value": "60"
+                }
+              ]
+            },
+            "description": "Calculates available time slots checking shop operating hours, therapist skill match, and 15-minute room cleaning buffer."
+          }
+        },
+        {
+          "name": "3.2 Create Booking - Auto Allocate Room & Therapist (Customer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customer_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bookings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookings"
+              ]
+            },
+            "description": "Creates booking with automatic room and available therapist allocation. Generates reference code.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceId\": 1,\n  \"durationMinutes\": 60,\n  \"startDateTime\": \"2026-10-15T11:00:00\",\n  \"preferredTherapistId\": null,\n  \"roomTypePreference\": \"SINGLE\",\n  \"specialRequests\": \"ขอเน้นช่วงบ่าไหล่เป็นพิเศษ\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.id) {",
+                  "    pm.collectionVariables.set('booking_id', jsonData.data.id);",
+                  "    console.log('Saved created booking_id:', jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.3 Create Booking - With Preferred Therapist (Customer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customer_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bookings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookings"
+              ]
+            },
+            "description": "Creates booking requesting a specific certified therapist.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceId\": 1,\n  \"durationMinutes\": 60,\n  \"startDateTime\": \"2026-10-15T14:00:00\",\n  \"preferredTherapistId\": 5,\n  \"roomTypePreference\": \"SINGLE\",\n  \"specialRequests\": \"นวดน้ำหนักปานกลาง ไม่เปิดแอร์เย็นเกินไป\"\n}"
+            }
+          }
+        },
+        {
+          "name": "3.4 Get Booking Details by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bookings/{{booking_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookings",
+                "{{booking_id}}"
+              ]
+            },
+            "description": "Returns full booking details including room number, therapist name, price, and current State."
+          }
+        },
+        {
+          "name": "3.5 Get My Bookings History (Customer)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bookings/my",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookings",
+                "my"
+              ]
+            },
+            "description": "Customer booking history list sorted by startDateTime descending."
+          }
+        },
+        {
+          "name": "3.6 Admin - Get Bookings by Date (Staff)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/bookings?date={{booking_date}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "bookings"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "{{booking_date}}"
+                }
+              ]
+            },
+            "description": "Front desk overview of all bookings scheduled on a specific date."
+          }
+        },
+        {
+          "name": "3.6b Admin - Get Bookings with Pagination & Sorting (Staff)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/bookings?page=0&size=5&sort=startDateTime,desc",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "bookings"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Page index (0-based)"
+                },
+                {
+                  "key": "size",
+                  "value": "5",
+                  "description": "Number of records per page"
+                },
+                {
+                  "key": "sort",
+                  "value": "startDateTime,desc",
+                  "description": "Dynamic sorting by startDateTime, totalPrice, createdAt"
+                },
+                {
+                  "key": "date",
+                  "value": "{{booking_date}}",
+                  "disabled": true,
+                  "description": "Optional date filter (YYYY-MM-DD)"
+                },
+                {
+                  "key": "status",
+                  "value": "CONFIRMED",
+                  "disabled": true,
+                  "description": "Optional booking status filter"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Optional search by refCode, customer name, phone, or service"
+                }
+              ]
+            },
+            "description": "Paginated and sorted bookings overview for staff (meets course project rubric: Pagination & Sorting requirement)."
+          }
+        },
+        {
+          "name": "3.7 Update Booking Status via State Pattern (Staff)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bookings/{{booking_id}}/status?status=CONFIRMED",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookings",
+                "{{booking_id}}",
+                "status"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "CONFIRMED"
+                }
+              ]
+            },
+            "description": "Staff triggers state transitions (e.g., PENDING -> CONFIRMED). Validated by GoF State Pattern concrete classes."
+          }
+        },
+        {
+          "name": "3.8 Cancel Booking with Policy Validation (Customer/Staff)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customer_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bookings/{{booking_id}}/cancel",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookings",
+                "{{booking_id}}",
+                "cancel"
+              ]
+            },
+            "description": "Cancels booking applying the 2-hour advance notice cancellation rule.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cancellationReason\": \"ติดธุระด่วน ไม่สามารถเดินทางมารับบริการได้\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Person 4 (Dev 4) - Front-Desk Queue, Service Execution & Observer Pattern",
+      "description": "UC-12/13/14 (Front Desk Arrival & Queue), UC-15/16/17 (Therapist Service Lifecycle), UC-18 (Customer Review), GoF Observer Pattern Event Notifications",
+      "item": [
+        {
+          "name": "4.1 Front Desk - Check-in Booking (Triggers Observer)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bookings/{{booking_id}}/check-in",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookings",
+                "{{booking_id}}",
+                "check-in"
+              ]
+            },
+            "description": "Customer arrives at shop. Front desk marks check-in, firing BookingStatusChangedEvent to auto-generate QueueItem ticket via Observer."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.id) {",
+                  "    pm.collectionVariables.set('queue_id', jsonData.data.id);",
+                  "    console.log('Saved created queue_id:', jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.2 Front Desk - Daily Queue Monitor (Staff)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/queue?date={{booking_date}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "queue"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "{{booking_date}}"
+                }
+              ]
+            },
+            "description": "Receptionist queue display showing waiting, called, and in-service customers."
+          }
+        },
+        {
+          "name": "4.3 Front Desk - Call Next Queue Customer (Staff)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/queue/call-next",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "queue",
+                "call-next"
+              ]
+            },
+            "description": "Pops and announces the next waiting customer ticket in the daily queue."
+          }
+        },
+        {
+          "name": "4.4 Front Desk - Update Queue Status (Staff)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/queue/{{queue_id}}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "queue",
+                "{{queue_id}}",
+                "status"
+              ]
+            },
+            "description": "Manually update queue status: WAITING, CALLED, IN_SERVICE, COMPLETED, CANCELLED.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CALLED\"\n}"
+            }
+          }
+        },
+        {
+          "name": "4.5 Therapist - View Own Schedule & Queue (Therapist)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{therapist_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/therapist/me/schedule?therapistId={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "therapist",
+                "me",
+                "schedule"
+              ],
+              "query": [
+                {
+                  "key": "therapistId",
+                  "value": "{{therapist_id}}"
+                }
+              ]
+            },
+            "description": "Therapist views their assigned massage appointments and queue status for the day."
+          }
+        },
+        {
+          "name": "4.6 Therapist - Start Service (Therapist)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{therapist_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/therapist/queue/{{queue_id}}/start?therapistId={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "therapist",
+                "queue",
+                "{{queue_id}}",
+                "start"
+              ],
+              "query": [
+                {
+                  "key": "therapistId",
+                  "value": "{{therapist_id}}"
+                }
+              ]
+            },
+            "description": "Therapist begins massage session. Transitions booking to IN_SERVICE and room status to OCCUPIED."
+          }
+        },
+        {
+          "name": "4.7 Therapist - Complete Service (Therapist)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{therapist_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/therapist/queue/{{queue_id}}/complete?therapistId={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "therapist",
+                "queue",
+                "{{queue_id}}",
+                "complete"
+              ],
+              "query": [
+                {
+                  "key": "therapistId",
+                  "value": "{{therapist_id}}"
+                }
+              ]
+            },
+            "description": "Therapist marks massage session as finished. Transitions booking to COMPLETED and room to CLEANING."
+          }
+        },
+        {
+          "name": "4.8 Customer - Submit Review for Completed Service (Customer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customer_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bookings/{{booking_id}}/review",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookings",
+                "{{booking_id}}",
+                "review"
+              ]
+            },
+            "description": "Customer submits 1-5 star ratings and feedback for a COMPLETED booking.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"overallRating\": 5,\n  \"therapistRating\": 5,\n  \"cleanlinessRating\": 5,\n  \"comment\": \"บริการประทับใจมาก หมอนวดน้ำหนักมือกำลังดี บรรยากาศเงียบสงบ สะอาดผ่อนคลายมากค่ะ\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Person 5 (Dev 5) - Payment Strategy, Refunds & Financial Reports",
+      "description": "UC-19 (Payment with GoF Strategy Pattern & Promo Discounts), UC-20 (Immutable Receipt Audit), UC-10 (Refund Audit), UC-21/22 (Owner Executive Dashboard, Revenue & Therapist Commission Reports)",
+      "item": [
+        {
+          "name": "5.1 Pay Booking - CASH Strategy (Staff)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bookings/{{booking_id}}/payment",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookings",
+                "{{booking_id}}",
+                "payment"
+              ]
+            },
+            "description": "Processes cash payment at front desk using CashPaymentStrategy. Creates immutable Payment audit record.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentMethod\": \"CASH\",\n  \"promoCode\": null,\n  \"transactionNote\": \"ชำระเงินสดที่เคาน์เตอร์หน้าร้าน\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.id) {",
+                  "    pm.collectionVariables.set('payment_id', jsonData.data.id);",
+                  "    console.log('Saved payment_id:', jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.2 Pay Booking - QR PromptPay Strategy + 'FIWDEE20' Discount (Customer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customer_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bookings/{{booking_id}}/payment",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookings",
+                "{{booking_id}}",
+                "payment"
+              ]
+            },
+            "description": "Applies PercentageDiscountStrategy (20% off) and executes QRPaymentStrategy.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentMethod\": \"QR_PROMPTPAY\",\n  \"promoCode\": \"FIWDEE20\",\n  \"transactionNote\": \"ชำระผ่าน PromptPay QR สแกนจ่าย พร้อมรับส่วนลด 20%\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.id) {",
+                  "    pm.collectionVariables.set('payment_id', jsonData.data.id);",
+                  "    console.log('Saved payment_id:', jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.3 Pay Booking - Credit Card Strategy (Customer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customer_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bookings/{{booking_id}}/payment",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookings",
+                "{{booking_id}}",
+                "payment"
+              ]
+            },
+            "description": "Executes CardPaymentStrategy for online card payment processing.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentMethod\": \"CREDIT_CARD\",\n  \"promoCode\": null,\n  \"transactionNote\": \"ชำระผ่านบัตรเครดิตออนไลน์\"\n}"
+            }
+          }
+        },
+        {
+          "name": "5.4 Get Payment by Booking ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bookings/{{booking_id}}/payment",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookings",
+                "{{booking_id}}",
+                "payment"
+              ]
+            },
+            "description": "Retrieves the payment transaction details attached to a booking."
+          }
+        },
+        {
+          "name": "5.5 Get Receipt - Immutable Audit View",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments/{{payment_id}}/receipt",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payments",
+                "{{payment_id}}",
+                "receipt"
+              ]
+            },
+            "description": "Returns receipt details including net amount, tax/discount breakdown, and immutable payment timestamp."
+          }
+        },
+        {
+          "name": "5.6 Process Refund for Payment (Staff/Owner)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments/{{payment_id}}/refund",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payments",
+                "{{payment_id}}",
+                "refund"
+              ]
+            },
+            "description": "Processes refund transaction against an existing payment record, enforcing refund policy limits.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refundAmount\": 400.0,\n  \"reason\": \"ลูกค้ายกเลิกตามนโยบายคืนเงินล่วงหน้า คืนเงินเต็มจำนวน\",\n  \"processedByStaff\": \"receptionist\"\n}"
+            }
+          }
+        },
+        {
+          "name": "5.7 Get Latest Refund by Payment ID (Staff)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments/{{payment_id}}/refund",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payments",
+                "{{payment_id}}",
+                "refund"
+              ]
+            },
+            "description": "Retrieves the most recent refund audit record for a given payment."
+          }
+        },
+        {
+          "name": "5.8 Get All Refunds by Payment ID (Staff)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments/{{payment_id}}/refunds",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payments",
+                "{{payment_id}}",
+                "refunds"
+              ]
+            },
+            "description": "Lists all refund records (supports partial refunds) for a payment."
+          }
+        },
+        {
+          "name": "5.9 Get All Refunds by Booking ID (Staff)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bookings/{{booking_id}}/refunds",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookings",
+                "{{booking_id}}",
+                "refunds"
+              ]
+            },
+            "description": "Lists all refunds tied to a specific booking."
+          }
+        },
+        {
+          "name": "5.10 Owner - Executive Business Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/reports/dashboard",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "reports",
+                "dashboard"
+              ]
+            },
+            "description": "Owner overview of today/month revenue, total bookings, active therapists, and operational stats."
+          }
+        },
+        {
+          "name": "5.11 Owner - Revenue Breakdown Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/reports/revenue?startDate=2026-10-01&endDate=2026-10-31",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "reports",
+                "revenue"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2026-10-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2026-10-31"
+                }
+              ]
+            },
+            "description": "Monthly revenue report broken down by payment method, discounts applied, and daily totals."
+          }
+        },
+        {
+          "name": "5.12 Owner - Therapist Commission Breakdown Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/reports/commissions?startDate=2026-10-01&endDate=2026-10-31",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "reports",
+                "commissions"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2026-10-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2026-10-31"
+                }
+              ]
+            },
+            "description": "Report calculating service hours, commission rates, and payout amounts per therapist."
+          }
+        }
+      ]
+    }
+  ]
+}

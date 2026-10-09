@@ -13,11 +13,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Controller for handling payment processing and receipt generation.
  */
+@Tag(name = "Payment", description = "ระบบชำระเงิน (รองรับ เงินสด, QR PromptPay, บัตรเครดิต ด้วย GoF Strategy Pattern)")
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
