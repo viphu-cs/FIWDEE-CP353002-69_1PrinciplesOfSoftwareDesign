@@ -13,8 +13,7 @@
 | **1. Technical Requirements** | บังคับ | 🟢 สมบูรณ์ | 95% | นำระบบขึ้น Cloud Server |
 | **2. Layered Architecture** | บังคับ | 🟢 สมบูรณ์ | 100% | ครบทุก Layer (Controller, Service, Repository, Entity, DTO, Mapper) |
 | **3. SOLID Principles** | บังคับ | 🟢 สมบูรณ์ | 100% | จัดทำเอกสาร `doc/solid-analysis.md` ครอบคลุมครบทั้ง 5 หลักการ (2026-10-09) |
-| **4. Design Patterns** | บังคับ | 🟢 สมบูรณ์ | 100% | ครบทั้ง 9 Patterns ในโค้ดจริงและเอกสารตารางสรุปสมบูรณ์ (2026-10-09) |
-| **5. Database Requirements** | บังคับ | 🟡 มีบางส่วน | 80% | ทำ Migration Script (`schema.sql` + `data.sql` หรือ Flyway) |
+| **5. Database Requirements** | บังคับ | 🟢 สมบูรณ์ | 100% | ครบ 18 ตาราง, ER Diagram, Constraints และ Migration Script (`schema.sql` + `data.sql`) สมบูรณ์ (2026-10-09) |
 | **6. REST API Requirements** | บังคับ | 🟢 สมบูรณ์ | 100% | มี Pagination, Sorting และ Swagger UI ครบถ้วน |
 | **7. Testing (JUnit 5 + Mockito)** | บังคับ | 🟡 มีบางส่วน | 35% | มี Pagination Unit Test ผ่านแล้ว, เพิ่ม Service Tests อื่นๆ |
 | **8. Git Workflow & ยอด Commit** | บังคับ | 🟡 มีบางส่วน | 70% | สมาชิกบางท่านต้อง Commit เพิ่มให้ครบอย่างน้อย 15 ครั้ง |
@@ -117,8 +116,8 @@
   - Optimistic Locking (`@Version` ใน Entity `Booking`)
   - Immutable Financial Audit Record (Entity `Payment` และ `Refund` ห้ามแก้ไข)
 - [x] **เอกสารฐานข้อมูล**: มี ER Diagram และ Data Dictionary ใน `doc/er-diagram.md`
-- [ ] **Database Migration / Seed Script**:
-  - *สิ่งที่ต้องทำ*: จัดทำ `schema.sql` (DDL สร้าง 18 ตาราง) และ `data.sql` (DML ข้อมูลตั้งต้นร้าน หมอนวด บริการ ห้อง) ไว้ใน `code/backend/src/main/resources/` (หรือใช้ Flyway)
+- [x] **Database Migration / Seed Script**:
+  - จัดทำ `schema.sql` (DDL สร้างครบทั้ง 18 ตาราง พร้อม Constraints, Defaults, Performance Indexes) และ `data.sql` (DML ข้อมูลตั้งต้นร้าน FIWDEE, เวลาทำการ 7 วัน, ห้องนวด 6 ห้อง, บริการ 4 รายการพร้อมตัวเลือกเวลา/ราคา, หมอนวด 6 คนพร้อมทักษะ/ตารางงาน, บัญชีผู้ใช้เริ่มต้นพร้อมรหัสผ่าน BCrypt และตัวอย่างการจอง/การชำระเงิน/คิว/รีวิว) ไว้ใน `code/backend/src/main/resources/` พร้อมตั้งค่า `spring.sql.init.mode` ใน `application.properties` (2026-10-09)
 
 ---
 
