@@ -4,5 +4,4 @@
 export const PROMO = {
   code: 'FIWDEE20',
   discount: '20%',
-  discountRate: 0.2, // ใช้คำนวณยอดส่วนลดจริงจากราคา
 }
