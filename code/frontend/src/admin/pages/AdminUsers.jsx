@@ -164,15 +164,15 @@ export default function AdminUsers() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-2xl p-4 border border-stone-200/80 shadow-2xs flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+      <div className="bg-surface rounded-2xl p-4 border border-outline-variant/80 shadow-[var(--admin-shadow-sm)] flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold text-stone-500 uppercase">สถานะ Session:</span>
+          <span className="text-xs font-semibold text-charcoal-muted uppercase">สถานะ Session:</span>
           {['ALL', 'ONLINE', 'OFFLINE', 'SUSPENDED'].map((st) => (
             <button
               key={st}
               onClick={() => setSessionFilter(st)}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all ${
-                sessionFilter === st ? 'bg-amber-900 text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                sessionFilter === st ? 'bg-teak-dark text-on-primary' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
               }`}
             >
               {st}
@@ -183,7 +183,7 @@ export default function AdminUsers() {
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-3 py-1.5 rounded-xl border border-stone-300 bg-stone-50 text-xs font-semibold text-stone-800 focus:outline-none cursor-pointer"
+            className="px-3 py-2 rounded-xl border border-outline-variant bg-surface-container-low text-xs font-semibold text-on-surface focus:outline-none hover:border-wood-deep/60 cursor-pointer"
           >
             <option value="ALL">ทุกบทบาท</option>
             <option value="OWNER">OWNER (ผู้จัดการ)</option>
@@ -196,7 +196,7 @@ export default function AdminUsers() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="ค้นหาชื่อ / อีเมล..."
-            className="px-3 py-1.5 rounded-xl border border-stone-300 bg-stone-50 text-xs font-semibold text-stone-800 focus:outline-none w-full sm:w-52"
+            className="px-3 py-2 rounded-xl border border-outline-variant bg-surface-container-low text-xs font-semibold text-on-surface placeholder:text-charcoal-muted focus:outline-none hover:border-wood-deep/60 w-full sm:w-52"
           />
         </div>
       </div>
