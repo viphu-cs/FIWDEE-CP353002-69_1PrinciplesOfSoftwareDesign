@@ -314,6 +314,8 @@ export const en = {
   },
   auth: {
     errLoginFailed: 'Login failed. Please check your details and try again.',
+    errWrongCredentials: 'Incorrect email/username or password. Please try again.',
+    errNetwork: 'Cannot connect to the server. Please try again later.',
     errRegisterFailed: 'Registration failed. Please check your details and try again.',
     loginCta: 'Sign in',
     loginSubmitting: 'Signing in...',
