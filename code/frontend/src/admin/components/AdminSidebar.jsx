@@ -4,17 +4,31 @@ import { useAdminAuth } from '../context/AdminAuthContext.jsx'
 import { useLanguage } from '../../i18n/useLanguage.js'
 import { shop } from '../../data/mock.js'
 
-export function getNavLinks(t, queueCount) {
+export function getNavLinks(t, queueCount, role = 'OWNER') {
   const translate = (key, fallback) => (t ? t(`admin.${key}`) : fallback)
-  return [
+
+  if (role === 'THERAPIST') {
+    return [
+      { key: 'therapist-queue', label: translate('myQueue', 'คิวงานของฉัน'), hash: '#admin/therapist-queue', iconType: 'queue' },
+      { key: 'therapist-schedule', label: translate('mySchedule', 'ตารางกะงานของฉัน'), hash: '#admin/therapist-schedule', iconType: 'therapists' },
+      { key: 'therapist-earnings', label: translate('myEarnings', 'รายได้ & ค่าคอมมิชชัน'), hash: '#admin/therapist-earnings', iconType: 'dashboard' },
+    ]
+  }
+
+  const links = [
     { key: 'dashboard', label: translate('dashboard', 'แดชบอร์ดภาพรวม'), hash: '#admin/dashboard', iconType: 'dashboard' },
     { key: 'queue', label: translate('queue', 'จัดการคิวสด'), hash: '#admin/queue', badge: queueCount > 0 ? String(queueCount) : null, iconType: 'queue' },
     { key: 'bookings', label: translate('bookings', 'ตารางการจองนัดหมาย'), hash: '#admin/bookings', iconType: 'bookings' },
     { key: 'rooms', label: translate('rooms', 'ผังห้องนวด (Real-time)'), hash: '#admin/rooms', iconType: 'rooms' },
     { key: 'therapists', label: translate('therapists', 'ข้อมูลหมอนวด & กะงาน'), hash: '#admin/therapists', iconType: 'therapists' },
     { key: 'services', label: translate('services', 'เมนูบริการ & ราคา'), hash: '#admin/services', iconType: 'services' },
-    { key: 'users', label: translate('users', 'สรุปข้อมูลผู้ใช้ทั้งหมด'), hash: '#admin/users', iconType: 'users' },
   ]
+
+  if (role === 'OWNER') {
+    links.push({ key: 'users', label: translate('users', 'สรุปข้อมูลผู้ใช้ทั้งหมด'), hash: '#admin/users', iconType: 'users' })
+  }
+
+  return links
 }
 
 export function RenderIcon({ type }) {
@@ -70,7 +84,7 @@ export default function AdminSidebar({ currentRoute = 'dashboard', onNavigate })
   const { user, logout, queueItems } = useAdminAuth()
   const { t } = useLanguage()
   const waitingCount = queueItems?.filter(q => q.status === 'WAITING' || q.status === 'PENDING' || q.status === 'CHECKED_IN').length || 0
-  const navLinks = getNavLinks(t, waitingCount)
+  const navLinks = getNavLinks(t, waitingCount, user?.role)
 
   const handleGoToCustomer = () => {
     window.location.hash = '#top'

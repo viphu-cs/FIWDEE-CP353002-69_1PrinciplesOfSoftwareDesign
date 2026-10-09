@@ -3,12 +3,11 @@ import AdminSidebar from '../components/AdminSidebar.jsx'
 import AdminTopbar from '../components/AdminTopbar.jsx'
 import QuickActionModal from '../components/QuickActionModal.jsx'
 import { AdminAuthProvider, useAdminAuth } from '../context/AdminAuthContext.jsx'
-import AdminLoginPage from '../pages/AdminLoginPage.jsx'
 import { RenderIcon, getNavLinks } from '../components/AdminSidebar.jsx'
 import { useLanguage } from '../../i18n/useLanguage.js'
 
 function AdminLayoutContent({ currentRoute = 'dashboard', onNavigate, children }) {
-  const { isAuthenticated, queueItems } = useAdminAuth()
+  const { isAuthenticated, user, queueItems } = useAdminAuth()
   const { t } = useLanguage()
   const [modalState, setModalState] = useState({
     isOpen: false,
@@ -16,9 +15,28 @@ function AdminLayoutContent({ currentRoute = 'dashboard', onNavigate, children }
     initialData: null
   })
 
-  // If not authenticated, force render Admin Login Page
-  if (!isAuthenticated) {
-    return <AdminLoginPage />
+  // หากไม่มีสิทธิ์เข้าถึงหลังบ้าน (ไม่ได้ล็อกอิน หรือเป็น CUSTOMER) ให้กลับหน้าแรกทันที
+  React.useEffect(() => {
+    if (!isAuthenticated || user?.role === 'CUSTOMER') {
+      window.location.hash = '#top'
+      return
+    }
+
+    // Role-based route guard
+    if (user?.role === 'THERAPIST') {
+      const allowedTherapistRoutes = ['therapist-queue', 'therapist-schedule', 'therapist-earnings']
+      if (!allowedTherapistRoutes.includes(currentRoute)) {
+        onNavigate('therapist-queue')
+      }
+    } else if (user?.role === 'RECEPTIONIST') {
+      if (currentRoute === 'users') {
+        onNavigate('dashboard')
+      }
+    }
+  }, [isAuthenticated, user?.role, currentRoute, onNavigate])
+
+  if (!isAuthenticated || user?.role === 'CUSTOMER') {
+    return null
   }
 
   const openWalkInModal = () => {
@@ -50,7 +68,7 @@ function AdminLayoutContent({ currentRoute = 'dashboard', onNavigate, children }
   }
 
   const waitingCount = queueItems?.filter(q => q.status === 'WAITING' || q.status === 'PENDING' || q.status === 'CHECKED_IN').length || 0
-  const navLinks = getNavLinks(t, waitingCount)
+  const navLinks = getNavLinks(t, waitingCount, user?.role)
 
   return (
     <div className="admin-theme min-h-screen bg-[var(--admin-page)] font-body-md text-on-surface antialiased flex flex-col">

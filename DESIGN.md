@@ -123,6 +123,12 @@ typography:
     fontWeight: '500'
     lineHeight: 16px
     letterSpacing: 0.12em
+  label-caps:
+    fontFamily: Manrope
+    fontSize: 11px
+    fontWeight: '600'
+    lineHeight: 16px
+    letterSpacing: 0.14em
 rounded:
   sm: 0.125rem
   DEFAULT: 0.25rem

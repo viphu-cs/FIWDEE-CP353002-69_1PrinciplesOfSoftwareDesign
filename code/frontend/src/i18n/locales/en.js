@@ -30,6 +30,7 @@ export const en = {
     login: 'Sign in',
     profile: 'My profile',
     myBookings: 'My bookings',
+    adminPortal: 'Admin Portal',
     logout: 'Sign out',
   },
   hero: {

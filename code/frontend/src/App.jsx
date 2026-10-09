@@ -26,6 +26,9 @@ import AdminTherapists from './admin/pages/AdminTherapists.jsx'
 import AdminRooms from './admin/pages/AdminRooms.jsx'
 import AdminServices from './admin/pages/AdminServices.jsx'
 import AdminUsers from './admin/pages/AdminUsers.jsx'
+import AdminTherapistQueue from './admin/pages/AdminTherapistQueue.jsx'
+import AdminTherapistSchedule from './admin/pages/AdminTherapistSchedule.jsx'
+import AdminTherapistEarnings from './admin/pages/AdminTherapistEarnings.jsx'
 
 // สถานะล็อกอิน = มีทั้ง JWT token และโปรไฟล์ (เช็คแค่โปรไฟล์ไม่พอ — ข้อมูลเก่าค้างจากยุค mock
 // ต้องไม่นับเป็นล็อกอิน ให้ตรงกับเงื่อนไขของ CustomerAuthContext)
@@ -41,13 +44,44 @@ const BOOKING_NAV_KEYS = ['booking', 'book', 'booking-flow', 'direct-booking']
 // หน้าที่ต้องล็อกอินก่อน (โปรไฟล์ / ประวัติการจอง รวมอยู่ด้วย)
 const LOGIN_REQUIRED_KEYS = [...BOOKING_NAV_KEYS, 'profile', 'my-bookings']
 
+const getStoredUserRole = () => {
+  try {
+    const raw = localStorage.getItem('fiwdee_admin_user') || localStorage.getItem('fiwdee_customer_auth') || sessionStorage.getItem('fiwdee_customer_auth')
+    return raw ? JSON.parse(raw)?.role : null
+  } catch {
+    return null
+  }
+}
+
 function getInitialNavigation() {
   if (typeof window === 'undefined') return { page: 'home', adminRoute: 'dashboard', therapistId: 1 }
   const hash = window.location.hash.toLowerCase()
 
   if (hash.startsWith('#admin')) {
+    const token = localStorage.getItem('fiwdee_token')
+    const role = getStoredUserRole()
+
+    // หากยังไม่ล็อกอิน หรือเป็นลูกค้าทั่วไป (CUSTOMER) ห้ามเข้าหลังบ้าน ให้กลับหน้าแรกทันที
+    if (!token || !role || role === 'CUSTOMER') {
+      window.location.hash = '#top'
+      return { page: 'home', adminRoute: 'dashboard', therapistId: 1 }
+    }
+
     const parts = hash.split('/')
-    const subRoute = parts[1] || 'dashboard'
+    let subRoute = parts[1] || (role === 'THERAPIST' ? 'therapist-queue' : 'dashboard')
+
+    // ตรวจสอบสิทธิ์เฉพาะของแต่ละบทบาท
+    if (role === 'THERAPIST') {
+      const allowedTherapist = ['therapist-queue', 'therapist-schedule', 'therapist-earnings']
+      if (!allowedTherapist.includes(subRoute)) {
+        subRoute = 'therapist-queue'
+      }
+    } else if (role === 'RECEPTIONIST') {
+      if (subRoute === 'users') {
+        subRoute = 'dashboard'
+      }
+    }
+
     return { page: 'admin', adminRoute: subRoute, therapistId: 1 }
   }
 
@@ -123,9 +157,15 @@ export default function App() {
 
   const handleNavigate = (targetKey, params) => {
     if (targetKey === 'admin') {
-      const sub = params?.subRoute || 'dashboard'
+      const role = getStoredUserRole()
+      const defaultSub = role === 'THERAPIST' ? 'therapist-queue' : 'dashboard'
+      const sub = params?.subRoute || defaultSub
       setNavState({ page: 'admin', adminRoute: sub, therapistId: 1 })
       window.history.pushState(null, '', `#admin/${sub}`)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else if (targetKey === 'admin-therapist') {
+      setNavState({ page: 'admin', adminRoute: 'therapist-queue', therapistId: 1 })
+      window.history.pushState(null, '', '#admin/therapist-queue')
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } else if (targetKey === 'therapist-profile') {
       const id = params?.therapistId || 1
@@ -203,6 +243,12 @@ export default function App() {
               <AdminServices />
             ) : adminRoute === 'users' ? (
               <AdminUsers />
+            ) : adminRoute === 'therapist-queue' ? (
+              <AdminTherapistQueue />
+            ) : adminRoute === 'therapist-schedule' ? (
+              <AdminTherapistSchedule />
+            ) : adminRoute === 'therapist-earnings' ? (
+              <AdminTherapistEarnings />
             ) : (
               <AdminDashboard />
             )}

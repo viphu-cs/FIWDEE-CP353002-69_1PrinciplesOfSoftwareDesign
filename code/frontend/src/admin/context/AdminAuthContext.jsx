@@ -7,7 +7,7 @@ const AdminAuthContext = createContext()
 const AUTH_USER_KEY = 'fiwdee_admin_user'
 
 // สิทธิ์ที่เข้าระบบหลังบ้านได้ — ยืนยันจาก JWT ที่ backend ออกให้ (role จริงจาก DB)
-const STAFF_ROLES = ['OWNER', 'RECEPTIONIST']
+export const STAFF_ROLES = ['OWNER', 'RECEPTIONIST', 'THERAPIST']
 
 // Mock Initial Domain Data
 const initialRooms = [
@@ -142,13 +142,29 @@ export function AdminAuthProvider({ children }) {
   const { t } = useLanguage()
 
   // Authentication State — JWT จริงจาก POST /api/auth/login (token + role จาก backend)
+  const readAdminUser = () => {
+    try {
+      const rawAdmin = localStorage.getItem(AUTH_USER_KEY)
+      if (rawAdmin) {
+        const parsed = JSON.parse(rawAdmin)
+        if (STAFF_ROLES.includes(parsed?.role)) return parsed
+      }
+      const rawCustomer = localStorage.getItem('fiwdee_customer_auth') || sessionStorage.getItem('fiwdee_customer_auth')
+      if (rawCustomer) {
+        const parsed = JSON.parse(rawCustomer)
+        if (STAFF_ROLES.includes(parsed?.role)) return parsed
+      }
+      return null
+    } catch {
+      return null
+    }
+  }
+
+  const [user, setUser] = useState(readAdminUser)
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     if (!localStorage.getItem('fiwdee_token')) return false
-    try { return STAFF_ROLES.includes(JSON.parse(localStorage.getItem(AUTH_USER_KEY))?.role) } catch { return false }
-  })
-
-  const [user, setUser] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(AUTH_USER_KEY)) } catch { return null }
+    const u = readAdminUser()
+    return !!u && STAFF_ROLES.includes(u.role)
   })
 
   const login = async (email, password) => {
@@ -184,6 +200,9 @@ export function AdminAuthProvider({ children }) {
     setUser(null)
     localStorage.removeItem('fiwdee_token')
     localStorage.removeItem(AUTH_USER_KEY)
+    localStorage.removeItem('fiwdee_customer_auth')
+    sessionStorage.removeItem('fiwdee_customer_auth')
+    window.location.hash = '#top'
   }
 
   // Shared domain state (mock — รอโมดูลของ Dev 2–5 ตาม BACKEND_TEAM_ROLES.md)

@@ -12,7 +12,7 @@ export default function AdminTopbar({ currentRoute, onNavigate, onOpenWalkInModa
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [showUserDropdown, setShowUserDropdown] = useState(false)
 
-  const navLinks = getNavLinks(t)
+  const navLinks = getNavLinks(t, 0, user?.role)
   const toggleLang = () => setLang(lang === 'th' ? 'en' : 'th')
 
   const handleGoToCustomer = () => {

@@ -30,6 +30,7 @@ export const th = {
     login: 'เข้าสู่ระบบ',
     profile: 'ข้อมูลผู้ใช้',
     myBookings: 'ประวัติการจอง',
+    adminPortal: 'ระบบจัดการหลังบ้าน',
     logout: 'ออกจากระบบ',
   },
   hero: {

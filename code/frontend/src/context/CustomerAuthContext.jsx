@@ -40,6 +40,19 @@ export function CustomerAuthProvider({ children }) {
     localStorage.setItem(TOKEN_KEY, data.token)
     const store = rememberMe ? localStorage : sessionStorage
     store.setItem(CUSTOMER_AUTH_KEY, JSON.stringify(profile))
+
+    // ซิงก์ข้อมูลผู้ใช้ไปยัง admin user storage สำหรับบทบาทที่มีสิทธิ์หลังบ้าน
+    if (['OWNER', 'RECEPTIONIST', 'THERAPIST'].includes(data.role)) {
+      localStorage.setItem('fiwdee_admin_user', JSON.stringify({
+        id: data.userId,
+        name: data.fullName,
+        email: data.email,
+        role: data.role,
+      }))
+    } else {
+      localStorage.removeItem('fiwdee_admin_user')
+    }
+
     setUser(profile)
     setIsAuthenticated(true)
     return profile
@@ -51,6 +64,14 @@ export function CustomerAuthProvider({ children }) {
       if (!prev) return prev
       const next = { ...prev, ...updates }
       persistProfile(next)
+      if (['OWNER', 'RECEPTIONIST', 'THERAPIST'].includes(next.role)) {
+        localStorage.setItem('fiwdee_admin_user', JSON.stringify({
+          id: next.id,
+          name: next.name,
+          email: next.email,
+          role: next.role,
+        }))
+      }
       return next
     })
   }
@@ -58,6 +79,7 @@ export function CustomerAuthProvider({ children }) {
   const logout = () => {
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(CUSTOMER_AUTH_KEY)
+    localStorage.removeItem('fiwdee_admin_user')
     sessionStorage.removeItem(CUSTOMER_AUTH_KEY)
     setUser(null)
     setIsAuthenticated(false)
