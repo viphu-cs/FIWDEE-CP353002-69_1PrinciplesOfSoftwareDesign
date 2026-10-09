@@ -13,6 +13,7 @@
 | **1. Technical Requirements** | บังคับ | 🟢 สมบูรณ์ | 95% | นำระบบขึ้น Cloud Server |
 | **2. Layered Architecture** | บังคับ | 🟢 สมบูรณ์ | 100% | ครบทุก Layer (Controller, Service, Repository, Entity, DTO, Mapper) |
 | **3. SOLID Principles** | บังคับ | 🟢 สมบูรณ์ | 100% | จัดทำเอกสาร `doc/solid-analysis.md` ครอบคลุมครบทั้ง 5 หลักการ (2026-10-09) |
+| **4. Design Patterns** | บังคับ | 🟢 สมบูรณ์ | 100% | ครบทั้ง 9 Patterns ในโค้ดจริงและเอกสารตารางสรุปสมบูรณ์ (2026-10-09) |
 | **5. Database Requirements** | บังคับ | 🟢 สมบูรณ์ | 100% | ครบ 18 ตาราง, ER Diagram, Constraints และ Migration Script (`schema.sql` + `data.sql`) สมบูรณ์ (2026-10-09) |
 | **6. REST API Requirements** | บังคับ | 🟢 สมบูรณ์ | 100% | มี Pagination, Sorting และ Swagger UI ครบถ้วน |
 | **7. Testing (JUnit 5 + Mockito)** | บังคับ | 🟡 มีบางส่วน | 35% | มี Pagination Unit Test ผ่านแล้ว, เพิ่ม Service Tests อื่นๆ |
@@ -151,7 +152,7 @@
   - `Titisak_673380035-5_sec2`
   - `supached_673380063-0_sec2`
 - [ ] **จำนวน Commit ต่อคน ($\ge 15$ Commits)**:
-  - `viphu-cs`: 67 commits ✅ (ผ่านเกณฑ์)
+  - `viphu-cs`: 69 commits ✅ (ผ่านเกณฑ์)
   - `Chakrit`: 33 commits ✅ (ผ่านเกณฑ์)
   - `Titisak2005`: 17 commits ✅ (ผ่านเกณฑ์)
   - `supached` / `nongsaw6969`: 5 commits ⚠️ **(ต้อง commit เพิ่มอย่างน้อย 10 ครั้ง)**
