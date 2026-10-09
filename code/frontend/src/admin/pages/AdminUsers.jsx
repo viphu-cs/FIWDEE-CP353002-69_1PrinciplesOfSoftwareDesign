@@ -202,16 +202,16 @@ export default function AdminUsers() {
       </div>
 
       {/* Registered Users Table */}
-      <div className="bg-white rounded-2xl border border-stone-200/80 shadow-2xs overflow-hidden">
-        <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
-          <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider">
+      <div className="bg-surface rounded-2xl border border-outline-variant/80 shadow-[var(--admin-shadow-sm)] overflow-hidden">
+        <div className="px-5 py-4 border-b border-surface-container flex items-center justify-between">
+          <h3 className="text-sm font-bold text-teak-dark uppercase tracking-wider">
             ผู้ใช้ที่สมัครไว้ทั้งหมด ({filteredUsers.length} จาก {users.length} คน)
           </h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="text-[11px] uppercase tracking-wider text-stone-500 bg-stone-50 border-b border-stone-200">
+              <tr className="text-[11px] uppercase tracking-wider text-charcoal-muted bg-surface-container-low border-b border-outline-variant/80">
                 <th className="px-5 py-3 font-semibold">ผู้ใช้</th>
                 <th className="px-4 py-3 font-semibold">บทบาท</th>
                 <th className="px-4 py-3 font-semibold">เบอร์โทร</th>
@@ -224,42 +224,42 @@ export default function AdminUsers() {
             </thead>
             <tbody>
               {filteredUsers.map((u) => (
-                <tr key={u.id} className="border-b border-stone-100 hover:bg-stone-50/60 transition-colors">
+                <tr key={u.id} className="admin-table-row border-b">
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-stone-800 text-white text-[11px] font-bold flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-teak-dark text-on-primary text-[11px] font-bold flex items-center justify-center shrink-0">
                         {u.name.slice(0, 2)}
                       </div>
                       <div className="leading-tight">
-                        <div className="text-xs font-bold text-stone-800">{u.name}</div>
-                        <div className="text-[11px] text-stone-500">{u.email}</div>
+                        <div className="text-xs font-bold text-on-surface">{u.name}</div>
+                        <div className="text-[11px] text-charcoal-muted">{u.email}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-4 py-3.5"><StatusBadge status={u.role} size="sm" /></td>
-                  <td className="px-4 py-3.5 text-xs text-stone-600">{u.phone}</td>
-                  <td className="px-4 py-3.5 text-xs font-bold text-stone-800 text-center">{u.totalBookings}</td>
-                  <td className="px-4 py-3.5 text-xs text-stone-600">{u.registeredAt}</td>
-                  <td className="px-4 py-3.5 text-xs text-stone-600">{u.lastLoginAt}</td>
+                  <td className="px-4 py-3.5 text-xs text-on-surface-variant">{u.phone}</td>
+                  <td className="px-4 py-3.5 text-xs font-bold text-on-surface text-center">{u.totalBookings}</td>
+                  <td className="px-4 py-3.5 text-xs text-on-surface-variant">{u.registeredAt}</td>
+                  <td className="px-4 py-3.5 text-xs text-on-surface-variant">{u.lastLoginAt}</td>
                   <td className="px-4 py-3.5"><StatusBadge status={u.status} size="sm" /></td>
                   <td className="px-4 py-3.5 text-right">
                     {u.status === 'ONLINE' ? (
                       <button
                         onClick={() => handleForceLogout(u.id)}
                         disabled={forceLoggingOutId === u.id}
-                        className="px-2.5 py-1.5 rounded-xl text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-colors cursor-pointer disabled:opacity-60"
+                        className="px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200/80 hover:bg-rose-100 shadow-xs transition-colors cursor-pointer disabled:opacity-60"
                       >
                         {forceLoggingOutId === u.id ? '...' : 'Force Logout'}
                       </button>
                     ) : (
-                      <span className="text-[11px] text-stone-400">—</span>
+                      <span className="text-[11px] text-charcoal-muted">—</span>
                     )}
                   </td>
                 </tr>
               ))}
               {filteredUsers.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-5 py-8 text-center text-xs text-stone-500">
+                  <td colSpan={8} className="px-5 py-8 text-center text-xs text-charcoal-muted">
                     ไม่พบผู้ใช้ที่ตรงกับเงื่อนไข
                   </td>
                 </tr>
