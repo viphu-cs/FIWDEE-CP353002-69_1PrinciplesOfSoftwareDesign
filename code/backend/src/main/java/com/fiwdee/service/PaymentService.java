@@ -25,4 +25,9 @@ public interface PaymentService {
      * Retrieves the payment details by booking ID.
      */
     PaymentResponseDTO getPaymentByBookingId(Long bookingId);
+
+    /**
+     * Calculates promo code discount server-side using GoF DiscountStrategy.
+     */
+    com.fiwdee.dto.response.PromoValidationResponseDTO calculatePromotion(com.fiwdee.dto.request.ValidatePromoRequestDTO request);
 }

@@ -1748,7 +1748,35 @@
           ]
         },
         {
-          "name": "5.2 Pay Booking - QR PromptPay Strategy + 'FIWDEE20' Discount (Customer)",
+          "name": "5.2 Validate Promo Code Quotation (Public / Strategy Pattern)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments/promotions/validate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payments",
+                "promotions",
+                "validate"
+              ]
+            },
+            "description": "Calculates and validates discount quote server-side via GoF DiscountStrategy (Single Source of Truth, no frontend math).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"promoCode\": \"FIWDEE20\",\n  \"grossAmount\": 500.00,\n  \"serviceId\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "5.3 Pay Booking - QR PromptPay Strategy + 'FIWDEE20' Discount (Customer)",
           "request": {
             "method": "POST",
             "header": [

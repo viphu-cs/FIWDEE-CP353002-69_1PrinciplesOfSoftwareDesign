@@ -160,8 +160,8 @@ export default function BookingPage({ onNavigate, initialStep = 1, initialTherap
     step === 3 && paymentMethod === 'promptpay'
   )
 
-  // Promotion code and discounts
-  const promoState = usePromoCode(activeService.rawPrice)
+  // Promotion code and discounts (100% server-side calculation)
+  const promoState = usePromoCode(activeService.rawPrice, selectedService?.id)
 
   const handleSelectService = useCallback(
     (svc) => {

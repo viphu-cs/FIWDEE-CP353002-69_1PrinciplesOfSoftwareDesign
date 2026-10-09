@@ -58,6 +58,7 @@
 
 | Date | Note |
 |---|---|
+| 2026-10-10 | ปรับสถาปัตยกรรมระบบโปรโมชั่น: ยกเลิกการคำนวณส่วนลดบน Frontend ทั้งหมด ให้ Backend เป็น Single Source of Truth ผ่าน `POST /api/payments/promotions/validate` + GoF Discount Strategy |
 | 2026-10-03 | File created — entities/enums done, everything else not started |
 | 2026-10-03 | Added Admin Users summary page (frontend mock, no DB) — `#admin/users` route; backend counterpart tracked in 2.14, API wiring in 4.8 |
 | 2026-10-03 | Created treatment images (service-thai, service-aroma, service-warm-oil, service-foot), added image fields in mock.js and BookingPage, updated ServicesPage and BookingPage UI with fallback |

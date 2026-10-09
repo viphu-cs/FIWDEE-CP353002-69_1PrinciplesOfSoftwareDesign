@@ -339,6 +339,14 @@ export const bookingService = {
     return await api.post('/bookings', payload)
   },
 
+  validatePromotion: async (promoCode, grossAmount, serviceId = null) => {
+    return await api.post('/payments/promotions/validate', {
+      promoCode,
+      grossAmount,
+      serviceId,
+    })
+  },
+
   processPayment: async (bookingId, paymentPayload) => {
     return await api.post(`/bookings/${bookingId}/payment`, paymentPayload)
   },

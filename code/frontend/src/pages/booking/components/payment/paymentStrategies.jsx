@@ -153,10 +153,13 @@ export function PromptPayStrategy({
                 />
                 <button
                   type="button"
+                  disabled={promoState.isValidating}
                   onClick={handleApplyPromo}
-                  className="px-4 py-2 rounded-lg bg-primary text-on-primary font-label-caps text-label-caps uppercase tracking-wider hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer shrink-0"
+                  className={`px-4 py-2 rounded-lg bg-primary text-on-primary font-label-caps text-label-caps uppercase tracking-wider hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer shrink-0 ${
+                    promoState.isValidating ? 'opacity-60 cursor-not-allowed' : ''
+                  }`}
                 >
-                  ใช้โค้ด
+                  {promoState.isValidating ? 'กำลังตรวจสอบ...' : 'ใช้โค้ด'}
                 </button>
               </div>
               {promoError && (

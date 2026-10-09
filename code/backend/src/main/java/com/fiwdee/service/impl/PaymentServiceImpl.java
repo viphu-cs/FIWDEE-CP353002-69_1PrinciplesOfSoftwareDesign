@@ -6,7 +6,9 @@ import com.fiwdee.domain.entity.Shop;
 import com.fiwdee.domain.enums.BookingStatus;
 import com.fiwdee.domain.enums.PaymentStatus;
 import com.fiwdee.dto.request.PaymentRequestDTO;
+import com.fiwdee.dto.request.ValidatePromoRequestDTO;
 import com.fiwdee.dto.response.PaymentResponseDTO;
+import com.fiwdee.dto.response.PromoValidationResponseDTO;
 import com.fiwdee.dto.response.ReceiptResponseDTO;
 import com.fiwdee.exception.ConflictException;
 import com.fiwdee.exception.NotFoundException;
@@ -167,5 +169,49 @@ public class PaymentServiceImpl implements PaymentService {
                 .orElseThrow(() -> new NotFoundException("Payment record not found for booking ID: " + bookingId));
 
         return paymentMapper.toResponseDTO(payment);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PromoValidationResponseDTO calculatePromotion(ValidatePromoRequestDTO request) {
+        if (request == null || request.getPromoCode() == null || request.getPromoCode().trim().isEmpty()) {
+            throw new ValidationException("กรุณาระบุรหัสโปรโมชั่น");
+        }
+        if (request.getGrossAmount() == null || request.getGrossAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ValidationException("ยอดเงินต้องมากกว่า 0 บาท");
+        }
+
+        String rawCode = request.getPromoCode().trim();
+        Optional<DiscountStrategy> strategyOpt = discountStrategyFactory.findStrategy(rawCode);
+
+        if (strategyOpt.isEmpty()) {
+            return PromoValidationResponseDTO.builder()
+                    .valid(false)
+                    .promoCode(rawCode)
+                    .grossAmount(request.getGrossAmount())
+                    .discountAmount(BigDecimal.ZERO)
+                    .netAmount(request.getGrossAmount())
+                    .discountLabel("฿0")
+                    .message("รหัสโปรโมชั่นไม่ถูกต้องหรือหมดอายุแล้ว")
+                    .build();
+        }
+
+        DiscountStrategy strategy = strategyOpt.get();
+        BigDecimal discount = strategy.calculateDiscount(request.getGrossAmount());
+        if (discount.compareTo(request.getGrossAmount()) > 0) {
+            discount = request.getGrossAmount();
+        }
+        BigDecimal net = request.getGrossAmount().subtract(discount);
+
+        return PromoValidationResponseDTO.builder()
+                .valid(true)
+                .promoCode(strategy.getPromotionCode())
+                .campaignName("ส่วนลดพิเศษ " + strategy.getPromotionCode())
+                .grossAmount(request.getGrossAmount())
+                .discountAmount(discount)
+                .netAmount(net)
+                .discountLabel("−฿" + discount.stripTrailingZeros().toPlainString())
+                .message("ใช้โค้ดส่วนลดสำเร็จ")
+                .build();
     }
 }
