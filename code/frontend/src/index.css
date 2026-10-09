@@ -415,6 +415,9 @@ select:focus-visible {
   --admin-accent: #b86a4c;
   --admin-accent-soft: #ece1d5;
   --admin-focus-ring: rgba(184, 106, 76, 0.22);
+  --admin-font-heading: 'Noto Serif', 'Noto Serif Thai', serif;
+  --admin-font-body: 'Inter', 'Noto Sans Thai', sans-serif;
+  --admin-font-label: 'Manrope', 'Inter', 'Noto Sans Thai', sans-serif;
   --admin-radius-sm: 0.5rem;
   --admin-radius-md: 0.75rem;
   --admin-radius-lg: 1rem;
@@ -427,7 +430,48 @@ select:focus-visible {
   --admin-space-5: 4rem;
   background-color: var(--admin-page);
   color: var(--admin-ink);
-  font-family: 'Inter', 'Noto Sans Thai', sans-serif;
+  font-family: var(--admin-font-body);
+}
+
+/* Typography hierarchy mirrors the public FIWDEE experience: calm serif
+   headings paired with highly legible sans-serif operational text. */
+.admin-theme :is(h1, h2, h3, h4, h5, h6),
+.admin-theme .admin-heading {
+  font-family: var(--admin-font-heading);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.admin-theme h1 {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  line-height: 1.18;
+}
+
+.admin-theme h2 {
+  font-size: clamp(1.625rem, 3vw, 2.125rem);
+  line-height: 1.25;
+}
+
+.admin-theme h3 {
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  line-height: 1.35;
+}
+
+.admin-theme :is(p, button, input, select, textarea, table) {
+  font-family: var(--admin-font-body);
+}
+
+.admin-theme :is(label, th, .admin-eyebrow) {
+  font-family: var(--admin-font-label);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.admin-theme th,
+.admin-theme .admin-eyebrow {
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  text-transform: uppercase;
 }
 
 .admin-theme :where(button, a, input, select, textarea):focus-visible {
