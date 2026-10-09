@@ -35,19 +35,19 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query(value = "SELECT u FROM User u WHERE "
             + "(:role IS NULL OR u.role = :role) AND "
-            + "(:search IS NULL OR ("
-            + "    LOWER(u.fullName) LIKE LOWER(CONCAT('%', :search, '%')) "
-            + "    OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')) "
-            + "    OR LOWER(u.phoneNumber) LIKE LOWER(CONCAT('%', :search, '%')) "
-            + "    OR LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%'))"
+            + "(CAST(:search AS string) IS NULL OR ("
+            + "    LOWER(u.fullName) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) "
+            + "    OR LOWER(u.email) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) "
+            + "    OR LOWER(u.phoneNumber) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) "
+            + "    OR LOWER(u.username) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%'))"
             + "))",
             countQuery = "SELECT count(u) FROM User u WHERE "
             + "(:role IS NULL OR u.role = :role) AND "
-            + "(:search IS NULL OR ("
-            + "    LOWER(u.fullName) LIKE LOWER(CONCAT('%', :search, '%')) "
-            + "    OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')) "
-            + "    OR LOWER(u.phoneNumber) LIKE LOWER(CONCAT('%', :search, '%')) "
-            + "    OR LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%'))"
+            + "(CAST(:search AS string) IS NULL OR ("
+            + "    LOWER(u.fullName) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) "
+            + "    OR LOWER(u.email) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) "
+            + "    OR LOWER(u.phoneNumber) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) "
+            + "    OR LOWER(u.username) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%'))"
             + "))")
     Page<User> findUsersPage(
             @Param("role") UserRole role,

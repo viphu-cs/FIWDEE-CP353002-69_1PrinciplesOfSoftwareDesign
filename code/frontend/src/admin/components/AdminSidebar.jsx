@@ -4,11 +4,11 @@ import { useAdminAuth } from '../context/AdminAuthContext.jsx'
 import { useLanguage } from '../../i18n/useLanguage.js'
 import { shop } from '../../data/mock.js'
 
-export function getNavLinks(t) {
+export function getNavLinks(t, queueCount) {
   const translate = (key, fallback) => (t ? t(`admin.${key}`) : fallback)
   return [
     { key: 'dashboard', label: translate('dashboard', 'แดชบอร์ดภาพรวม'), hash: '#admin/dashboard', iconType: 'dashboard' },
-    { key: 'queue', label: translate('queue', 'จัดการคิวสด'), hash: '#admin/queue', badge: '5', iconType: 'queue' },
+    { key: 'queue', label: translate('queue', 'จัดการคิวสด'), hash: '#admin/queue', badge: queueCount > 0 ? String(queueCount) : null, iconType: 'queue' },
     { key: 'bookings', label: translate('bookings', 'ตารางการจองนัดหมาย'), hash: '#admin/bookings', iconType: 'bookings' },
     { key: 'rooms', label: translate('rooms', 'ผังห้องนวด (Real-time)'), hash: '#admin/rooms', iconType: 'rooms' },
     { key: 'therapists', label: translate('therapists', 'ข้อมูลหมอนวด & กะงาน'), hash: '#admin/therapists', iconType: 'therapists' },
@@ -67,9 +67,10 @@ export function RenderIcon({ type }) {
 }
 
 export default function AdminSidebar({ currentRoute = 'dashboard', onNavigate }) {
-  const { user, logout } = useAdminAuth()
+  const { user, logout, queueItems } = useAdminAuth()
   const { t } = useLanguage()
-  const navLinks = getNavLinks(t)
+  const waitingCount = queueItems?.filter(q => q.status === 'WAITING' || q.status === 'PENDING' || q.status === 'CHECKED_IN').length || 0
+  const navLinks = getNavLinks(t, waitingCount)
 
   const handleGoToCustomer = () => {
     window.location.hash = '#top'

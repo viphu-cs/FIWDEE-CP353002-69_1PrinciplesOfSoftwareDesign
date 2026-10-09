@@ -311,7 +311,8 @@ export function AdminAuthProvider({ children }) {
 
 
   const addWalkInQueue = (newQueueData) => {
-    const targetDate = newQueueData.date || '2026-10-02'
+    const todayStr = new Date().toISOString().slice(0, 10)
+    const targetDate = newQueueData.date || todayStr
     const targetType = newQueueData.type || 'WALK_IN'
 
     // ⚠️ Validation Check: If Therapist selected, verify availability for the specific date!
@@ -322,7 +323,8 @@ export function AdminAuthProvider({ children }) {
         if (shiftOnDate === 'OFF') {
           throw new Error(`หมอนวด "${selectedT.fullName}" มีตารางหยุดงาน (OFF) ในวันที่ ${targetDate} กรุณาเลือกหมอนวดท่านอื่น`)
         }
-        if (targetDate === '2026-10-02' && selectedT.status !== 'ON_DUTY' && selectedT.status !== 'IN_SERVICE' && targetType === 'WALK_IN') {
+        const isToday = targetDate === todayStr || targetDate === '2026-10-02'
+        if (isToday && selectedT.status !== 'ON_DUTY' && selectedT.status !== 'IN_SERVICE' && targetType === 'WALK_IN') {
           throw new Error(`หมอนวด "${selectedT.fullName}" ไม่พร้อมรับงานทันทีในขณะนี้ (${selectedT.status})`)
         }
       }

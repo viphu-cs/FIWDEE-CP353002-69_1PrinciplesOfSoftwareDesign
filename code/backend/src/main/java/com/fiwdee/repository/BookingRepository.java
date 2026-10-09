@@ -12,10 +12,11 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface BookingRepository extends JpaRepository<Booking, Long> {
+public interface BookingRepository extends JpaRepository<Booking, Long>, JpaSpecificationExecutor<Booking> {
 
     List<Booking> findByCustomerIdOrderByStartDateTimeDesc(Long customerId);
 
@@ -40,28 +41,24 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
      */
     @EntityGraph(attributePaths = {"customer", "therapist", "room", "service", "durationOption"})
     @Query(value = "SELECT b FROM Booking b "
-            + "LEFT JOIN b.customer c "
-            + "LEFT JOIN b.service s "
-            + "WHERE (:startOfDay IS NULL OR b.startDateTime >= :startOfDay) "
-            + "AND (:endOfDay IS NULL OR b.startDateTime <= :endOfDay) "
+            + "WHERE b.startDateTime >= :startOfDay "
+            + "AND b.startDateTime <= :endOfDay "
             + "AND (:status IS NULL OR b.status = :status) "
-            + "AND (:search IS NULL OR ("
+            + "AND (:search = '' OR ("
             + "    LOWER(b.bookingReferenceCode) LIKE LOWER(CONCAT('%', :search, '%')) "
-            + "    OR LOWER(c.fullName) LIKE LOWER(CONCAT('%', :search, '%')) "
-            + "    OR LOWER(c.phoneNumber) LIKE LOWER(CONCAT('%', :search, '%')) "
-            + "    OR LOWER(s.serviceName) LIKE LOWER(CONCAT('%', :search, '%'))"
+            + "    OR LOWER(b.customer.fullName) LIKE LOWER(CONCAT('%', :search, '%')) "
+            + "    OR LOWER(b.customer.phoneNumber) LIKE LOWER(CONCAT('%', :search, '%')) "
+            + "    OR LOWER(b.service.serviceName) LIKE LOWER(CONCAT('%', :search, '%'))"
             + "))",
             countQuery = "SELECT count(b) FROM Booking b "
-            + "LEFT JOIN b.customer c "
-            + "LEFT JOIN b.service s "
-            + "WHERE (:startOfDay IS NULL OR b.startDateTime >= :startOfDay) "
-            + "AND (:endOfDay IS NULL OR b.startDateTime <= :endOfDay) "
+            + "WHERE b.startDateTime >= :startOfDay "
+            + "AND b.startDateTime <= :endOfDay "
             + "AND (:status IS NULL OR b.status = :status) "
-            + "AND (:search IS NULL OR ("
+            + "AND (:search = '' OR ("
             + "    LOWER(b.bookingReferenceCode) LIKE LOWER(CONCAT('%', :search, '%')) "
-            + "    OR LOWER(c.fullName) LIKE LOWER(CONCAT('%', :search, '%')) "
-            + "    OR LOWER(c.phoneNumber) LIKE LOWER(CONCAT('%', :search, '%')) "
-            + "    OR LOWER(s.serviceName) LIKE LOWER(CONCAT('%', :search, '%'))"
+            + "    OR LOWER(b.customer.fullName) LIKE LOWER(CONCAT('%', :search, '%')) "
+            + "    OR LOWER(b.customer.phoneNumber) LIKE LOWER(CONCAT('%', :search, '%')) "
+            + "    OR LOWER(b.service.serviceName) LIKE LOWER(CONCAT('%', :search, '%'))"
             + "))")
     Page<Booking> findAdminBookings(
             @Param("startOfDay") LocalDateTime startOfDay,

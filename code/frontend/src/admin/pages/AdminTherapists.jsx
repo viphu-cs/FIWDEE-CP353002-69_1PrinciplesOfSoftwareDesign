@@ -6,20 +6,38 @@ import StatusBadge from '../components/StatusBadge.jsx'
 export default function AdminTherapists() {
   const { user, therapists, updateTherapistStatus, updateTherapistShiftForDate, getTherapistShiftForDate, setTherapists } = useAdminAuth()
   const { lang, t } = useLanguage()
+  const today = new Date()
+  const formatDateKey = (d) => {
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+  const todayStr = formatDateKey(today)
+
+  const dateList = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date()
+    d.setDate(today.getDate() + i)
+    const dateStr = formatDateKey(d)
+    let label = ''
+    if (i === 0) {
+      label = lang === 'th'
+        ? `วันนี้ (${d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })})`
+        : `Today (${d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })})`
+    } else if (i === 1) {
+      label = lang === 'th'
+        ? `พรุ่งนี้ (${d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })})`
+        : `Tomorrow (${d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })})`
+    } else {
+      label = d.toLocaleDateString(lang === 'th' ? 'th-TH' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+    }
+    return { dateStr, label }
+  })
+
   const [filterDuty, setFilterDuty] = useState('ALL')
-  const [selectedShiftDate, setSelectedShiftDate] = useState('2026-10-02')
+  const [selectedShiftDate, setSelectedShiftDate] = useState(todayStr)
 
   const isOwner = user.role === 'OWNER'
-
-  const dateList = [
-    { dateStr: '2026-10-02', label: lang === 'th' ? 'วันนี้ (2 ต.ค.)' : 'Today (2 Oct)' },
-    { dateStr: '2026-10-03', label: lang === 'th' ? 'พรุ่งนี้ (3 ต.ค.)' : 'Tomorrow (3 Oct)' },
-    { dateStr: '2026-10-04', label: '4 Oct 2026' },
-    { dateStr: '2026-10-05', label: '5 Oct 2026' },
-    { dateStr: '2026-10-06', label: '6 Oct 2026' },
-    { dateStr: '2026-10-07', label: '7 Oct 2026' },
-    { dateStr: '2026-10-08', label: '8 Oct 2026' },
-  ]
 
   const filteredTherapists = therapists.filter(t => {
     if (filterDuty === 'ALL') return true
@@ -67,10 +85,10 @@ export default function AdminTherapists() {
       {/* Multi-day Shift Schedule Date Selector */}
       <div className="bg-surface rounded-2xl p-4 border border-outline-variant shadow-[var(--admin-shadow-sm)] space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-teak-deep uppercase tracking-wider">
-            📅 เลือกวันที่เพื่อดู/จัดการตารางกะงานล่วงหน้า (Work Shifts Schedule):
+          <span className="text-xs font-semibold text-teak-deep uppercase tracking-wider">
+            {lang === 'th' ? 'ตารางกะงานล่วงหน้า 7 วัน (Shift Schedule):' : '7-Day Shift Schedule:'}
           </span>
-          <span className="text-[11px] text-terracotta-deep font-semibold bg-terracotta-soft px-2.5 py-1 rounded-lg border border-terracotta/30">
+          <span className="text-[11px] text-charcoal-muted font-medium bg-surface-container px-2.5 py-0.5 rounded border border-outline-variant/60">
             {lang === 'th' ? 'เชื่อมโยงกับการจองล่วงหน้า' : 'Linked with advance bookings'}
           </span>
         </div>
@@ -80,10 +98,10 @@ export default function AdminTherapists() {
             <button
               key={d.dateStr}
               onClick={() => setSelectedShiftDate(d.dateStr)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all border ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap cursor-pointer transition-all border ${
                 selectedShiftDate === d.dateStr
-                  ? 'bg-teak-dark text-on-primary border-teak-dark shadow-xs'
-                  : 'bg-surface-container-low text-on-surface-variant border-outline-variant hover:bg-surface-container'
+                  ? 'bg-teak-dark text-warm-ivory border-teak-dark shadow-xs font-semibold'
+                  : 'bg-surface-container-low text-charcoal-muted border-outline-variant hover:bg-surface-container'
               }`}
             >
               {d.label}
@@ -94,8 +112,8 @@ export default function AdminTherapists() {
 
       {/* Filter bar */}
       <div className="bg-surface rounded-2xl p-4 border border-outline-variant shadow-[var(--admin-shadow-sm)] flex items-center gap-2 overflow-x-auto">
-        <span className="text-xs font-semibold text-charcoal-muted uppercase mr-2">
-          {lang === 'th' ? 'กรองสถานะวันนี้:' : 'Today Status Filter:'}
+        <span className="text-xs font-medium text-charcoal-muted uppercase mr-2">
+          {lang === 'th' ? 'สถานะวันนี้:' : 'Today Status:'}
         </span>
         {[
           { key: 'ALL', label: 'ทั้งหมด' },
@@ -107,10 +125,10 @@ export default function AdminTherapists() {
           <button
             key={item.key}
             onClick={() => setFilterDuty(item.key)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap cursor-pointer transition-all ${
               filterDuty === item.key
-                ? 'bg-teak-dark text-on-primary shadow-xs'
-                : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
+                ? 'bg-teak-dark text-warm-ivory font-semibold shadow-xs'
+                : 'bg-surface-container-low text-charcoal-muted hover:bg-surface-container'
             }`}
           >
             {item.label}
@@ -126,18 +144,18 @@ export default function AdminTherapists() {
           return (
             <div
               key={tItem.id}
-              className="bg-surface rounded-2xl border border-outline-variant p-5 shadow-[var(--admin-shadow-sm)] hover:-translate-y-0.5 hover:shadow-[var(--admin-shadow-md)] transition-all flex flex-col justify-between space-y-4"
+              className="bg-surface rounded-2xl border border-outline-variant p-5 shadow-[var(--admin-shadow-sm)] hover:border-outline transition-all flex flex-col justify-between space-y-4"
             >
               <div>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-2xl bg-teak-dark text-warm-ivory font-bold font-headline text-lg flex items-center justify-center shadow-xs">
+                    <div className="w-10 h-10 rounded-xl bg-surface-container text-teak-deep font-bold font-headline text-base flex items-center justify-center border border-outline-variant">
                       {tItem.nickname.charAt(0)}
                     </div>
                     <div>
-                      <h3 className="font-bold text-teak-deep text-base">{tItem.fullName} ({tItem.nickname})</h3>
-                      <p className="text-xs text-charcoal-muted font-medium">
-                        {lang === 'th' ? 'กะงานวันนี้:' : 'Today Shift:'} {shiftLabels[getTherapistShiftForDate(tItem, '2026-10-02')]}
+                      <h3 className="font-semibold text-teak-deep text-sm">{tItem.fullName} ({tItem.nickname})</h3>
+                      <p className="text-xs text-charcoal-muted">
+                        {lang === 'th' ? 'กะงานวันนี้:' : 'Today Shift:'} {shiftLabels[getTherapistShiftForDate(tItem, todayStr)]}
                       </p>
                     </div>
                   </div>
@@ -145,18 +163,18 @@ export default function AdminTherapists() {
 
                 <div className="mt-3 flex items-center justify-between">
                   <StatusBadge status={tItem.status} size="sm" />
-                  <span className="text-xs text-terracotta-deep font-semibold bg-terracotta-soft px-2.5 py-1 rounded-lg border border-terracotta/30">
+                  <span className="text-xs text-charcoal-muted font-medium bg-surface-container px-2 py-0.5 rounded border border-outline-variant/60">
                     {lang === 'th' ? `รับงานวันนี้: ${tItem.totalJobsToday} คิว` : `Jobs today: ${tItem.totalJobsToday}`}
                   </span>
                 </div>
 
                 {/* Multi-day Work Shift Manager Section */}
-                <div className="mt-4 p-3.5 bg-surface-container-low rounded-xl border border-outline-variant space-y-2">
+                <div className="mt-4 p-3 bg-surface-container-low rounded-xl border border-outline-variant/70 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-on-surface">
-                      🗓️ {lang === 'th' ? `ตารางกะงานวันที่ ${selectedShiftDate}:` : `Shift on ${selectedShiftDate}:`}
+                    <span className="text-xs font-medium text-on-surface">
+                      {lang === 'th' ? `ตารางกะวันที่ ${selectedShiftDate}:` : `Shift on ${selectedShiftDate}:`}
                     </span>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${shiftOnSelectedDate === 'OFF' ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-900'}`}>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-medium uppercase border ${shiftOnSelectedDate === 'OFF' ? 'bg-surface text-charcoal-muted border-outline-variant' : 'bg-surface text-teak-deep border-outline-variant font-semibold'}`}>
                       {shiftOnSelectedDate}
                     </span>
                   </div>
@@ -192,13 +210,13 @@ export default function AdminTherapists() {
                           key={skill}
                           onClick={() => handleSkillToggle(tItem.id, skill)}
                           disabled={!isOwner}
-                          className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-colors cursor-pointer border ${
+                          className={`px-2.5 py-1 rounded-lg text-[10px] transition-colors cursor-pointer border ${
                             isSelected
-                              ? 'bg-teak-dark text-on-primary border-teak-dark'
+                              ? 'bg-teak-deep text-warm-ivory border-teak-deep font-medium'
                               : 'bg-surface-container-low text-charcoal-muted border-outline-variant hover:bg-surface-container'
                           } ${!isOwner ? 'cursor-default opacity-90' : ''}`}
                         >
-                          {isSelected ? '✓ ' : '+ '}{skill}
+                          {skill}
                         </button>
                       )
                     })}
@@ -208,7 +226,7 @@ export default function AdminTherapists() {
 
               {/* Change Duty Status Controls */}
               <div className="pt-3 border-t border-outline-variant space-y-2">
-                <label className="block text-[11px] font-semibold text-charcoal-muted uppercase tracking-wider">
+                <label className="block text-[11px] font-medium text-charcoal-muted uppercase tracking-wider">
                   {lang === 'th' ? 'อัปเดตสถานะปฏิบัติงานวันนี้:' : 'Update Today Duty Status:'}
                 </label>
                 <div className="grid grid-cols-2 gap-1.5">
@@ -221,10 +239,10 @@ export default function AdminTherapists() {
                     <button
                       key={st.key}
                       onClick={() => updateTherapistStatus(tItem.id, st.key)}
-                      className={`px-2 py-1.5 rounded-lg text-[11px] font-semibold border transition-colors cursor-pointer text-center ${
+                      className={`px-2 py-1.5 rounded-lg text-[11px] transition-colors cursor-pointer text-center border ${
                         tItem.status === st.key
-                          ? 'bg-teak-dark text-on-primary border-teak-dark font-bold shadow-xs'
-                          : 'bg-surface-container-low text-on-surface-variant border-outline-variant hover:bg-surface-container'
+                          ? 'bg-surface-container-high text-teak-deep border-outline font-semibold shadow-xs'
+                          : 'bg-surface-container-low text-charcoal-muted border-outline-variant hover:bg-surface-container'
                       }`}
                     >
                       {st.label}

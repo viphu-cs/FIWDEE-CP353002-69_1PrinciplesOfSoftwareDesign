@@ -8,7 +8,7 @@ import { RenderIcon, getNavLinks } from '../components/AdminSidebar.jsx'
 import { useLanguage } from '../../i18n/useLanguage.js'
 
 function AdminLayoutContent({ currentRoute = 'dashboard', onNavigate, children }) {
-  const { isAuthenticated } = useAdminAuth()
+  const { isAuthenticated, queueItems } = useAdminAuth()
   const { t } = useLanguage()
   const [modalState, setModalState] = useState({
     isOpen: false,
@@ -49,7 +49,8 @@ function AdminLayoutContent({ currentRoute = 'dashboard', onNavigate, children }
     setModalState(prev => ({ ...prev, isOpen: false }))
   }
 
-  const navLinks = getNavLinks(t)
+  const waitingCount = queueItems?.filter(q => q.status === 'WAITING' || q.status === 'PENDING' || q.status === 'CHECKED_IN').length || 0
+  const navLinks = getNavLinks(t, waitingCount)
 
   return (
     <div className="admin-theme min-h-screen bg-[var(--admin-page)] font-body-md text-on-surface antialiased flex flex-col">
@@ -84,15 +85,15 @@ function AdminLayoutContent({ currentRoute = 'dashboard', onNavigate, children }
         </main>
 
         {/* Bottom Navigation for Mobile & Tablet */}
-        <nav aria-label="Mobile Navigation Bar" className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-stone-900 text-stone-200 border-t border-stone-800 px-2 py-2 flex items-center justify-around shadow-2xl">
+        <nav aria-label="Mobile Navigation Bar" className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-teak-deep text-warm-ivory border-t border-wood-deep/30 px-2 py-2 flex items-center justify-around shadow-2xl">
           {navLinks.slice(0, 5).map((item) => (
             <button
               key={item.key}
               onClick={() => onNavigate(item.key)}
               className={`flex flex-col items-center gap-1 px-3 py-1 rounded-xl text-[10px] font-semibold transition-colors cursor-pointer ${
                 currentRoute === item.key
-                  ? 'text-amber-300 font-bold bg-stone-800'
-                  : 'text-stone-400 hover:text-stone-200'
+                  ? 'text-wood-light font-bold bg-primary-container'
+                  : 'text-sand-warm hover:text-warm-ivory'
               }`}
             >
               <RenderIcon type={item.iconType} />
