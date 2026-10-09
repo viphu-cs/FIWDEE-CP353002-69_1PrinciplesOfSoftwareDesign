@@ -421,6 +421,59 @@
             },
             "description": "Owner forcefully terminates a user session."
           }
+        },
+        {
+          "name": "1.11 Admin - Get Users with Pagination & Sorting (Owner)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{owner_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users/page?page=0&size=5&sort=createdAt,desc",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "users",
+                "page"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Page index (0-based)"
+                },
+                {
+                  "key": "size",
+                  "value": "5",
+                  "description": "Number of records per page"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt,desc",
+                  "description": "Dynamic sorting property and direction"
+                },
+                {
+                  "key": "role",
+                  "value": "CUSTOMER",
+                  "disabled": true,
+                  "description": "Optional role filter (CUSTOMER, THERAPIST, RECEPTIONIST, OWNER)"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Optional search keyword"
+                }
+              ]
+            },
+            "description": "Paginated and sorted user accounts endpoint (meets course project rubric: Pagination & Sorting requirement)."
+          }
         }
       ]
     },
@@ -1264,6 +1317,64 @@
               ]
             },
             "description": "Front desk overview of all bookings scheduled on a specific date."
+          }
+        },
+        {
+          "name": "3.6b Admin - Get Bookings with Pagination & Sorting (Staff)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/bookings?page=0&size=5&sort=startDateTime,desc",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "bookings"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Page index (0-based)"
+                },
+                {
+                  "key": "size",
+                  "value": "5",
+                  "description": "Number of records per page"
+                },
+                {
+                  "key": "sort",
+                  "value": "startDateTime,desc",
+                  "description": "Dynamic sorting by startDateTime, totalPrice, createdAt"
+                },
+                {
+                  "key": "date",
+                  "value": "{{booking_date}}",
+                  "disabled": true,
+                  "description": "Optional date filter (YYYY-MM-DD)"
+                },
+                {
+                  "key": "status",
+                  "value": "CONFIRMED",
+                  "disabled": true,
+                  "description": "Optional booking status filter"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Optional search by refCode, customer name, phone, or service"
+                }
+              ]
+            },
+            "description": "Paginated and sorted bookings overview for staff (meets course project rubric: Pagination & Sorting requirement)."
           }
         },
         {
