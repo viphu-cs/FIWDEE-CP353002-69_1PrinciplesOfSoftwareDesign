@@ -231,17 +231,17 @@ export default function AdminDashboard({ onNavigate, onOpenWalkInModal, onOpenAs
         </div>
 
         {/* Right 1 Col: Live Queue Timeline */}
-        <div className="bg-white rounded-2xl p-6 border border-stone-200/80 shadow-2xs space-y-4">
+        <div className="bg-surface rounded-2xl p-6 border border-outline-variant/80 shadow-[var(--admin-shadow-sm)] space-y-5">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-headline font-bold text-stone-900 text-lg">
+              <h3 className="font-headline font-bold text-teak-dark text-lg">
                 {lang === 'th' ? 'คิวถัดไปวันนี้' : 'Upcoming Queue'}
               </h3>
-              <p className="text-xs text-stone-500">{lang === 'th' ? 'รายการคิวล่าสุด' : 'Recent active queue items'}</p>
+              <p className="text-xs text-charcoal-muted">{lang === 'th' ? 'รายการคิวล่าสุด' : 'Recent active queue items'}</p>
             </div>
             <button
               onClick={() => onNavigate('queue')}
-              className="text-xs font-semibold text-amber-900 hover:underline cursor-pointer"
+              className="text-xs font-semibold text-secondary hover:text-terracotta-muted link-underline cursor-pointer"
             >
               {lang === 'th' ? `ดูคิวทั้งหมด (${queueItems.length})` : `View All (${queueItems.length})`}
             </button>
@@ -251,15 +251,15 @@ export default function AdminDashboard({ onNavigate, onOpenWalkInModal, onOpenAs
             {queueItems.slice(0, 5).map((q) => (
               <div
                 key={q.queueNo}
-                className="p-3.5 rounded-xl border border-stone-200 hover:border-amber-300 bg-stone-50/50 hover:bg-amber-50/30 transition-all flex items-center justify-between"
+                className="p-4 rounded-xl border border-outline-variant/75 hover:border-wood-deep/60 bg-surface-container-low/70 hover:bg-surface-container-low transition-all duration-200 flex items-center justify-between"
               >
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-amber-900 text-xs px-2 py-0.5 rounded bg-amber-100">{q.queueNo}</span>
-                    <span className="text-xs font-semibold text-stone-900">{q.customerName}</span>
+                    <span className="font-bold text-secondary text-xs px-2 py-0.5 rounded bg-secondary-container">{q.queueNo}</span>
+                    <span className="text-xs font-semibold text-on-surface">{q.customerName}</span>
                   </div>
-                  <div className="text-[11px] text-stone-600 mt-1">{q.serviceName} ({q.durationMinutes} {lang === 'th' ? 'นาที' : 'Mins'})</div>
-                  <div className="text-[10px] text-stone-500">{lang === 'th' ? 'เวลา:' : 'Time:'} {q.time} • {q.type}</div>
+                  <div className="text-[11px] text-on-surface-variant mt-1">{q.serviceName} ({q.durationMinutes} {lang === 'th' ? 'นาที' : 'Mins'})</div>
+                  <div className="text-[10px] text-charcoal-muted">{lang === 'th' ? 'เวลา:' : 'Time:'} {q.time} • {q.type}</div>
                 </div>
 
                 <div className="flex flex-col items-end gap-1">
@@ -267,7 +267,7 @@ export default function AdminDashboard({ onNavigate, onOpenWalkInModal, onOpenAs
                   {q.status === 'WAITING' || q.status === 'CHECKED_IN' ? (
                     <button
                       onClick={() => handleStartService(q)}
-                      className="px-2 py-1 text-[10px] rounded bg-emerald-800 text-white hover:bg-emerald-900 transition-colors font-semibold cursor-pointer"
+                      className="px-2.5 py-1.5 text-[10px] rounded-lg bg-teak-dark text-on-primary hover:bg-teak-deep transition-colors font-semibold cursor-pointer"
                     >
                       {lang === 'th' ? 'เข้าห้องนวด →' : 'Start Service →'}
                     </button>
