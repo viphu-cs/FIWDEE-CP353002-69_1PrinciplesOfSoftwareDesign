@@ -168,9 +168,6 @@ public class QueueServiceImpl implements QueueService {
         if (!booking.getStartDateTime().toLocalDate().equals(now.toLocalDate())) {
             throw new ValidationException("A booking can only be checked in on its scheduled date");
         }
-        if (now.isBefore(booking.getStartDateTime().minusMinutes(30))) {
-            throw new ValidationException("Check-in is available only within 30 minutes before the appointment");
-        }
     }
 
     private String nextQueueNumber(LocalDate queueDate) {
@@ -200,7 +197,7 @@ public class QueueServiceImpl implements QueueService {
 
     private boolean isAllowedTransition(QueueStatus currentStatus, QueueStatus requestedStatus) {
         return switch (currentStatus) {
-            case WAITING -> requestedStatus == QueueStatus.CALLED || requestedStatus == QueueStatus.CANCELLED;
+            case WAITING -> requestedStatus == QueueStatus.CALLED || requestedStatus == QueueStatus.IN_SERVICE || requestedStatus == QueueStatus.CANCELLED;
             case CALLED -> requestedStatus == QueueStatus.IN_SERVICE || requestedStatus == QueueStatus.CANCELLED;
             case IN_SERVICE -> requestedStatus == QueueStatus.COMPLETED;
             case COMPLETED, CANCELLED -> false;

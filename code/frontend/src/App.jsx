@@ -15,7 +15,6 @@ import CustomerProfilePage from './pages/profile/CustomerProfilePage.jsx'
 import BookingHistoryPage from './pages/booking/BookingHistoryPage.jsx'
 import { LanguageProvider } from './i18n/LanguageContext.jsx'
 import { CustomerAuthProvider } from './context/CustomerAuthContext.jsx'
-import { therapists as mockTherapists } from './data/mock.js'
 import api from './lib/api.js'
 
 // Admin Portal Imports
@@ -248,19 +247,15 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  // โหลดรายชื่อผู้บำบัดจริงจาก API (พร้อม fallback จาก mock)
-  const [allTherapists, setAllTherapists] = useState(mockTherapists)
+  // โหลดรายชื่อผู้บำบัดจริงจาก API
+  const [allTherapists, setAllTherapists] = useState([])
 
   useEffect(() => {
     let isMounted = true
     api.get('/therapists')
       .then((res) => {
         if (isMounted && res && res.success && Array.isArray(res.data) && res.data.length > 0) {
-          const merged = res.data.map((bt, idx) => {
-            const matchedMock =
-              mockTherapists.find((mt) => mt.nickname.toLowerCase() === bt.nickname.toLowerCase()) ||
-              mockTherapists[idx % mockTherapists.length]
-
+          const mapped = res.data.map((bt) => {
             const backendSkills = bt.skills || []
             const specialties = []
             backendSkills.forEach((s) => {
@@ -272,19 +267,25 @@ export default function App() {
             })
 
             return {
-              ...matchedMock,
               id: bt.id,
               nickname: bt.nickname,
+              englishName: bt.nickname,
               skills: backendSkills,
-              specialties: specialties.length > 0 ? specialties : matchedMock.specialties,
-              rating: bt.averageRating > 0 ? Number(bt.averageRating) : matchedMock.rating,
-              bio: bt.bio || matchedMock.bio,
+              specialties: specialties.length > 0 ? specialties : ['thai'],
+              rating: bt.averageRating > 0 ? Number(bt.averageRating) : 5.0,
+              bio: bt.bio || '',
+              experienceYears: bt.experienceYears || 5,
+              imageUrl: bt.imageUrl || '/images/booking/therapist-mali.jpg',
             }
           })
-          setAllTherapists(merged)
+          setAllTherapists(mapped)
+        } else if (isMounted) {
+          setAllTherapists([])
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        if (isMounted) setAllTherapists([])
+      })
 
     return () => {
       isMounted = false
@@ -294,8 +295,7 @@ export default function App() {
   // หาหมอนวดที่เลือกอยู่ สำหรับหน้าโปรไฟล์ (รองรับทั้ง id ตัวเลขและ string)
   const activeTherapist =
     allTherapists.find((t) => String(t.id) === String(selectedTherapistId)) ||
-    allTherapists[0] ||
-    therapists[0]
+    (allTherapists.length > 0 ? allTherapists[0] : null)
 
   return (
     <MotionConfig reducedMotion="user">

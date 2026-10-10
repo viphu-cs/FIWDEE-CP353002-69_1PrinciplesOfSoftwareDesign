@@ -320,6 +320,8 @@ export const th = {
     occupied: 'กำลังให้บริการ',
     cleaning: 'ทำความสะอาด',
     maintenance: 'ปิดปรับปรุง',
+    awaitArrival: 'รอเช็คอิน (นัดหมายวันนี้)',
+    checkInFrontDesk: 'เช็คอินหน้าร้าน',
     waiting: 'รอเรียกคิว',
     checkedIn: 'เช็คอินแล้ว',
     inService: 'กำลังนวด',

@@ -37,6 +37,16 @@ export default function StatusBadge({ status, size = 'md' }) {
       dotColor = 'bg-amber-500'
       label = t('admin.waiting')
       break
+    case 'AWAITING_ARRIVAL':
+      badgeStyle = 'bg-sky-50 text-sky-800 border-sky-200 font-medium'
+      dotColor = 'bg-sky-500'
+      label = t('admin.awaitArrival')
+      break
+    case 'CALLED':
+      badgeStyle = 'bg-purple-50 text-purple-800 border-purple-200 font-medium animate-pulse'
+      dotColor = 'bg-purple-600'
+      label = lang === 'th' ? 'เรียกคิวแล้ว' : 'Called'
+      break
     case 'CONFIRMED':
       badgeStyle = 'bg-stone-100 text-stone-700 border-stone-200'
       dotColor = 'bg-stone-600'

@@ -88,28 +88,27 @@ export default function AdminTherapists() {
   // โหลดรายการ Therapists จาก Backend API
   const fetchTherapists = React.useCallback(() => {
     api.get('/admin/therapists').then((res) => {
-      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
-        setTherapists((prev) => {
-          return res.data.map((bt) => {
-            const matched = prev.find(p => p.id === bt.id || (p.nickname && bt.nickname && p.nickname.toLowerCase() === bt.nickname.toLowerCase()))
-            return {
-              id: bt.id,
-              nickname: bt.nickname,
-              fullName: bt.fullName,
-              email: bt.email || matched?.email || '',
-              phoneNumber: bt.phoneNumber || matched?.phoneNumber || '',
-              bio: bt.bio || matched?.bio || '',
-              commissionRate: bt.commissionRate !== undefined && bt.commissionRate !== null ? Number(bt.commissionRate) : (matched?.commissionRate || 30.0),
-              status: bt.isActive ? (matched?.status || 'ON_DUTY') : 'OFF_DUTY',
-              skills: bt.skills && bt.skills.length > 0 ? bt.skills : (matched?.skills || []),
-              shiftsByDate: matched?.shiftsByDate || {},
-              totalJobsToday: matched?.totalJobsToday || 0,
-              currentRoom: matched?.currentRoom || null
-            }
-          })
-        })
+      if (res && res.success && Array.isArray(res.data)) {
+        setTherapists(res.data.map((bt) => ({
+          id: bt.id,
+          nickname: bt.nickname,
+          fullName: bt.fullName,
+          email: bt.email || '',
+          phoneNumber: bt.phoneNumber || '',
+          bio: bt.bio || '',
+          commissionRate: bt.commissionRate !== undefined && bt.commissionRate !== null ? Number(bt.commissionRate) : 30.0,
+          status: bt.isActive ? 'ON_DUTY' : 'OFF_DUTY',
+          skills: bt.skills || [],
+          shiftsByDate: {},
+          totalJobsToday: 0,
+          currentRoom: null
+        })))
+      } else {
+        setTherapists([])
       }
-    }).catch(() => {})
+    }).catch(() => {
+      setTherapists([])
+    })
   }, [setTherapists])
 
   useEffect(() => {
@@ -517,7 +516,12 @@ export default function AdminTherapists() {
 
       {/* Therapists Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredTherapists.map((tItem) => {
+        {filteredTherapists.length === 0 ? (
+          <div className="col-span-full bg-surface rounded-2xl p-12 text-center border border-outline-variant text-charcoal-muted shadow-[var(--admin-shadow-sm)]">
+            <p className="font-medium text-sm">{t('admin.noMatchingRecords')}</p>
+          </div>
+        ) : (
+          filteredTherapists.map((tItem) => {
           const shiftOnSelectedDate = getTherapistShiftForDate(tItem, selectedShiftDate)
 
           return (
@@ -643,7 +647,7 @@ export default function AdminTherapists() {
               </div>
             </div>
           )
-        })}
+        }))}
       </div>
 
       {/* Edit Therapist Modal Dialog */}

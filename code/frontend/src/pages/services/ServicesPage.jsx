@@ -1,58 +1,36 @@
 import { useState, useEffect } from 'react'
 import { useLanguage } from '../../i18n/useLanguage.js'
 import FadeIn from '../../components/motion/FadeIn.jsx'
-import { services as mockServices } from '../../data/mock.js'
 import api from '../../lib/api.js'
 
 export default function ServicesPage({ onNavigate }) {
   const { t } = useLanguage()
   const [liveServices, setLiveServices] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let isMounted = true
     api.get('/services')
       .then((res) => {
-        if (isMounted && res && res.success && Array.isArray(res.data)) {
-          setLiveServices(res.data)
+        if (isMounted) {
+          if (res && res.success && Array.isArray(res.data)) {
+            setLiveServices(res.data)
+          } else {
+            setLiveServices([])
+          }
+          setLoading(false)
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        if (isMounted) {
+          setLiveServices([])
+          setLoading(false)
+        }
+      })
     return () => {
       isMounted = false
     }
   }, [])
-
-  // Helper to get duration options from live services or mock
-  const getDurations = (serviceCode, fallbackServiceId) => {
-    const live = liveServices.find((s) => s.serviceCode === serviceCode)
-    if (live && live.durationOptions && live.durationOptions.length > 0) {
-      return live.durationOptions.map((opt) => ({
-        minutes: opt.durationMinutes,
-        price: Number(opt.price).toLocaleString('en-US'),
-      }))
-    }
-    const mock = mockServices.find((s) => s.id === fallbackServiceId)
-    if (mock && mock.durationOptions) {
-      return mock.durationOptions.map((opt) => ({
-        minutes: opt.durationMinutes,
-        price: Number(opt.price).toLocaleString('en-US'),
-      }))
-    }
-    return [
-      { minutes: 60, price: '600' },
-      { minutes: 90, price: '850' },
-    ]
-  }
-
-  const thaiDurations = getDurations('THAI', 1)
-  const aromaDurations = getDurations('AROMA', 2)
-  const warmOilDurations = getDurations('HOT_OIL', 3)
-  const footDurations = getDurations('FOOT', 4)
-
-  const thaiService = mockServices.find((s) => s.id === 1) || { image: '/images/services/service-thai.jpg' }
-  const aromaService = mockServices.find((s) => s.id === 2) || { image: '/images/services/service-aroma.jpg' }
-  const warmOilService = mockServices.find((s) => s.id === 3) || { image: '/images/services/service-warm-oil.jpg' }
-  const footService = mockServices.find((s) => s.id === 4) || { image: '/images/services/service-foot.jpg' }
 
   const [formData, setFormData] = useState({
     name: '',
@@ -161,214 +139,81 @@ export default function ServicesPage({ onNavigate }) {
           </FadeIn>
 
           {/* Treatment List Cards */}
-          <div className="flex flex-col gap-10">
-            {/* Treatment 1: Royal Thai Massage */}
-            <FadeIn delay={0.05}>
-              <article className="bg-surface-container-low rounded-xl p-8 md:p-12 hover:bg-surface-container transition-colors duration-300">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-                  <div className="lg:col-span-6 space-y-4">
-                    <span className="font-label-caps text-label-caps text-primary tracking-widest uppercase">
-                      {t('servicesPage.t1Tag')}
-                    </span>
-                    <h3 className="font-headline-md text-headline-md text-on-surface font-normal">
-                      {t('servicesPage.t1Title')}
-                    </h3>
-                    <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">
-                      {t('servicesPage.t1Desc')}
-                    </p>
-                    <div className="py-4 space-y-3">
-                      {thaiDurations.map((d, i) => (
-                        <div key={i} className="flex items-baseline justify-between py-1.5">
-                          <span className="font-body-md text-body-md text-on-surface">
-                            {t('servicesPage.minuteUnit', { n: d.minutes })}
-                          </span>
-                          <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
-                            {t('servicesPage.bahtUnit', { price: d.price })}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="pt-2 flex items-center gap-6">
-                      <button
-                        type="button"
-                        onClick={() => onNavigate?.('booking', { service: 'thai' })}
-                        className="font-label-md text-label-md text-primary hover:text-on-primary-fixed-variant underline underline-offset-8 transition-colors cursor-pointer"
-                      >
-                        {t('servicesPage.bookThis')}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="lg:col-span-6 overflow-hidden rounded-lg">
-                    <img
-                      alt={t('servicesPage.t1Title')}
-                      className="w-full h-80 lg:h-96 object-cover rounded-lg transition-transform duration-700 hover:scale-[1.01]"
-                      src={thaiService?.image || '/images/services/service-thai.jpg'}
-                      onError={(e) => {
-                        e.currentTarget.onerror = null
-                        e.currentTarget.src = '/images/services/room-architecture.jpg'
-                      }}
-                    />
-                  </div>
-                </div>
-              </article>
+          {liveServices.length === 0 ? (
+            <FadeIn className="text-center py-16 bg-surface-container-low rounded-xl border border-outline-variant/30">
+              <span className="material-symbols-outlined text-4xl text-charcoal-muted mb-2">spa</span>
+              <p className="font-body-md text-charcoal-muted">
+                {loading ? t('common.loading') || 'กำลังโหลดข้อมูล...' : t('services.empty') || 'ไม่พบข้อมูลรายการบริการในระบบ'}
+              </p>
             </FadeIn>
+          ) : (
+            <div className="flex flex-col gap-10">
+              {liveServices.map((service, index) => {
+                const durations = (service.durationOptions || []).map((opt) => ({
+                  minutes: opt.durationMinutes,
+                  price: Number(opt.price).toLocaleString('en-US'),
+                }))
+                let img = '/images/services/service-thai.jpg'
+                if (service.serviceCode?.includes('AROMA')) img = '/images/services/service-aroma.jpg'
+                else if (service.serviceCode?.includes('OIL') || service.serviceCode?.includes('WARM')) img = '/images/services/service-warm-oil.jpg'
+                else if (service.serviceCode?.includes('FOOT')) img = '/images/services/service-foot.jpg'
 
-            {/* Treatment 2: Organic Aromatherapy Massage */}
-            <FadeIn delay={0.1}>
-              <article className="bg-surface-container-low rounded-xl p-8 md:p-12 hover:bg-surface-container transition-colors duration-300">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-                  <div className="lg:col-span-6 space-y-4">
-                    <span className="font-label-caps text-label-caps text-primary tracking-widest uppercase">
-                      {t('servicesPage.t2Tag')}
-                    </span>
-                    <h3 className="font-headline-md text-headline-md text-on-surface font-normal">
-                      {t('servicesPage.t2Title')}
-                    </h3>
-                    <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">
-                      {t('servicesPage.t2Desc')}
-                    </p>
-                    <div className="py-4 space-y-3">
-                      {aromaDurations.map((d, i) => (
-                        <div key={i} className="flex items-baseline justify-between py-1.5">
-                          <span className="font-body-md text-body-md text-on-surface">
-                            {t('servicesPage.minuteUnit', { n: d.minutes })}
+                return (
+                  <FadeIn key={service.id} delay={0.05 * (index + 1)}>
+                    <article className="bg-surface-container-low rounded-xl p-8 md:p-12 hover:bg-surface-container transition-colors duration-300">
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                        <div className="lg:col-span-6 space-y-4">
+                          <span className="font-label-caps text-label-caps text-primary tracking-widest uppercase">
+                            {service.serviceCode || 'TREATMENT'}
                           </span>
-                          <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
-                            {t('servicesPage.bahtUnit', { price: d.price })}
-                          </span>
+                          <h3 className="font-headline-md text-headline-md text-on-surface font-normal">
+                            {service.serviceName}
+                          </h3>
+                          <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                            {service.description}
+                          </p>
+                          {durations.length > 0 && (
+                            <div className="py-4 space-y-3">
+                              {durations.map((d, i) => (
+                                <div key={i} className="flex items-baseline justify-between py-1.5">
+                                  <span className="font-body-md text-body-md text-on-surface">
+                                    {t('servicesPage.minuteUnit', { n: d.minutes })}
+                                  </span>
+                                  <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
+                                    {t('servicesPage.bahtUnit', { price: d.price })}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <div className="pt-2 flex items-center gap-6">
+                            <button
+                              type="button"
+                              onClick={() => onNavigate?.('booking', { service: service.serviceCode?.toLowerCase() })}
+                              className="font-label-md text-label-md text-primary hover:text-on-primary-fixed-variant underline underline-offset-8 transition-colors cursor-pointer"
+                            >
+                              {t('servicesPage.bookThis')}
+                            </button>
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                    <div className="pt-2">
-                      <button
-                        type="button"
-                        onClick={() => onNavigate?.('booking', { service: 'aroma' })}
-                        className="font-label-md text-label-md text-primary hover:text-on-primary-fixed-variant underline underline-offset-8 transition-colors cursor-pointer"
-                      >
-                        {t('servicesPage.bookThis')}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="lg:col-span-6 overflow-hidden rounded-lg">
-                    <img
-                      alt={t('servicesPage.t2ImageAlt')}
-                      className="w-full h-80 lg:h-96 object-cover rounded-lg transition-transform duration-700 hover:scale-[1.01]"
-                      src={aromaService?.image || '/images/services/service-aroma.jpg'}
-                      onError={(e) => {
-                        e.currentTarget.onerror = null
-                        e.currentTarget.src = '/images/services/aromatherapy-herbs.jpg'
-                      }}
-                    />
-                  </div>
-                </div>
-              </article>
-            </FadeIn>
-
-            {/* Treatment 3 & 4: Two-column symmetric grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Treatment 3: Warm Herbal Oil Massage */}
-              <FadeIn delay={0.08} className="h-full">
-                <article className="bg-surface-container-low rounded-xl p-8 md:p-10 flex flex-col justify-between h-full hover:bg-surface-container transition-colors duration-300">
-                  <div className="space-y-4">
-                    <div className="w-full h-52 md:h-60 overflow-hidden rounded-lg mb-4">
-                      <img
-                        alt={t('servicesPage.t3Title')}
-                        className="w-full h-full object-cover rounded-lg transition-transform duration-700 hover:scale-[1.01]"
-                        src={warmOilService?.image || '/images/services/service-warm-oil.jpg'}
-                        onError={(e) => {
-                          e.currentTarget.onerror = null
-                          e.currentTarget.src = '/images/services/aromatherapy-herbs.jpg'
-                        }}
-                      />
-                    </div>
-                    <span className="font-label-caps text-label-caps text-primary tracking-widest uppercase">
-                      {t('servicesPage.t3Tag')}
-                    </span>
-                    <h3 className="font-headline-sm text-headline-sm text-on-surface font-normal">
-                      {t('servicesPage.t3Title')}
-                    </h3>
-                    <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">
-                      {t('servicesPage.t3Desc')}
-                    </p>
-                  </div>
-                  <div className="pt-8 space-y-4">
-                    <div className="bg-surface rounded-lg p-5 space-y-2.5">
-                      {warmOilDurations.map((d, i) => (
-                        <div key={i} className="flex items-baseline justify-between">
-                          <span className="font-body-md text-body-md text-on-surface">
-                            {t('servicesPage.minuteUnit', { n: d.minutes })}
-                          </span>
-                          <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
-                            {t('servicesPage.bahtUnit', { price: d.price })}
-                          </span>
+                        <div className="lg:col-span-6 overflow-hidden rounded-lg">
+                          <img
+                            alt={service.serviceName}
+                            className="w-full h-80 lg:h-96 object-cover rounded-lg transition-transform duration-700 hover:scale-[1.01]"
+                            src={img}
+                            onError={(e) => {
+                              e.currentTarget.onerror = null
+                              e.currentTarget.src = '/images/services/room-architecture.jpg'
+                            }}
+                          />
                         </div>
-                      ))}
-                    </div>
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => onNavigate?.('booking', { service: 'oil' })}
-                        className="font-label-md text-label-md text-primary hover:text-on-primary-fixed-variant underline underline-offset-8 transition-colors cursor-pointer"
-                      >
-                        {t('servicesPage.bookThis')}
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              </FadeIn>
-
-              {/* Treatment 4: Foot Reflexology & Hand Relief */}
-              <FadeIn delay={0.12} className="h-full">
-                <article className="bg-surface-container-low rounded-xl p-8 md:p-10 flex flex-col justify-between h-full hover:bg-surface-container transition-colors duration-300">
-                  <div className="space-y-4">
-                    <div className="w-full h-52 md:h-60 overflow-hidden rounded-lg mb-4">
-                      <img
-                        alt={t('servicesPage.t4Title')}
-                        className="w-full h-full object-cover rounded-lg transition-transform duration-700 hover:scale-[1.01]"
-                        src={footService?.image || '/images/services/service-foot.jpg'}
-                        onError={(e) => {
-                          e.currentTarget.onerror = null
-                          e.currentTarget.src = '/images/services/aromatherapy-herbs.jpg'
-                        }}
-                      />
-                    </div>
-                    <span className="font-label-caps text-label-caps text-primary tracking-widest uppercase">
-                      {t('servicesPage.t4Tag')}
-                    </span>
-                    <h3 className="font-headline-sm text-headline-sm text-on-surface font-normal">
-                      {t('servicesPage.t4Title')}
-                    </h3>
-                    <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">
-                      {t('servicesPage.t4Desc')}
-                    </p>
-                  </div>
-                  <div className="pt-8 space-y-4">
-                    <div className="bg-surface rounded-lg p-5 space-y-2.5">
-                      {footDurations.map((d, i) => (
-                        <div key={i} className="flex items-baseline justify-between">
-                          <span className="font-body-md text-body-md text-on-surface">
-                            {t('servicesPage.minuteUnit', { n: d.minutes })}
-                          </span>
-                          <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
-                            {t('servicesPage.bahtUnit', { price: d.price })}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => onNavigate?.('booking', { service: 'foot' })}
-                        className="font-label-md text-label-md text-primary hover:text-on-primary-fixed-variant underline underline-offset-8 transition-colors cursor-pointer"
-                      >
-                        {t('servicesPage.bookThis')}
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              </FadeIn>
+                      </div>
+                    </article>
+                  </FadeIn>
+                )
+              })}
             </div>
-          </div>
+          )}
         </section>
 
         {/* Section ติดต่อสอบถาม (Inquiries & Reservation) */}

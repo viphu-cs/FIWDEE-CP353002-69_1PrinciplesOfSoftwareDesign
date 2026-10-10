@@ -24,7 +24,7 @@ export default function AdminServices() {
     setLoading(true)
     try {
       const res = await api.get('/admin/services')
-      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+      if (res && res.success && Array.isArray(res.data)) {
         const mapped = res.data.map(s => ({
           id: s.id,
           code: s.serviceCode,
@@ -39,20 +39,20 @@ export default function AdminServices() {
         }))
         setLiveServices(mapped)
       } else {
-        setLiveServices(fallbackServices)
+        setLiveServices([])
       }
     } catch {
-      setLiveServices(fallbackServices)
+      setLiveServices([])
     } finally {
       setLoading(false)
     }
-  }, [fallbackServices])
+  }, [])
 
   useEffect(() => {
     fetchServices()
   }, [fetchServices])
 
-  const displayServices = liveServices.length > 0 ? liveServices : fallbackServices
+  const displayServices = liveServices
 
   // Form states
   const [code, setCode] = useState('')
@@ -233,7 +233,12 @@ export default function AdminServices() {
 
       {/* Service Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {displayServices.map((service) => (
+        {displayServices.length === 0 ? (
+          <div className="col-span-full bg-surface rounded-2xl p-12 text-center border border-outline-variant text-charcoal-muted shadow-[var(--admin-shadow-sm)]">
+            <p className="font-medium text-sm">{t('admin.noMatchingRecords')}</p>
+          </div>
+        ) : (
+          displayServices.map((service) => (
           <div
             key={service.id || service.code}
             className={`bg-surface rounded-2xl border p-5 shadow-[var(--admin-shadow-sm)] flex flex-col justify-between space-y-4 transition-all ${
@@ -296,7 +301,7 @@ export default function AdminServices() {
               </div>
             )}
           </div>
-        ))}
+        )))}
       </div>
 
       {/* Edit/Add Modal */}

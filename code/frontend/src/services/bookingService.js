@@ -139,20 +139,21 @@ export const therapistsData = [
     image: '/images/booking/therapist-karn.jpg',
     avatar: '/images/booking/therapist-karn.jpg',
   },
-  {
-    id: 'any',
-    backendId: null,
-    name: 'ให้ร้านจัดสรรให้ (Any Specialist)',
-    shortName: 'ให้ร้านจัดสรรให้',
-    role: 'คัดสรรโดย FIWDEE Boutique Retreatment',
-    exp: 'Any Available Specialist',
-    avatarExp: 'คัดเลือกโดยผู้จัดการสาขา',
-    badges: ['คัดเลือกเฉพาะบุคคล', 'เวลาคิวรวดเร็ว'],
-    bio: 'ให้ทีมงานคัดเลือกผู้บำบัดที่เชี่ยวชาญเหมาะสมกับทรีตเมนต์และสรีระของท่านที่สุด',
-    handWeight: 'แมตช์ตามประเภทบริการ',
-    isConcierge: true,
-  },
 ]
+
+export const anyTherapistOption = {
+  id: 'any',
+  backendId: null,
+  name: 'ให้ร้านจัดสรรให้ (Any Specialist)',
+  shortName: 'ให้ร้านจัดสรรให้',
+  role: 'คัดสรรโดย FIWDEE Boutique Retreatment',
+  exp: 'Any Available Specialist',
+  avatarExp: 'คัดเลือกโดยผู้จัดการสาขา',
+  badges: ['คัดเลือกเฉพาะบุคคล', 'เวลาคิวรวดเร็ว'],
+  bio: 'ให้ทีมงานคัดเลือกผู้บำบัดที่เชี่ยวชาญเหมาะสมกับทรีตเมนต์และสรีระของท่านที่สุด',
+  handWeight: 'แมตช์ตามประเภทบริการ',
+  isConcierge: true,
+}
 
 export const servicesData = [
   {
@@ -306,13 +307,13 @@ export const bookingService = {
             avatar: extra.avatar || '/images/booking/therapist-mali-avatar.jpg',
           }
         })
-        mapped.push(therapistsData.find((t) => t.id === 'any'))
+        mapped.push(anyTherapistOption)
         return mapped
       }
     } catch {
-      // Graceful fallback to static therapistsData
+      // API error -> return empty
     }
-    return therapistsData
+    return []
   },
 
   getServices: async () => {
@@ -338,9 +339,9 @@ export const bookingService = {
         })
       }
     } catch {
-      // Graceful fallback
+      // API error -> return empty
     }
-    return servicesData
+    return []
   },
 
   getDateOptions: () => generateDateOptions(),
