@@ -51,18 +51,20 @@ export default function BookingConfirmation({
             )}
             <div>
               <span className="text-secondary block">ผู้บำบัด:</span>
-              <span className="font-medium text-on-surface">{selectedTherapist.name}</span>
+              <span className="font-medium text-on-surface">
+                {selectedTherapist?.name || selectedTherapist?.shortName || 'ให้ร้านจัดสรรให้'}
+              </span>
             </div>
             <div>
               <span className="text-secondary block">บริการ:</span>
               <span className="font-medium text-on-surface">
-                {selectedService.name} ({activeService.duration})
+                {selectedService?.name || '—'} {activeService?.duration ? `(${activeService.duration})` : ''}
               </span>
             </div>
             <div>
               <span className="text-secondary block">วันและเวลา:</span>
               <span className="font-medium text-primary">
-                {selectedDate.fullText} · {selectedTimeSlot.timeRange || selectedTimeSlot.time}
+                {selectedDate?.fullText || selectedDate?.label || '—'} · {selectedTimeSlot?.timeRange || selectedTimeSlot?.time || '—'}
               </span>
             </div>
             <div>

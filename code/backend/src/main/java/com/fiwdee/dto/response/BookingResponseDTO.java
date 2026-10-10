@@ -37,6 +37,9 @@ public class BookingResponseDTO {
     private LocalDateTime startDateTime;
     private LocalDateTime endDateTime;
     private BookingStatus status;
+    private String paymentStatus;
+    private String paymentMethod;
+    private Long paymentId;
     private String bookingChannel;
     private String specialNotes;
     private LocalDateTime actualStartTime;

@@ -1,4 +1,5 @@
 import React from 'react'
+import { useLanguage } from '../../../i18n/useLanguage.js'
 
 /**
  * BookingStepSlot - ขั้นตอนที่ 2: เลือกวันและช่วงเวลา และปรับแต่งความต้องการ (SRP: จัดการเฉพาะ Step 2 UI)
@@ -20,6 +21,8 @@ export default function BookingStepSlot({
   onPrev,
   onNext,
 }) {
+  const { t } = useLanguage()
+
   return (
     <>
       <section className="w-full bg-surface">
@@ -77,6 +80,10 @@ export default function BookingStepSlot({
                   <span className="font-label-caps text-label-caps uppercase text-secondary">
                     {selectedDate?.monthYearHeader || 'ปฏิทินการจอง'}
                   </span>
+                </div>
+                <div className="flex items-center gap-2 p-3 bg-primary-container/30 border border-primary/20 rounded-lg text-xs text-primary font-body-sm">
+                  <span className="material-symbols-outlined text-sm shrink-0">info</span>
+                  <span>{t('bookingWizard.advanceBookingNotice')}</span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-space-xs pt-space-xs">
                   {dateOptions.map((dateTab) => {
@@ -440,15 +447,15 @@ export default function BookingStepSlot({
                 <div className="space-y-space-sm pt-space-xs">
                   <div className="flex items-center gap-space-md">
                     <div className="w-12 h-12 rounded-full overflow-hidden bg-surface-container-highest shrink-0">
-                      {selectedTherapist.isConcierge ? (
+                      {selectedTherapist?.isConcierge ? (
                         <div className="w-full h-full bg-secondary-container flex items-center justify-center text-primary font-bold">
                           F
                         </div>
                       ) : (
                         <img
                           className="w-full h-full object-cover"
-                          src={selectedTherapist.avatar || selectedTherapist.image}
-                          alt={selectedTherapist.name}
+                          src={selectedTherapist?.avatar || selectedTherapist?.image || '/images/booking/therapist-mali.jpg'}
+                          alt={selectedTherapist?.name || 'Therapist'}
                         />
                       )}
                     </div>
@@ -457,10 +464,10 @@ export default function BookingStepSlot({
                         ผู้บำบัดที่ท่านเลือก
                       </span>
                       <span className="font-headline-sm text-headline-sm text-on-surface font-normal">
-                        {selectedTherapist.shortName}
+                        {selectedTherapist?.shortName || selectedTherapist?.name || 'ให้ร้านจัดสรรให้'}
                       </span>
                       <span className="font-body-sm text-body-sm text-tertiary block">
-                        {selectedTherapist.avatarExp}
+                        {selectedTherapist?.avatarExp || selectedTherapist?.exp || 'รับรองมาตรฐานวิชาชีพ'}
                       </span>
                     </div>
                   </div>
@@ -471,13 +478,13 @@ export default function BookingStepSlot({
                   <div className="flex justify-between py-1">
                     <span className="font-body-sm text-body-sm text-secondary">วันที่นัดหมาย:</span>
                     <span className="font-label-md text-label-md text-on-surface font-medium">
-                      {selectedDate.fullText}
+                      {selectedDate?.fullText || selectedDate?.label || '—'}
                     </span>
                   </div>
                   <div className="flex justify-between py-1">
                     <span className="font-body-sm text-body-sm text-secondary">ช่วงเวลา:</span>
                     <span className="font-label-md text-label-md text-primary font-medium">
-                      {selectedTimeSlot.timeRange || selectedTimeSlot.time}
+                      {selectedTimeSlot?.timeRange || selectedTimeSlot?.time || '—'}
                     </span>
                   </div>
                   <div className="flex justify-between py-1">

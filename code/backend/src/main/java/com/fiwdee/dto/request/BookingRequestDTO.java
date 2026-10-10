@@ -44,6 +44,13 @@ public class BookingRequestDTO {
     private LocalDateTime startDateTime;
 
     /**
+     * Optional customer name and phone for Walk-in or phone reservations when customerId is not known.
+     */
+    private String customerName;
+
+    private String customerPhone;
+
+    /**
      * Booking channel: ONLINE, WALK_IN, PHONE.
      */
     private String bookingChannel;

@@ -51,6 +51,20 @@ public class BookingMapper {
         if (booking == null) {
             return null;
         }
+
+        String paymentStatus = "UNPAID";
+        String paymentMethod = null;
+        Long paymentId = null;
+        if (booking.getPayment() != null) {
+            paymentId = booking.getPayment().getId();
+            if (booking.getPayment().getPaymentStatus() != null) {
+                paymentStatus = booking.getPayment().getPaymentStatus().name();
+            }
+            if (booking.getPayment().getPaymentMethod() != null) {
+                paymentMethod = booking.getPayment().getPaymentMethod().name();
+            }
+        }
+
         return BookingResponseDTO.builder()
                 .id(booking.getId())
                 .bookingReferenceCode(booking.getBookingReferenceCode())
@@ -74,6 +88,9 @@ public class BookingMapper {
                 .startDateTime(booking.getStartDateTime())
                 .endDateTime(booking.getEndDateTime())
                 .status(booking.getStatus())
+                .paymentStatus(paymentStatus)
+                .paymentMethod(paymentMethod)
+                .paymentId(paymentId)
                 .bookingChannel(booking.getBookingChannel())
                 .specialNotes(booking.getSpecialNotes())
                 .actualStartTime(booking.getActualStartTime())

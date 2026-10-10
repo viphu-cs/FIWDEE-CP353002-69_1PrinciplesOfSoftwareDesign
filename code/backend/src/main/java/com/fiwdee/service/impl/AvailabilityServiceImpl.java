@@ -135,7 +135,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         int openMin = openTime.toSecondOfDay() / 60;
         int closeMin = closeTime.toSecondOfDay() / 60;
 
-        for (int m = openMin; m + duration <= closeMin; m += 60) {
+        for (int m = openMin; m + duration <= closeMin; m += step) {
             LocalTime slotTime = LocalTime.ofSecondOfDay(m * 60L);
             LocalDateTime slotStart = LocalDateTime.of(date, slotTime);
             LocalDateTime slotEnd = slotStart.plusMinutes(duration);

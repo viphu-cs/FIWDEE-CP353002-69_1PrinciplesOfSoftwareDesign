@@ -90,6 +90,44 @@ export function AdminAuthProvider({ children }) {
   const [bookings, setBookings] = useState(initialBookings)
   const [services, setServices] = useState(initialServices)
 
+  // ฟังก์ชันดึงคิวสดประจำวันจาก Backend
+  const refreshDailyQueue = React.useCallback(async () => {
+    try {
+      const todayStr = new Date().toISOString().slice(0, 10)
+      const res = await api.get(`/admin/queue?date=${todayStr}`)
+      if (res && res.success && Array.isArray(res.data)) {
+        if (res.data.length > 0) {
+          setQueueItems(res.data.map(q => {
+            const timeFormatted = q.scheduledStartDateTime
+              ? new Date(q.scheduledStartDateTime).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+              : (q.checkInTime ? new Date(q.checkInTime).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : '-')
+
+            return {
+              queueId: q.queueId,
+              queueNo: q.queueNumber || `Q-${q.queueId}`,
+              bookingCode: q.bookingReferenceCode || (q.bookingId ? `BK-${q.bookingId}` : '-'),
+              bookingId: q.bookingId,
+              customerName: q.customerName || 'ลูกค้าหน้าร้าน',
+              phone: '—',
+              serviceName: q.serviceName || 'นวดแผนไทย',
+              durationMinutes: 60,
+              therapistName: q.therapistName || null,
+              roomNo: q.roomNumber || null,
+              status: q.queueStatus,
+              type: 'ONLINE',
+              time: timeFormatted,
+              price: 600,
+            }
+          }))
+        } else {
+          setQueueItems([])
+        }
+      }
+    } catch (err) {
+      console.warn('Error refreshing daily queue:', err)
+    }
+  }, [])
+
   // ซิงก์ข้อมูลจริงจาก Database เมื่อล็อกอินสำเร็จ
   React.useEffect(() => {
     let isMounted = true
@@ -153,38 +191,7 @@ export function AdminAuthProvider({ children }) {
     }).catch(() => {})
 
     // 3. ดึงคิวสดประจำวัน
-    const todayStr = new Date().toISOString().slice(0, 10)
-    api.get(`/admin/queue?date=${todayStr}`).then((res) => {
-      if (isMounted && res && res.success && Array.isArray(res.data)) {
-        if (res.data.length > 0) {
-          setQueueItems(res.data.map(q => {
-            const timeFormatted = q.scheduledStartDateTime
-              ? new Date(q.scheduledStartDateTime).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
-              : (q.checkInTime ? new Date(q.checkInTime).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : '-')
-
-            return {
-              queueId: q.queueId,
-              queueNo: q.queueNumber || `Q-${q.queueId}`,
-              bookingCode: q.bookingReferenceCode || (q.bookingId ? `BK-${q.bookingId}` : '-'),
-              bookingId: q.bookingId,
-              customerName: q.customerName || 'ลูกค้าหน้าร้าน',
-              phone: '—',
-              serviceName: q.serviceName || 'นวดแผนไทย',
-              durationMinutes: 60,
-              therapistName: q.therapistName || null,
-              roomNo: q.roomNumber || null,
-              status: q.queueStatus,
-              type: 'ONLINE',
-              time: timeFormatted,
-              price: 600,
-            }
-          }))
-        } else {
-          // หากไม่มีคิวจริงในวันนี้ ล้างคิวม็อกออก
-          setQueueItems([])
-        }
-      }
-    }).catch(() => {})
+    refreshDailyQueue()
 
     // 4. ดึงตารางการจองจริง
     api.get('/admin/bookings?size=20').then((res) => {
@@ -197,7 +204,7 @@ export function AdminAuthProvider({ children }) {
     }).catch(() => {})
 
     return () => { isMounted = false }
-  }, [isAuthenticated])
+  }, [isAuthenticated, refreshDailyQueue])
 
   // Multi-day Work Shift Manager
   const updateTherapistShiftForDate = (therapistId, dateStr, shiftType) => {
@@ -328,51 +335,117 @@ export function AdminAuthProvider({ children }) {
 
 
 
-  const addWalkInQueue = (newQueueData) => {
+  const addWalkInQueue = async (newQueueData) => {
     const todayStr = new Date().toISOString().slice(0, 10)
     const targetDate = newQueueData.date || todayStr
     const targetType = newQueueData.type || 'WALK_IN'
 
-    // ⚠️ Validation Check: If Therapist selected, verify availability for the specific date!
+    // Validation Check: If Therapist selected, verify availability
+    let therapistObj = null
     if (newQueueData.therapistName && newQueueData.therapistName !== 'ไม่ระบุ') {
-      const selectedT = therapists.find(t => t.fullName === newQueueData.therapistName || t.nickname === newQueueData.therapistName)
-      if (selectedT) {
-        const shiftOnDate = getTherapistShiftForDate(selectedT, targetDate)
+      therapistObj = therapists.find(t => t.fullName === newQueueData.therapistName || t.nickname === newQueueData.therapistName)
+      if (therapistObj) {
+        const shiftOnDate = getTherapistShiftForDate(therapistObj, targetDate)
         if (shiftOnDate === 'OFF') {
-          throw new Error(`หมอนวด "${selectedT.fullName}" มีตารางหยุดงาน (OFF) ในวันที่ ${targetDate} กรุณาเลือกหมอนวดท่านอื่น`)
+          throw new Error(`หมอนวด "${therapistObj.fullName}" มีตารางหยุดงาน (OFF) ในวันที่ ${targetDate} กรุณาเลือกหมอนวดท่านอื่น`)
         }
-        const isToday = targetDate === todayStr || targetDate === '2026-10-02'
-        if (isToday && selectedT.status !== 'ON_DUTY' && selectedT.status !== 'IN_SERVICE' && targetType === 'WALK_IN') {
-          throw new Error(`หมอนวด "${selectedT.fullName}" ไม่พร้อมรับงานทันทีในขณะนี้ (${selectedT.status})`)
+        const isToday = targetDate === todayStr
+        if (isToday && therapistObj.status !== 'ON_DUTY' && therapistObj.status !== 'IN_SERVICE' && targetType === 'WALK_IN') {
+          throw new Error(`หมอนวด "${therapistObj.fullName}" ไม่พร้อมรับงานทันทีในขณะนี้ (${therapistObj.status})`)
         }
       }
     }
 
-    // ⚠️ Validation Check: If Room selected, verify availability
-    if (newQueueData.roomNo && targetType === 'WALK_IN') {
-      const selectedR = rooms.find(r => r.id === newQueueData.roomNo)
-      if (selectedR && selectedR.status !== 'AVAILABLE') {
-        throw new Error(`ห้องนวด "${selectedR.id} - ${selectedR.name}" ไม่พร้อมใช้งาน (สถานะ: ${selectedR.status})`)
+    // Validation Check: If Room selected, verify availability
+    let roomObj = null
+    if (newQueueData.roomNo) {
+      roomObj = rooms.find(r => r.id === newQueueData.roomNo || String(r.backendId) === String(newQueueData.roomNo))
+      if (roomObj && targetType === 'WALK_IN' && roomObj.status !== 'AVAILABLE') {
+        throw new Error(`ห้องนวด "${roomObj.id} - ${roomObj.name}" ไม่พร้อมใช้งาน (สถานะ: ${roomObj.status})`)
       }
     }
 
+    // Resolve Service and Duration Option
+    const serviceObj = services.find(s => s.name === newQueueData.serviceName || String(s.id) === String(newQueueData.serviceId)) || services[0]
+    const durMinutes = parseInt(newQueueData.durationMinutes || 60, 10)
+    const durOpt = serviceObj?.durations?.find(d => Number(d.minutes) === durMinutes) || serviceObj?.durations?.[0]
+
+    // Construct startDateTime
+    const now = new Date()
+    const hh = String(now.getHours()).padStart(2, '0')
+    const mm = String(now.getMinutes()).padStart(2, '0')
+    const ss = String(now.getSeconds()).padStart(2, '0')
+
+    let startDateTimeStr
+    if (targetType === 'WALK_IN' && targetDate === todayStr) {
+      startDateTimeStr = `${todayStr}T${hh}:${mm}:${ss}`
+    } else if (targetDate && newQueueData.time) {
+      const timeParts = String(newQueueData.time).replace(/[^0-9:]/g, '').split(':')
+      const hour = (timeParts[0] || '10').padStart(2, '0')
+      const minute = (timeParts[1] || '00').padStart(2, '0')
+      startDateTimeStr = `${targetDate}T${hour}:${minute}:00`
+    } else {
+      startDateTimeStr = `${todayStr}T${hh}:${mm}:${ss}`
+    }
+
+    // 1. Send to Backend API
+    let bookingResult = null
+    try {
+      const bookingPayload = {
+        serviceId: serviceObj?.id,
+        durationOptionId: durOpt?.id,
+        therapistId: therapistObj?.id || null,
+        roomId: roomObj?.backendId || null,
+        startDateTime: startDateTimeStr,
+        customerName: newQueueData.customerName,
+        customerPhone: newQueueData.phone || '080-000-0000',
+        bookingChannel: targetType,
+        specialNotes: targetType === 'WALK_IN' ? 'ลูกค้า Walk-in หน้าร้าน' : 'ลูกค้าโทรจองนัดหมาย'
+      }
+
+      const res = await api.post('/bookings', bookingPayload)
+      if (!res || !res.success) {
+        throw new Error(res?.message || 'ไม่สามารถสร้างการจองได้')
+      }
+
+      bookingResult = res.data
+      // For Walk-in, perform check-in immediately to generate queue ticket!
+      if (targetType === 'WALK_IN' && bookingResult?.id) {
+        try {
+          const checkInRes = await api.patch(`/bookings/${bookingResult.id}/check-in`)
+          if (checkInRes?.success && checkInRes?.data?.queueNumber) {
+            bookingResult.queueNumber = checkInRes.data.queueNumber
+          }
+        } catch (checkInErr) {
+          console.warn('Auto check-in warning:', checkInErr)
+        }
+      }
+    } catch (apiErr) {
+      console.error('Walk-in booking error:', apiErr)
+      throw apiErr
+    }
+
+    // 2. Also update local state for immediate feedback
     const nextNum = queueItems.length + 1
-    const queueNo = `Q-${String(nextNum).padStart(3, '0')}`
-    const bookingCode = `BK-${targetDate.replace(/-/g, '')}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
-    
+    const queueNo = bookingResult?.queueNumber || `Q-${String(nextNum).padStart(3, '0')}`
+    const bookingCode = bookingResult?.bookingReferenceCode || `BK-${targetDate.replace(/-/g, '')}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
+
     const newQueue = {
+      queueId: bookingResult?.id || null,
       queueNo,
       bookingCode,
+      bookingId: bookingResult?.id || null,
       customerName: newQueueData.customerName,
       phone: newQueueData.phone || '080-000-0000',
       serviceName: newQueueData.serviceName,
-      durationMinutes: parseInt(newQueueData.durationMinutes || 60, 10),
+      durationMinutes: durMinutes,
       therapistName: newQueueData.therapistName || 'ไม่ระบุ',
       roomNo: newQueueData.roomNo || null,
-      status: newQueueData.roomNo && targetType === 'WALK_IN' ? 'CHECKED_IN' : 'WAITING',
+      status: 'WAITING',
       type: targetType,
       time: newQueueData.time || new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
-      price: newQueueData.price || 600
+      price: newQueueData.price || 600,
+      isAwaitingArrival: false
     }
 
     const newBooking = {
@@ -381,12 +454,12 @@ export function AdminAuthProvider({ children }) {
       customerName: newQueueData.customerName,
       phone: newQueueData.phone || '080-000-0000',
       serviceName: newQueueData.serviceName,
-      durationMinutes: parseInt(newQueueData.durationMinutes || 60, 10),
+      durationMinutes: durMinutes,
       therapistName: newQueueData.therapistName || 'ไม่ระบุ',
       roomNo: newQueueData.roomNo || null,
       date: targetDate,
       time: newQueueData.time || new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
-      status: newQueueData.roomNo && targetType === 'WALK_IN' ? 'CHECKED_IN' : 'PENDING',
+      status: targetType === 'WALK_IN' ? 'CHECKED_IN' : 'PENDING',
       price: newQueueData.price || 600,
       paymentStatus: 'PAID',
       channel: targetType === 'PHONE_BOOKING' ? 'Phone Reservation' : 'Walk-in'
@@ -395,12 +468,13 @@ export function AdminAuthProvider({ children }) {
     setQueueItems(prev => [newQueue, ...prev])
     setBookings(prev => [newBooking, ...prev])
 
-    if (newQueueData.roomNo && targetType === 'WALK_IN') {
-      updateRoomStatus(newQueueData.roomNo, 'OCCUPIED', bookingCode, newQueueData.therapistName, newQueueData.serviceName)
+    // Re-sync directly with Backend API
+    refreshDailyQueue()
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('fiwdee_queue_updated'))
     }
-    if (newQueueData.therapistName && newQueueData.therapistName !== 'ไม่ระบุ' && targetType === 'WALK_IN') {
-      setTherapists(prev => prev.map(t => (t.fullName === newQueueData.therapistName || t.nickname === newQueueData.therapistName) ? { ...t, status: 'IN_SERVICE' } : t))
-    }
+
+    return bookingResult
   }
 
   const updateTherapistStatus = (therapistId, newStatus) => {
@@ -460,6 +534,7 @@ export function AdminAuthProvider({ children }) {
         updateQueueStatus,
         assignAndStartService,
         addWalkInQueue,
+        refreshDailyQueue,
         bookings,
         setBookings,
         services,

@@ -241,10 +241,10 @@ export default function BookingStepPayment({
                   สรุปการนัดหมาย
                 </span>
                 <h3 className="font-headline-md text-headline-md text-on-surface font-normal">
-                  {selectedService.name}
+                  {selectedService?.name || '—'}
                 </h3>
                 <p className="font-body-sm text-body-sm text-secondary">
-                  {selectedService.desc} ({activeService.duration})
+                  {selectedService?.desc || ''} ({activeService?.duration || ''})
                 </p>
               </div>
 
@@ -265,7 +265,7 @@ export default function BookingStepPayment({
                     วันนัดหมาย
                   </span>
                   <span className="font-label-md text-label-md text-on-surface font-medium">
-                    {selectedDate.fullText}
+                    {selectedDate?.fullText || selectedDate?.label || '—'}
                   </span>
                 </div>
 
@@ -275,7 +275,7 @@ export default function BookingStepPayment({
                     ช่วงเวลา
                   </span>
                   <span className="font-label-md text-label-md text-primary font-semibold">
-                    {selectedTimeSlot.timeRange || selectedTimeSlot.time}
+                    {selectedTimeSlot?.timeRange || selectedTimeSlot?.time || '—'}
                   </span>
                 </div>
 
@@ -285,7 +285,7 @@ export default function BookingStepPayment({
                     หมอนวดผู้ดูแล
                   </span>
                   <span className="font-label-md text-label-md text-on-surface">
-                    {selectedTherapist.shortName}
+                    {selectedTherapist?.shortName || selectedTherapist?.name || 'ให้ร้านจัดสรรให้'}
                   </span>
                 </div>
 

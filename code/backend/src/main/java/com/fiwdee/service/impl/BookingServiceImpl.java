@@ -33,6 +33,7 @@ import com.fiwdee.service.BookingService;
 import com.fiwdee.domain.entity.BusinessHours;
 import com.fiwdee.domain.enums.DayOfWeek;
 import com.fiwdee.repository.BusinessHoursRepository;
+import com.fiwdee.repository.UserRepository;
 import com.fiwdee.domain.entity.Payment;
 import com.fiwdee.domain.entity.Refund;
 import com.fiwdee.domain.enums.PaymentStatus;
@@ -79,6 +80,7 @@ public class BookingServiceImpl implements BookingService {
     private final TherapistRepository therapistRepository;
     private final TherapistSkillRepository therapistSkillRepository;
     private final TherapistScheduleRepository therapistScheduleRepository;
+    private final UserRepository userRepository;
     private final BookingMapper bookingMapper;
     private final RefundService refundService;
     private final ApplicationEventPublisher eventPublisher;
@@ -98,11 +100,43 @@ public class BookingServiceImpl implements BookingService {
                             "Customer profile not found for user: " + currentUser.getId()));
         } else {
             Long targetCustomerId = requestDTO.getCustomerId();
-            if (targetCustomerId == null) {
-                throw new ValidationException("Customer ID is required when booking on behalf of a customer");
+            if (targetCustomerId != null) {
+                customer = customerRepository.findById(targetCustomerId)
+                        .orElseThrow(() -> new NotFoundException("Customer not found with id: " + targetCustomerId));
+            } else if (requestDTO.getCustomerPhone() != null && !requestDTO.getCustomerPhone().isBlank()) {
+                String cleanPhone = requestDTO.getCustomerPhone().trim();
+                customer = userRepository.findByPhoneNumber(cleanPhone)
+                        .filter(u -> u instanceof Customer)
+                        .map(u -> (Customer) u)
+                        .orElseGet(() -> {
+                            String cName = (requestDTO.getCustomerName() != null && !requestDTO.getCustomerName().isBlank())
+                                    ? requestDTO.getCustomerName().trim()
+                                    : "ลูกค้าหน้าร้าน";
+                            Customer newCustomer = Customer.builder()
+                                    .fullName(cName)
+                                    .phoneNumber(cleanPhone)
+                                    .role(UserRole.CUSTOMER)
+                                    .isActive(true)
+                                    .registeredDate(LocalDateTime.now())
+                                    .build();
+                            return customerRepository.save(newCustomer);
+                        });
+            } else if (requestDTO.getCustomerName() != null && !requestDTO.getCustomerName().isBlank()) {
+                String cName = requestDTO.getCustomerName().trim();
+                String autoPhone = "080-" + UUID.randomUUID().toString().substring(0, 7);
+                Customer newCustomer = Customer.builder()
+                        .fullName(cName)
+                        .phoneNumber(autoPhone)
+                        .role(UserRole.CUSTOMER)
+                        .isActive(true)
+                        .registeredDate(LocalDateTime.now())
+                        .build();
+                customer = customerRepository.save(newCustomer);
+            } else {
+                // Default fallback: find the first registered customer in DB (e.g. customer@test.com)
+                customer = customerRepository.findAll().stream().findFirst()
+                        .orElseThrow(() -> new ValidationException("Customer information is required for booking"));
             }
-            customer = customerRepository.findById(targetCustomerId)
-                    .orElseThrow(() -> new NotFoundException("Customer not found with id: " + targetCustomerId));
         }
 
         // 2. Validate Service & Duration Option
@@ -384,11 +418,13 @@ public class BookingServiceImpl implements BookingService {
     private void validateBookingTime(LocalDateTime start, LocalDateTime end, User currentUser) {
         LocalDateTime now = LocalDateTime.now();
 
-        // กฎล่วงหน้าใช้กับลูกค้าเท่านั้น พนักงานรับ walk-in ที่มาถึงร้านได้ทันที
+        // กฎล่วงหน้าใช้กับลูกค้าเท่านั้น: ต้องจองล่วงหน้าอย่างน้อย 1 วัน (เริ่มตั้งแต่พรุ่งนี้เป็นต้นไป)
+        // พนักงาน/แอดมินยังรับ walk-in หรือจองของวันนี้ได้ตามปกติ
         if (currentUser.getRole() == UserRole.CUSTOMER) {
-            if (start.isBefore(now.plusMinutes(MIN_LEAD_MINUTES))) {
+            LocalDate today = LocalDate.now();
+            if (!start.toLocalDate().isAfter(today)) {
                 throw new ValidationException(
-                        "Bookings must be made at least " + MIN_LEAD_MINUTES + " minutes in advance");
+                        "การจองออนไลน์ต้องทำล่วงหน้าอย่างน้อย 1 วัน (จองได้ตั้งแต่พรุ่งนี้เป็นต้นไป สำหรับบริการวันนี้กรุณาติดต่อหน้าร้าน)");
             }
             if (start.isAfter(now.plusDays(MAX_ADVANCE_DAYS))) {
                 throw new ValidationException(

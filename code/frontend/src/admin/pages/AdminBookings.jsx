@@ -3,6 +3,7 @@ import { useAdminAuth } from '../context/AdminAuthContext.jsx'
 import { useLanguage } from '../../i18n/useLanguage.js'
 import StatusBadge from '../components/StatusBadge.jsx'
 import RefundModal from '../components/RefundModal.jsx'
+import PaymentCollectModal from '../components/PaymentCollectModal.jsx'
 import { api } from '../../lib/api.js'
 
 export default function AdminBookings() {
@@ -18,6 +19,7 @@ export default function AdminBookings() {
   const [updatingId, setUpdatingId] = useState(null)
   const [toastMessage, setToastMessage] = useState(null)
   const [refundTargetBooking, setRefundTargetBooking] = useState(null)
+  const [paymentTargetBooking, setPaymentTargetBooking] = useState(null)
 
   const showToast = (msg) => {
     setToastMessage(msg)
@@ -120,6 +122,56 @@ export default function AdminBookings() {
     }
   }
 
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'PENDING':
+        return lang === 'th' ? 'รอยืนยัน' : 'Pending'
+      case 'CONFIRMED':
+        return lang === 'th' ? 'ยืนยันแล้ว' : 'Confirmed'
+      case 'CHECKED_IN':
+        return lang === 'th' ? 'เช็คอินแล้ว' : 'Checked In'
+      case 'IN_SERVICE':
+        return lang === 'th' ? 'กำลังให้บริการ' : 'In Service'
+      case 'COMPLETED':
+        return lang === 'th' ? 'เสร็จสิ้น' : 'Completed'
+      case 'CANCELLED':
+        return lang === 'th' ? 'ยกเลิก' : 'Cancelled'
+      case 'NO_SHOW':
+        return lang === 'th' ? 'ไม่มาตามนัด' : 'No Show'
+      default:
+        return status
+    }
+  }
+
+  const handleStatusChange = async (booking, newStatus) => {
+    if (!newStatus || newStatus === booking.status) return
+
+    // Strict validation: check if transition is allowed by State Machine
+    const allowed = getNextStatuses(booking.status)
+    if (!allowed.includes(newStatus)) {
+      showToast(lang === 'th' ? `ไม่อนุญาตให้เปลี่ยนสถานะจาก ${booking.status} ไปเป็น ${newStatus}` : `Invalid transition from ${booking.status} to ${newStatus}`)
+      return
+    }
+
+    // Invariant Guard: If trying to complete, must be paid first
+    if (newStatus === 'COMPLETED') {
+      const isPaid = booking.paymentStatus === 'PAID' || booking.paymentStatus === 'COMPLETED'
+      if (!isPaid) {
+        showToast(t('admin.cannotCompleteUnpaid'))
+        setPaymentTargetBooking(booking)
+        return
+      }
+    }
+
+    // Confirm prompt for cancellation
+    if (newStatus === 'CANCELLED') {
+      const confirmMsg = t('admin.confirmCancelBooking', { ref: booking.bookingReferenceCode || booking.id })
+      if (!window.confirm(confirmMsg)) return
+    }
+
+    await handleUpdateStatus(booking.id, newStatus)
+  }
+
   const statusOptions = ['ALL', 'PENDING', 'CONFIRMED', 'CHECKED_IN', 'IN_SERVICE', 'COMPLETED', 'CANCELLED', 'NO_SHOW']
 
   return (
@@ -198,8 +250,8 @@ export default function AdminBookings() {
                 <th className="py-3.5 px-4">{lang === 'th' ? 'วัน - เวลา' : 'Schedule'}</th>
                 <th className="py-3.5 px-4">{t('admin.therapist')} / {t('admin.room')}</th>
                 <th className="py-3.5 px-4">{t('admin.paymentStatus')}</th>
-                <th className="py-3.5 px-4">{lang === 'th' ? 'สถานะ' : 'Status'}</th>
-                <th className="py-3.5 px-4 text-right">{lang === 'th' ? 'เปลี่ยนสถานะ (State)' : 'Action'}</th>
+                <th className="py-3.5 px-4">{lang === 'th' ? 'สถานะการจอง (State)' : 'Booking Status'}</th>
+                <th className="py-3.5 px-4 text-right">{lang === 'th' ? 'การดำเนินการ' : 'Action'}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant text-xs text-on-surface">
@@ -219,6 +271,7 @@ export default function AdminBookings() {
                 realBookings.map((b) => {
                   const nextStatuses = getNextStatuses(b.status)
                   const isUpdating = updatingId === b.id
+                  const isTerminal = ['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(b.status)
 
                   return (
                     <tr key={b.id || b.bookingReferenceCode} className="hover:bg-surface-container-low transition-colors">
@@ -243,53 +296,120 @@ export default function AdminBookings() {
                       </td>
                       <td className="py-3.5 px-4">
                         <div className="font-bold text-teak-dark">฿{Number(b.totalPrice || b.price || 0).toLocaleString()}</div>
-                        <span className={`inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                          b.paymentStatus === 'PAID' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200'
-                        }`}>
-                          {b.paymentStatus === 'PAID' ? t('admin.paymentPaid') : t('admin.paymentUnpaid')}
-                        </span>
+                        {(() => {
+                          const isPaid = b.paymentStatus === 'PAID' || b.paymentStatus === 'COMPLETED'
+                          const isRefunded = b.paymentStatus === 'REFUNDED'
+
+                          if (isPaid) {
+                            return (
+                              <div>
+                                <span className="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                  {t('admin.paymentPaid')}
+                                </span>
+                                {b.paymentMethod && (
+                                  <div className="text-[10px] text-charcoal-muted mt-0.5 font-medium">{b.paymentMethod}</div>
+                                )}
+                              </div>
+                            )
+                          }
+
+                          if (isRefunded) {
+                            return (
+                              <span className="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-rose-50 text-rose-800 border border-rose-200">
+                                {t('admin.paymentRefunded')}
+                              </span>
+                            )
+                          }
+
+                          return (
+                            <div className="space-y-1">
+                              <span className="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-50 text-amber-800 border border-amber-200">
+                                {t('admin.paymentUnpaid')}
+                              </span>
+                              {b.status !== 'CANCELLED' && b.status !== 'NO_SHOW' && (
+                                <div>
+                                  <button
+                                    type="button"
+                                    onClick={() => setPaymentTargetBooking(b)}
+                                    className="px-2 py-0.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-warm-ivory text-[10px] font-semibold cursor-pointer shadow-xs transition-colors"
+                                  >
+                                    {t('admin.collectPayment')}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })()}
                       </td>
                       <td className="py-3.5 px-4">
-                        <StatusBadge status={b.status} size="sm" />
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        {nextStatuses.length > 0 ? (
-                          <div className="inline-flex items-center gap-1.5 justify-end">
-                            {nextStatuses.map((st) => (
-                              <button
-                                key={st}
-                                disabled={isUpdating}
-                                onClick={() => handleUpdateStatus(b.id, st)}
-                                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
-                                  st === 'CONFIRMED'
-                                    ? 'bg-secondary-container text-secondary hover:bg-secondary hover:text-warm-ivory'
-                                    : st === 'CHECKED_IN'
-                                    ? 'bg-teak-dark text-on-primary hover:bg-teak-deep'
-                                    : st === 'IN_SERVICE'
-                                    ? 'bg-emerald-800 text-warm-ivory hover:bg-emerald-900'
-                                    : st === 'COMPLETED'
-                                    ? 'bg-teak-deep text-warm-ivory hover:bg-wood-deep'
-                                    : 'bg-surface-container text-charcoal-muted hover:bg-rose-50 hover:text-rose-700'
-                                }`}
-                              >
-                                {st}
-                              </button>
-                            ))}
+                        {isTerminal ? (
+                          <div className="inline-flex items-center gap-1.5">
+                            <StatusBadge status={b.status} size="sm" />
+                            <span className="text-[10px] text-charcoal-muted italic">({t('admin.closedLifecycle')})</span>
                           </div>
                         ) : (
-                          <div className="inline-flex items-center gap-1.5 justify-end">
-                            {b.status === 'CANCELLED' && (
-                              <button
-                                type="button"
-                                onClick={() => setRefundTargetBooking(b)}
-                                className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition-all cursor-pointer"
-                              >
-                                {lang === 'th' ? 'คืนเงิน (Refund)' : 'Refund'}
-                              </button>
-                            )}
-                            <span className="text-[11px] text-charcoal-muted italic">Closed</span>
+                          <div className="relative inline-block min-w-[145px]">
+                            <select
+                              value={b.status}
+                              disabled={isUpdating}
+                              onChange={(e) => handleStatusChange(b, e.target.value)}
+                              aria-label={t('admin.changeStatus')}
+                              className={`w-full appearance-none pl-2.5 pr-7 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-teak-dark/30 ${
+                                b.status === 'PENDING' ? 'bg-amber-50 text-amber-900 border-amber-300' :
+                                b.status === 'CONFIRMED' ? 'bg-sky-50 text-sky-900 border-sky-300' :
+                                b.status === 'CHECKED_IN' ? 'bg-stone-100 text-stone-800 border-stone-300' :
+                                b.status === 'IN_SERVICE' ? 'bg-emerald-50 text-emerald-900 border-emerald-300' :
+                                'bg-surface-container text-on-surface border-outline-variant'
+                              }`}
+                            >
+                              <option value={b.status} disabled>
+                                ● {getStatusLabel(b.status)} ({t('admin.currentStatus')})
+                              </option>
+                              {nextStatuses.map((st) => (
+                                <option key={st} value={st} className="bg-surface text-on-surface">
+                                  → {getStatusLabel(st)}
+                                </option>
+                              ))}
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-charcoal-muted">
+                              {isUpdating ? (
+                                <span className="text-[10px] animate-spin">⏳</span>
+                              ) : (
+                                <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </div>
                           </div>
                         )}
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="inline-flex items-center gap-1.5 justify-end">
+                          {b.status === 'CANCELLED' && (
+                            <button
+                              type="button"
+                              onClick={() => setRefundTargetBooking(b)}
+                              className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition-all cursor-pointer"
+                            >
+                              {lang === 'th' ? 'คืนเงิน (Refund)' : 'Refund'}
+                            </button>
+                          )}
+                          {b.status === 'COMPLETED' && (
+                            <span className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+                              <span>✓</span> {lang === 'th' ? 'เสร็จสมบูรณ์' : 'Completed'}
+                            </span>
+                          )}
+                          {b.status === 'NO_SHOW' && (
+                            <span className="text-[11px] text-rose-600 font-medium">
+                              {lang === 'th' ? 'ไม่ปรากฏตัว' : 'No Show'}
+                            </span>
+                          )}
+                          {!isTerminal && (
+                            <span className="text-[11px] text-charcoal-muted">
+                              {lang === 'th' ? 'เลือกสถานะในช่องทางซ้าย' : 'Select next state'}
+                            </span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   )
@@ -333,6 +453,19 @@ export default function AdminBookings() {
           booking={refundTargetBooking}
           onRefundProcessed={() => {
             showToast(lang === 'th' ? 'ทำเรื่องคืนเงินสำเร็จ' : 'Refund processed successfully')
+            fetchBookings()
+          }}
+        />
+      )}
+
+      {/* Payment Collection Modal */}
+      {paymentTargetBooking && (
+        <PaymentCollectModal
+          isOpen={Boolean(paymentTargetBooking)}
+          onClose={() => setPaymentTargetBooking(null)}
+          booking={paymentTargetBooking}
+          onPaymentProcessed={() => {
+            showToast(t('admin.paymentSuccess'))
             fetchBookings()
           }}
         />

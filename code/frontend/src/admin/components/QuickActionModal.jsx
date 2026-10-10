@@ -1,20 +1,16 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAdminAuth } from '../context/AdminAuthContext.jsx'
 import { useLanguage } from '../../i18n/useLanguage.js'
-
-const serviceSkillMap = {
-  'นวดแผนไทยโบราณ': 'Traditional Thai Massage',
-  'นวดอโรมาสุคนธบำบัด': 'Aroma Therapy Massage',
-  'นวดเท้าคลายตึง': 'Foot Reflexology',
-  'FIWDEE Royal Herbal Spa': 'FIWDEE Royal Herbal Spa'
-}
+import { therapistCanPerformService } from '../../services/skillMatcher.js'
+import { api } from '../../lib/api.js'
 
 export default function QuickActionModal({ isOpen, onClose, modalType = 'walkin', initialData = null }) {
   const { services, therapists, rooms, addWalkInQueue, updateRoomStatus, assignAndStartService } = useAdminAuth()
   const { lang, t } = useLanguage()
 
   const todayStr = new Date().toISOString().slice(0, 10)
-  const nowTimeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+  const now = new Date()
+  const nowTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
 
   // Registration Mode: 'WALK_IN' or 'PHONE_BOOKING'
   const [bookingType, setBookingType] = useState('WALK_IN')
@@ -30,6 +26,11 @@ export default function QuickActionModal({ isOpen, onClose, modalType = 'walkin'
   const [bookingTime, setBookingTime] = useState(nowTimeStr || '14:30')
   const [errorMsg, setErrorMsg] = useState('')
 
+  // Live Availability States
+  const [availabilitySlots, setAvailabilitySlots] = useState([])
+  const [serviceAvailabilityMap, setServiceAvailabilityMap] = useState({})
+  const [loadingAvailability, setLoadingAvailability] = useState(false)
+
   // Form State for Room Status Edit
   const [roomStatus, setRoomStatus] = useState(initialData?.status || 'AVAILABLE')
 
@@ -41,12 +42,167 @@ export default function QuickActionModal({ isOpen, onClose, modalType = 'walkin'
   const [assignService, setAssignService] = useState(initialData?.serviceName || services[0]?.name || '')
   const [assignDuration, setAssignDuration] = useState(initialData?.durationMinutes || 60)
 
+  const [submitting, setSubmitting] = useState(false)
+
+  // Synchronize default service when services load
+  useEffect(() => {
+    if (!selectedService && services.length > 0) {
+      setSelectedService(services[0].name)
+    }
+  }, [services, selectedService])
+
+  // Reset modal state on open
+  useEffect(() => {
+    if (isOpen) {
+      setErrorMsg('')
+      setSubmitting(false)
+      const d = new Date()
+      const hh = String(d.getHours()).padStart(2, '0')
+      const mm = String(d.getMinutes()).padStart(2, '0')
+      setBookingTime(`${hh}:${mm}`)
+      setBookingDate(d.toISOString().slice(0, 10))
+    }
+  }, [isOpen])
+
+  // 1. Check availability for all services to flag fully booked services
+  useEffect(() => {
+    if (!isOpen || !services || services.length === 0) return
+    let isCancelled = false
+
+    const checkAllServices = async () => {
+      const statusMap = {}
+      await Promise.all(
+        services.map(async (svc) => {
+          try {
+            const res = await api.get(
+              `/bookings/availability?date=${bookingDate}&serviceId=${svc.id}&durationMinutes=${durationMinutes}&stepMinutes=30`
+            )
+            if (res && res.success && Array.isArray(res.data?.availableSlots)) {
+              if (bookingType === 'WALK_IN') {
+                const [h, m] = nowTimeStr.split(':').map(Number)
+                const curMin = h * 60 + m
+                const slot = res.data.availableSlots.find((s) => {
+                  const [sh, sm] = s.time.split(':').map(Number)
+                  const sMin = sh * 60 + sm
+                  return (curMin >= sMin && curMin < sMin + 30) || sMin >= curMin
+                }) || res.data.availableSlots[0]
+                statusMap[svc.id] = slot ? slot.available : false
+              } else {
+                statusMap[svc.id] = res.data.availableSlots.some((s) => s.available)
+              }
+            } else {
+              statusMap[svc.id] = false
+            }
+          } catch {
+            statusMap[svc.id] = false
+          }
+        })
+      )
+      if (!isCancelled) {
+        setServiceAvailabilityMap(statusMap)
+      }
+    }
+
+    checkAllServices()
+    return () => {
+      isCancelled = true
+    }
+  }, [isOpen, bookingDate, durationMinutes, bookingType, services, nowTimeStr])
+
+  // 2. Fetch detailed available slots for currently selected service
+  useEffect(() => {
+    if (!isOpen || !selectedService) return
+    const svcObj = services.find((s) => s.name === selectedService)
+    if (!svcObj) return
+    let isCancelled = false
+
+    setLoadingAvailability(true)
+    api
+      .get(
+        `/bookings/availability?date=${bookingDate}&serviceId=${svcObj.id}&durationMinutes=${durationMinutes}&stepMinutes=30`
+      )
+      .then((res) => {
+        if (!isCancelled && res && res.success && Array.isArray(res.data?.availableSlots)) {
+          setAvailabilitySlots(res.data.availableSlots)
+        }
+      })
+      .catch(() => {
+        if (!isCancelled) setAvailabilitySlots([])
+      })
+      .finally(() => {
+        if (!isCancelled) setLoadingAvailability(false)
+      })
+
+    return () => {
+      isCancelled = true
+    }
+  }, [isOpen, selectedService, bookingDate, durationMinutes, services])
+
+  // Calculate targetSlot
+  const getTargetSlot = () => {
+    if (!availabilitySlots || availabilitySlots.length === 0) return null
+    if (bookingType === 'PHONE_BOOKING') {
+      return availabilitySlots.find((s) => s.time === bookingTime) || availabilitySlots[0]
+    }
+    // WALK_IN
+    const [h, m] = nowTimeStr.split(':').map(Number)
+    const curMin = h * 60 + m
+    return (
+      availabilitySlots.find((s) => {
+        const [sh, sm] = s.time.split(':').map(Number)
+        const sMin = sh * 60 + sm
+        return curMin >= sMin && curMin < sMin + 30
+      }) ||
+      availabilitySlots.find((s) => {
+        const [sh, sm] = s.time.split(':').map(Number)
+        const sMin = sh * 60 + sm
+        return sMin >= curMin
+      }) ||
+      availabilitySlots[0]
+    )
+  }
+
+  const targetSlot = getTargetSlot()
+  const availTherapistIds = new Set((targetSlot?.availableTherapists || []).map((t) => Number(t.id)))
+  const availRoomIds = new Set((targetSlot?.availableRooms || []).map((r) => Number(r.id)))
+
+  // Auto-switch service if currently selected service is full
+  useEffect(() => {
+    if (services.length > 0 && Object.keys(serviceAvailabilityMap).length > 0) {
+      const curSvc = services.find((s) => s.name === selectedService)
+      if (curSvc && serviceAvailabilityMap[curSvc.id] === false) {
+        const firstAvail = services.find((s) => serviceAvailabilityMap[s.id] === true)
+        if (firstAvail) {
+          setSelectedService(firstAvail.name)
+        }
+      }
+    }
+  }, [serviceAvailabilityMap, services, selectedService])
+
+  // Reset selected therapist if they are not in available therapists for this slot
+  useEffect(() => {
+    if (selectedTherapist && targetSlot) {
+      const thObj = therapists.find((t) => t.fullName === selectedTherapist || t.nickname === selectedTherapist)
+      if (thObj && !availTherapistIds.has(Number(thObj.id))) {
+        setSelectedTherapist('')
+      }
+    }
+  }, [selectedTherapist, targetSlot, therapists])
+
+  // Reset selected room if not in available rooms for this slot
+  useEffect(() => {
+    if (selectedRoom && targetSlot) {
+      const rmObj = rooms.find((r) => r.id === selectedRoom || String(r.backendId) === String(selectedRoom))
+      const rmBackendId = Number(rmObj?.backendId || rmObj?.id)
+      if (!availRoomIds.has(rmBackendId)) {
+        setSelectedRoom('')
+      }
+    }
+  }, [selectedRoom, targetSlot, rooms])
+
   if (!isOpen) return null
 
-  const availableTherapists = therapists.filter(t => t.status === 'ON_DUTY' || t.fullName === assignTherapist || t.nickname === assignTherapist)
-  const availableRooms = rooms.filter(r => r.status === 'AVAILABLE' || r.id === assignRoom)
-
-  const handleQueueSubmit = (e) => {
+  const handleQueueSubmit = async (e) => {
     e.preventDefault()
     setErrorMsg('')
 
@@ -59,8 +215,9 @@ export default function QuickActionModal({ isOpen, onClose, modalType = 'walkin'
     const durOpt = serviceObj?.durations?.find(d => d.minutes === Number(durationMinutes))
     const price = durOpt ? durOpt.price : 600
 
+    setSubmitting(true)
     try {
-      addWalkInQueue({
+      await addWalkInQueue({
         customerName: bookingType === 'PHONE_BOOKING' ? `${customerName} (โทรจอง)` : customerName,
         phone,
         serviceName: selectedService,
@@ -78,7 +235,9 @@ export default function QuickActionModal({ isOpen, onClose, modalType = 'walkin'
       setErrorMsg('')
       onClose()
     } catch (err) {
-      setErrorMsg(err.message || 'เกิดข้อผิดพลาด ไม่สามารถลงทะเบียนคิวได้')
+      setErrorMsg(err.message || (lang === 'th' ? 'เกิดข้อผิดพลาด ไม่สามารถลงทะเบียนคิวได้' : 'Failed to register queue'))
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -250,9 +409,20 @@ export default function QuickActionModal({ isOpen, onClose, modalType = 'walkin'
                     onChange={(e) => setBookingTime(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-semibold text-stone-800 focus:outline-none"
                   >
-                    {['10:00', '11:00', '12:00', '13:00', '14:00', '14:30', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'].map(t => (
-                      <option key={t} value={t}>{t} น.</option>
-                    ))}
+                    {availabilitySlots.length > 0 ? (
+                      availabilitySlots.map((s) => {
+                        const count = s.availableTherapists?.length || 0
+                        return (
+                          <option key={s.time} value={s.time} disabled={!s.available}>
+                            {s.time} น. {!s.available ? (lang === 'th' ? '(คิวเต็มแล้ว)' : '(Full)') : `(ว่าง ${count} ท่าน)`}
+                          </option>
+                        )
+                      })
+                    ) : (
+                      ['10:00', '11:00', '12:00', '13:00', '14:00', '14:30', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'].map(t => (
+                        <option key={t} value={t}>{t} น.</option>
+                      ))
+                    )}
                   </select>
                 </div>
               </div>
@@ -267,11 +437,14 @@ export default function QuickActionModal({ isOpen, onClose, modalType = 'walkin'
                 onChange={(e) => setSelectedService(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-amber-800/40 text-sm bg-stone-50"
               >
-                {services.map((svc) => (
-                  <option key={svc.id} value={svc.name}>
-                    {svc.name}
-                  </option>
-                ))}
+                {services.map((svc) => {
+                  const isAvail = serviceAvailabilityMap[svc.id] !== false
+                  return (
+                    <option key={svc.id} value={svc.name} disabled={!isAvail}>
+                      {svc.name} {!isAvail ? (lang === 'th' ? ' (คิวเต็มขณะนี้ - Fully Booked)' : ' (Fully Booked)') : ''}
+                    </option>
+                  )
+                })}
               </select>
             </div>
 
@@ -285,20 +458,35 @@ export default function QuickActionModal({ isOpen, onClose, modalType = 'walkin'
                   onChange={(e) => setSelectedTherapist(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-amber-800/40 text-sm bg-stone-50"
                 >
-                  <option value="">{lang === 'th' ? 'ไม่ระบุ (หมอนวดคิวถัดไป)' : 'Auto Assign'}</option>
+                  <option value="" disabled={targetSlot ? (targetSlot.availableTherapists?.length === 0) : false}>
+                    {lang === 'th'
+                      ? (targetSlot && targetSlot.availableTherapists?.length === 0
+                          ? 'ไม่ระบุ (ขณะนี้ไม่มีหมอนวดว่าง)'
+                          : `ไม่ระบุ (หมอนวดคิวถัดไป - ว่าง ${targetSlot?.availableTherapists?.length ?? 0} ท่าน)`)
+                      : 'Auto Assign'}
+                  </option>
                   {therapists.map((t) => {
-                    const isAvail = t.status === 'ON_DUTY'
-                    const reqSkill = serviceSkillMap[selectedService]
-                    const hasSkill = reqSkill ? t.skills?.includes(reqSkill) : true
+                    const svcObj = services.find(s => s.name === selectedService)
+                    const hasSkill = therapistCanPerformService(t, svcObj)
+                    const isAvail = availTherapistIds.has(Number(t.id))
+                    const canSelect = hasSkill && isAvail
+                    let label = ''
+                    if (!hasSkill) {
+                      label = lang === 'th' ? 'ไม่มีทักษะบริการนี้' : 'No Skill'
+                    } else if (!isAvail) {
+                      label = lang === 'th' ? 'ติดนวดอยู่ / นอกเวลากะ' : 'Busy / Off Shift'
+                    } else {
+                      label = lang === 'th' ? 'พร้อมให้บริการ' : 'Ready'
+                    }
                     return (
-                      <option key={t.id} value={t.fullName} disabled={!isAvail}>
-                        {t.nickname} - {t.fullName} ({isAvail ? (lang === 'th' ? 'พร้อมให้บริการ' : 'Ready') : (lang === 'th' ? 'ไม่ว่าง' : 'Busy')}){reqSkill ? (hasSkill ? ' · มีทักษะตรง' : ' · ทักษะไม่ตรง') : ''}
+                      <option key={t.id} value={t.fullName} disabled={!canSelect}>
+                        {t.nickname} - {t.fullName} ({label})
                       </option>
                     )
                   })}
                 </select>
-                {availableTherapists.length === 0 && (
-                  <p className="text-[11px] text-stone-500 mt-1 font-medium">ขณะนี้ไม่มีหมอนวดว่าง</p>
+                {targetSlot && targetSlot.availableTherapists?.length === 0 && (
+                  <p className="text-[11px] text-rose-600 mt-1 font-medium">ขณะนี้ไม่มีหมอนวดว่างสำหรับบริการนี้</p>
                 )}
               </div>
 
@@ -311,18 +499,42 @@ export default function QuickActionModal({ isOpen, onClose, modalType = 'walkin'
                   onChange={(e) => setSelectedRoom(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-amber-800/40 text-sm bg-stone-50"
                 >
-                  <option value="">{lang === 'th' ? 'จัดห้องทีหลัง' : 'Assign Later'}</option>
+                  <option value="" disabled={targetSlot ? (targetSlot.availableRooms?.length === 0) : false}>
+                    {lang === 'th'
+                      ? (targetSlot && targetSlot.availableRooms?.length === 0
+                          ? 'จัดห้องทีหลัง (ห้องเต็มทุกห้อง)'
+                          : `จัดห้องทีหลัง (ห้องว่าง ${targetSlot?.availableRooms?.length ?? 0} ห้อง)`)
+                      : 'Assign Later'}
+                  </option>
                   {rooms.map((r) => {
-                    const isAvail = r.status === 'AVAILABLE'
+                    const roomIdNum = Number(r.backendId || r.id)
+                    const isAvail = availRoomIds.has(roomIdNum)
                     return (
                       <option key={r.id} value={r.id} disabled={!isAvail}>
-                        {r.id} - {r.name} ({isAvail ? (lang === 'th' ? 'ห้องว่าง' : 'Available') : (lang === 'th' ? 'ไม่ว่าง' : 'Unavailable')})
+                        {r.id} - {r.name} ({isAvail ? (lang === 'th' ? 'ห้องว่าง' : 'Available') : (lang === 'th' ? 'ห้องติดใช้งาน / พักทำความสะอาด 15 น.' : 'In Use / Cleaning')})
                       </option>
                     )
                   })}
                 </select>
+                {targetSlot && targetSlot.availableRooms?.length === 0 && (
+                  <p className="text-[11px] text-rose-600 mt-1 font-medium">ขณะนี้ห้องนวดเต็มหรืออยู่ระหว่างทำความสะอาด</p>
+                )}
               </div>
             </div>
+
+            {/* Resource Availability Warnings */}
+            {targetSlot && targetSlot.availableTherapists?.length === 0 && (
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium flex items-center gap-2">
+                <span className="material-symbols-outlined text-base text-amber-700">warning</span>
+                <span>{lang === 'th' ? 'ขณะนี้ไม่มีหมอนวดที่ว่างสำหรับบริการนี้ กรุณาเลือกบริการอื่นหรือรอคิวถัดไป' : 'No therapists available for this service right now. Please choose another service or wait for the next slot.'}</span>
+              </div>
+            )}
+            {targetSlot && targetSlot.availableTherapists?.length > 0 && targetSlot.availableRooms?.length === 0 && (
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium flex items-center gap-2">
+                <span className="material-symbols-outlined text-base text-amber-700">warning</span>
+                <span>{lang === 'th' ? 'ขณะนี้ห้องนวดสำหรับบริการนี้เต็ม/กำลังทำความสะอาด 15 นาที กรุณารอสักครู่' : 'Massage rooms for this service are currently full or undergoing 15-minute cleaning buffer.'}</span>
+              </div>
+            )}
 
             <div className="pt-4 flex items-center justify-end gap-2 border-t border-stone-200">
               <button
@@ -334,9 +546,10 @@ export default function QuickActionModal({ isOpen, onClose, modalType = 'walkin'
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-teak-dark text-warm-ivory hover:bg-teak-deep text-sm font-semibold shadow-xs transition-all cursor-pointer"
+                disabled={submitting || (targetSlot ? (!targetSlot.available || targetSlot.availableTherapists?.length === 0 || targetSlot.availableRooms?.length === 0) : false)}
+                className="px-5 py-2 rounded-xl bg-teak-dark text-warm-ivory hover:bg-teak-deep text-sm font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {t('admin.save')}
+                {submitting ? (lang === 'th' ? 'กำลังบันทึก...' : 'Saving...') : t('admin.save')}
               </button>
             </div>
           </form>

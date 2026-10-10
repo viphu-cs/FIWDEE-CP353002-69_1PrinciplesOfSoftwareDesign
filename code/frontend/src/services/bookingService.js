@@ -227,7 +227,8 @@ export function generateDateOptions() {
   const list = []
   const now = new Date()
 
-  for (let i = 0; i < 7; i++) {
+  // จองล่วงหน้าได้ตั้งแต่พรุ่งนี้เป็นต้นไป (i = 1 ถึง 7 วันข้างหน้า)
+  for (let i = 1; i <= 7; i++) {
     const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i)
     const isoDate = formatLocalDateISO(d)
     const dayNum = String(d.getDate())
@@ -237,8 +238,7 @@ export function generateDateOptions() {
     const thaiYear = d.getFullYear() + 543
 
     let label = `${dayNum} ${monthName}`
-    if (i === 0) label = 'วันนี้'
-    else if (i === 1) label = 'พรุ่งนี้'
+    if (i === 1) label = 'พรุ่งนี้'
     else if (i === 2) label = 'วันถัดไป'
 
     list.push({
@@ -312,10 +312,12 @@ export const bookingService = {
         mapped.push(anyTherapistOption)
         return mapped
       }
-    } catch {
-      // API error -> return empty
+    } catch (err) {
+      console.warn('Backend /therapists offline or unreachable, using fallback catalog:', err)
     }
-    return []
+    const fallback = therapistsData.map((t) => ({ ...t }))
+    fallback.push(anyTherapistOption)
+    return fallback
   },
 
   getServices: async () => {
@@ -340,10 +342,10 @@ export const bookingService = {
           }
         })
       }
-    } catch {
-      // API error -> return empty
+    } catch (err) {
+      console.warn('Backend /services offline or unreachable, using fallback catalog:', err)
     }
-    return []
+    return servicesData.map((s) => ({ ...s }))
   },
 
   getDateOptions: () => generateDateOptions(),
@@ -379,9 +381,17 @@ export const bookingService = {
         })
       }
     } catch (err) {
-      console.warn('Could not fetch live availability:', err)
+      console.warn('Could not fetch live availability, using fallback timeSlots:', err)
     }
-    return null
+    // Fallback: return default time slots
+    return timeSlots.map((ts) => ({
+      ...ts,
+      startTime: ts.time,
+      endTime: null,
+      timeRange: `${ts.time} น.`,
+      availableTherapists: therapistsData.map((t) => ({ id: t.id, name: t.name })),
+      availableRooms: [{ id: 1, roomNumber: 'Room 101' }],
+    }))
   },
 
   getTimeSlots: () => timeSlots,

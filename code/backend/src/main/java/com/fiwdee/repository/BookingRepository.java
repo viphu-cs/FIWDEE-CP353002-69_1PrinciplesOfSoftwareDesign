@@ -20,8 +20,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long>, JpaSpec
 
     List<Booking> findByCustomerIdOrderByStartDateTimeDesc(Long customerId);
 
-    /** Booking with all single-valued relations resolved (service, therapist, room, duration options, customer). */
-    @EntityGraph(attributePaths = {"customer", "therapist", "room", "service", "durationOption"})
+    /** Booking with all single-valued relations resolved (service, therapist, room, duration options, customer, payment). */
+    @EntityGraph(attributePaths = {"customer", "therapist", "room", "service", "durationOption", "payment"})
     Optional<Booking> findDetailedById(Long id);
 
     /** A customer's bookings newest first, with the relations needed for display. */
@@ -39,7 +39,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long>, JpaSpec
     /**
      * Paginated and sorted query for administrative booking overview with optional date, status, and keyword search filters.
      */
-    @EntityGraph(attributePaths = {"customer", "therapist", "room", "service", "durationOption"})
+    @EntityGraph(attributePaths = {"customer", "therapist", "room", "service", "durationOption", "payment"})
     @Query(value = "SELECT b FROM Booking b "
             + "WHERE b.startDateTime >= :startOfDay "
             + "AND b.startDateTime <= :endOfDay "
