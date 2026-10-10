@@ -1,40 +1,108 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useAdminAuth } from '../context/AdminAuthContext.jsx'
 import { useLanguage } from '../../i18n/useLanguage.js'
 import StatusBadge from '../components/StatusBadge.jsx'
 import { api } from '../../lib/api.js'
 
 export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
-  const { queueItems, updateQueueStatus, rooms, updateRoomStatus } = useAdminAuth()
+  const { queueItems: fallbackQueueItems, updateQueueStatus: updateLocalQueueStatus, rooms, updateRoomStatus } = useAdminAuth()
   const { lang, t } = useLanguage()
   const [activeTab, setActiveTab] = useState('ALL')
   const [searchQuery, setSearchQuery] = useState('')
   const [notification, setNotification] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [liveQueueItems, setLiveQueueItems] = useState([])
 
   const showNotification = (msg) => {
     setNotification(msg)
     setTimeout(() => setNotification(null), 4000)
   }
 
+  const fetchDailyQueue = useCallback(async () => {
+    setLoading(true)
+    try {
+      const todayStr = new Date().toISOString().slice(0, 10)
+      const res = await api.get(`/admin/queue?date=${todayStr}`)
+      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+        const mapped = res.data.map((q) => {
+          const timeFormatted = q.scheduledStartDateTime
+            ? new Date(q.scheduledStartDateTime).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+            : (q.checkInTime ? new Date(q.checkInTime).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : '-')
+
+          return {
+            queueId: q.queueId,
+            queueNo: q.queueNumber || `Q-${q.queueId}`,
+            bookingCode: q.bookingId ? `BK-${q.bookingId}` : '-',
+            bookingId: q.bookingId,
+            customerName: q.customerName || 'ลูกค้าหน้าร้าน',
+            phone: '—',
+            serviceName: q.serviceName || 'นวดแผนไทย',
+            durationMinutes: 60,
+            therapistName: q.therapistName || null,
+            roomNo: q.roomNumber || null,
+            status: q.queueStatus, // WAITING, CALLED, IN_SERVICE, COMPLETED, CANCELLED
+            type: 'ONLINE',
+            time: timeFormatted,
+            price: 600,
+          }
+        })
+        setLiveQueueItems(mapped)
+      } else {
+        // Fallback to local context state
+        setLiveQueueItems(fallbackQueueItems)
+      }
+    } catch {
+      setLiveQueueItems(fallbackQueueItems)
+    } finally {
+      setLoading(false)
+    }
+  }, [fallbackQueueItems])
+
+  useEffect(() => {
+    fetchDailyQueue()
+  }, [fetchDailyQueue])
+
+  // Current display items
+  const displayItems = liveQueueItems.length > 0 ? liveQueueItems : fallbackQueueItems
+
   const handleCallNext = async () => {
-    // Try backend call-next first
     try {
       const res = await api.post('/admin/queue/call-next')
       if (res.success && res.data) {
         showNotification(`${t('admin.callNextSuccess')}: ${res.data.queueNumber || 'Next'}`)
+        fetchDailyQueue()
         return
       }
     } catch {
       // Fallback to local queue items
     }
 
-    const nextItem = queueItems.find(q => q.status === 'WAITING' || q.status === 'PENDING')
+    const nextItem = displayItems.find(q => q.status === 'WAITING' || q.status === 'PENDING')
     if (nextItem) {
-      updateQueueStatus(nextItem.queueNo, 'CHECKED_IN')
+      updateLocalQueueStatus(nextItem.queueNo, 'CHECKED_IN')
       showNotification(`${t('admin.callNextSuccess')}: ${nextItem.queueNo} (${nextItem.customerName})`)
     } else {
       showNotification(lang === 'th' ? 'ไม่มีคิวที่รอดำเนินการในขณะนี้' : 'No pending queues waiting at the moment')
     }
+  }
+
+  const handleUpdateStatus = async (item, newStatus) => {
+    // 1. Try Backend API first if queueId is available
+    if (item.queueId) {
+      try {
+        const res = await api.patch(`/admin/queue/${item.queueId}/status`, { status: newStatus })
+        if (res.success) {
+          fetchDailyQueue()
+          return
+        }
+      } catch (err) {
+        console.warn('Backend queue status error, falling back to local state:', err)
+      }
+    }
+
+    // 2. Fallback to context
+    updateLocalQueueStatus(item.queueNo, newStatus)
+    setLiveQueueItems(prev => prev.map(q => q.queueNo === item.queueNo ? { ...q, status: newStatus } : q))
   }
 
   const handleStartService = (item) => {
@@ -46,7 +114,7 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
       }
     } else {
       try {
-        updateQueueStatus(item.queueNo, 'IN_SERVICE')
+        handleUpdateStatus(item, 'IN_SERVICE')
         // Automatically set room to OCCUPIED
         if (item.roomNo && updateRoomStatus) {
           updateRoomStatus(item.roomNo, 'OCCUPIED')
@@ -60,7 +128,7 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
 
   const handleCompleteService = (item) => {
     try {
-      updateQueueStatus(item.queueNo, 'COMPLETED')
+      handleUpdateStatus(item, 'COMPLETED')
       // Rule: Completed service triggers 15-minute CLEANING buffer on room
       if (item.roomNo && updateRoomStatus) {
         updateRoomStatus(item.roomNo, 'CLEANING')
@@ -73,8 +141,8 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
     }
   }
 
-  const filteredItems = queueItems.filter((item) => {
-    if (activeTab === 'WAITING' && !(item.status === 'WAITING' || item.status === 'PENDING' || item.status === 'CHECKED_IN')) return false
+  const filteredItems = displayItems.filter((item) => {
+    if (activeTab === 'WAITING' && !(item.status === 'WAITING' || item.status === 'PENDING' || item.status === 'CHECKED_IN' || item.status === 'CALLED')) return false
     if (activeTab === 'IN_SERVICE' && item.status !== 'IN_SERVICE') return false
     if (activeTab === 'COMPLETED' && item.status !== 'COMPLETED') return false
     if (activeTab === 'CANCELLED' && item.status !== 'CANCELLED') return false
@@ -84,7 +152,7 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
       return (
         item.queueNo.toLowerCase().includes(q) ||
         item.customerName.toLowerCase().includes(q) ||
-        item.phone.includes(q) ||
+        (item.phone && item.phone.includes(q)) ||
         item.serviceName.toLowerCase().includes(q)
       )
     }
@@ -120,6 +188,16 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
 
         <div className="flex items-center gap-2.5 flex-wrap">
           <button
+            onClick={fetchDailyQueue}
+            disabled={loading}
+            className="px-3.5 py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-semibold text-xs border border-outline-variant shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            title="รีเฟรชคิวสดจากเซิร์ฟเวอร์"
+          >
+            <span className={`material-symbols-outlined text-base ${loading ? 'animate-spin' : ''}`}>sync</span>
+            <span>{loading ? '...' : (lang === 'th' ? 'รีเฟรช' : 'Refresh')}</span>
+          </button>
+
+          <button
             onClick={handleCallNext}
             className="px-4 py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-semibold text-xs border border-outline-variant shadow-xs transition-all flex items-center gap-2 cursor-pointer"
           >
@@ -146,11 +224,11 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
         {/* Status Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-2 md:pb-0 scrollbar-none">
           {[
-            { key: 'ALL', label: lang === 'th' ? 'ทั้งหมด' : 'All', count: queueItems.length },
-            { key: 'WAITING', label: t('admin.waiting'), count: queueItems.filter(q => ['WAITING', 'PENDING', 'CHECKED_IN'].includes(q.status)).length },
-            { key: 'IN_SERVICE', label: t('admin.inService'), count: queueItems.filter(q => q.status === 'IN_SERVICE').length },
-            { key: 'COMPLETED', label: t('admin.completed'), count: queueItems.filter(q => q.status === 'COMPLETED').length },
-            { key: 'CANCELLED', label: t('admin.cancelled'), count: queueItems.filter(q => q.status === 'CANCELLED').length }
+            { key: 'ALL', label: lang === 'th' ? 'ทั้งหมด' : 'All', count: displayItems.length },
+            { key: 'WAITING', label: t('admin.waiting'), count: displayItems.filter(q => ['WAITING', 'PENDING', 'CHECKED_IN', 'CALLED'].includes(q.status)).length },
+            { key: 'IN_SERVICE', label: t('admin.inService'), count: displayItems.filter(q => q.status === 'IN_SERVICE').length },
+            { key: 'COMPLETED', label: t('admin.completed'), count: displayItems.filter(q => q.status === 'COMPLETED').length },
+            { key: 'CANCELLED', label: t('admin.cancelled'), count: displayItems.filter(q => q.status === 'CANCELLED').length }
           ].map((tab) => (
             <button
               key={tab.key}
@@ -204,7 +282,7 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
                       {item.queueNo}
                     </span>
                     <span className="px-2 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider bg-surface-container-low text-charcoal-muted border border-outline-variant/60">
-                      {item.type}
+                      {item.type || 'ONLINE'}
                     </span>
                   </div>
                   <StatusBadge status={item.status} size="sm" />
@@ -214,8 +292,12 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
                 <div className="mt-3 space-y-1">
                   <h3 className="font-semibold text-teak-dark text-base">{item.customerName}</h3>
                   <div className="text-xs text-charcoal-muted flex items-center gap-2">
-                    <span>{t('admin.phone')}: {item.phone}</span>
-                    <span>•</span>
+                    {item.phone && item.phone !== '—' && (
+                      <>
+                        <span>{t('admin.phone')}: {item.phone}</span>
+                        <span>•</span>
+                      </>
+                    )}
                     <span>{item.time} น.</span>
                   </div>
                 </div>
@@ -253,19 +335,19 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
                       {t('admin.callNext')}
                     </button>
                     <button
-                      onClick={() => updateQueueStatus(item.queueNo, 'CHECKED_IN')}
+                      onClick={() => handleUpdateStatus(item, 'CHECKED_IN')}
                       className="px-3 py-1.5 rounded-xl bg-teak-dark text-warm-ivory hover:bg-teak-deep text-xs font-semibold transition-colors cursor-pointer"
                     >
                       {t('admin.checkedIn')}
                     </button>
                     <button
-                      onClick={() => updateQueueStatus(item.queueNo, 'CANCELLED')}
+                      onClick={() => handleUpdateStatus(item, 'CANCELLED')}
                       className="px-2.5 py-1.5 rounded-xl text-charcoal-muted hover:bg-rose-50 hover:text-rose-700 text-xs font-medium transition-colors cursor-pointer ml-auto"
                     >
                       {t('admin.cancelled')}
                     </button>
                   </>
-                ) : item.status === 'CHECKED_IN' ? (
+                ) : item.status === 'CHECKED_IN' || item.status === 'CALLED' ? (
                   <>
                     <button
                       onClick={() => handleStartService(item)}

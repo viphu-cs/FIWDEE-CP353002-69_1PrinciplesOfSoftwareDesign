@@ -60,7 +60,18 @@ export default function AdminBookings() {
   const handleUpdateStatus = async (bookingId, newStatus) => {
     setUpdatingId(bookingId)
     try {
-      const res = await api.patch(`/bookings/${bookingId}/status?status=${newStatus}`)
+      let res
+      if (newStatus === 'CHECKED_IN') {
+        // Call FrontDeskController to register arrival in queue system
+        res = await api.patch(`/bookings/${bookingId}/check-in`)
+        if (!res.success) {
+          // Fallback to generic status update
+          res = await api.patch(`/bookings/${bookingId}/status?status=${newStatus}`)
+        }
+      } else {
+        res = await api.patch(`/bookings/${bookingId}/status?status=${newStatus}`)
+      }
+
       if (res.success) {
         showToast(lang === 'th' ? `อัปเดตสถานะการจองเป็น ${newStatus} สำเร็จ` : `Updated status to ${newStatus}`)
         fetchBookings()
