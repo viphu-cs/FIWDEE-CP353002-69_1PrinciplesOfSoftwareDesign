@@ -41,7 +41,8 @@ CREATE TABLE IF NOT EXISTS therapists (
     bio TEXT,
     commission_rate NUMERIC(5, 2) NOT NULL DEFAULT 0.00,
     employment_status VARCHAR(30) NOT NULL DEFAULT 'ACTIVE',
-    average_rating NUMERIC(3, 2) NOT NULL DEFAULT 0.00
+    average_rating NUMERIC(3, 2) NOT NULL DEFAULT 0.00,
+    photo_url VARCHAR(500)
 );
 
 -- -------------------------------------------------------------------
