@@ -65,7 +65,8 @@ public class BookingServiceImpl implements BookingService {
 
     private static final Collection<BookingStatus> EXCLUDED_STATUSES = List.of(
             BookingStatus.CANCELLED,
-            BookingStatus.NO_SHOW
+            BookingStatus.NO_SHOW,
+            BookingStatus.COMPLETED
     );
     private static final int MIN_LEAD_MINUTES = 30;
     private static final int MAX_ADVANCE_DAYS = 14;

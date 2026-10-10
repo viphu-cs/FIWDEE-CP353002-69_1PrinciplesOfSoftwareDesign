@@ -44,13 +44,14 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     public static final int CLEANING_BUFFER_MINUTES = 15;
     private static final Collection<BookingStatus> EXCLUDED_STATUSES = List.of(
             BookingStatus.CANCELLED,
-            BookingStatus.NO_SHOW
+            BookingStatus.NO_SHOW,
+            BookingStatus.COMPLETED
     );
 
     private final ServiceRepository serviceRepository;
     private final ServiceDurationOptionRepository durationOptionRepository;
     private final RoomRepository roomRepository;
-    private final TherapistRepository therapistRepository;
+    //private final TherapistRepository therapistRepository;
     private final TherapistSkillRepository therapistSkillRepository;
     private final TherapistScheduleRepository therapistScheduleRepository;
     private final BusinessHoursRepository businessHoursRepository;
