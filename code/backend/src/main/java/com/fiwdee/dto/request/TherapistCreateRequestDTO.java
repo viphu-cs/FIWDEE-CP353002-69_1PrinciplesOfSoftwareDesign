@@ -14,6 +14,7 @@ public record TherapistCreateRequestDTO(
         @NotBlank String phoneNumber,
         @NotBlank String nickname,
         String bio,
+        String photoUrl,
         @NotNull @DecimalMin("0.00") BigDecimal commissionRate,
         List<Long> serviceIds) {
 }

@@ -12,7 +12,7 @@ public class TherapistMapper {
         return new PublicTherapistResponseDTO(therapist.getId(), therapist.getNickname(), therapist.getBio(),
                 therapist.getSkills().stream().filter(skill -> Boolean.TRUE.equals(skill.getService().getIsActive()))
                         .map(skill -> skill.getService().getServiceName()).distinct().sorted(Comparator.naturalOrder()).toList(),
-                therapist.getAverageRating());
+                therapist.getAverageRating(), therapist.getPhotoUrl());
     }
 
     public TherapistResponseDTO toResponse(Therapist therapist) {
@@ -20,6 +20,6 @@ public class TherapistMapper {
                 therapist.getSkills().stream().filter(skill -> Boolean.TRUE.equals(skill.getService().getIsActive()))
                         .map(skill -> skill.getService().getServiceName()).distinct().sorted(Comparator.naturalOrder()).toList(),
                 therapist.getAverageRating(), therapist.getFullName(), therapist.getEmail(), therapist.getPhoneNumber(),
-                therapist.getCommissionRate(), therapist.getIsActive());
+                therapist.getCommissionRate(), therapist.getIsActive(), therapist.getPhotoUrl());
     }
 }

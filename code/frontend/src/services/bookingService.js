@@ -289,6 +289,8 @@ export const bookingService = {
       if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
         const mapped = res.data.map((t) => {
           const extra = THERAPIST_ASSETS[t.id] || {}
+          const photo = t.photoUrl || extra.image || '/images/booking/therapist-mali.jpg'
+          const avatarPhoto = t.photoUrl || extra.avatar || photo
           return {
             id: t.id,
             backendId: t.id,
@@ -303,8 +305,8 @@ export const bookingService = {
             badges: t.skills || ['สรีระบำบัด', 'ผ่อนคลายลึก'],
             bio: t.bio || 'มุ่งเน้นการดูแลสุขภาพและฟื้นฟูสมดุลของร่างกายด้วยความประณีต',
             handWeight: extra.handWeight || 'ปานกลาง - ละเมียดละไม',
-            image: extra.image || '/images/booking/therapist-mali.jpg',
-            avatar: extra.avatar || '/images/booking/therapist-mali-avatar.jpg',
+            image: photo,
+            avatar: avatarPhoto,
           }
         })
         mapped.push(anyTherapistOption)

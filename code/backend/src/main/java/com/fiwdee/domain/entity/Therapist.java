@@ -33,6 +33,9 @@ public class Therapist extends User {
     @Column(name = "bio", columnDefinition = "TEXT")
     private String bio;
 
+    @Column(name = "photo_url", length = 500)
+    private String photoUrl;
+
     @Column(name = "commission_rate", nullable = false, precision = 5, scale = 2)
     @lombok.Builder.Default
     private BigDecimal commissionRate = BigDecimal.ZERO;

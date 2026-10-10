@@ -48,7 +48,7 @@ export default function TherapistsSection({ onNavigate }) {
                 rating: bt.averageRating > 0 ? Number(bt.averageRating) : 5.0,
                 bio: bt.bio || '',
                 experienceYears: bt.experienceYears || 5,
-                imageUrl: bt.imageUrl || '/images/booking/therapist-mali.jpg',
+                imageUrl: bt.photoUrl || bt.imageUrl || '/images/booking/therapist-mali.jpg',
               }
             })
             setDisplayTherapists(mapped)
