@@ -29,10 +29,18 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
 
       let queueItems = []
       const checkedInBookingIds = new Set()
+      const bookingMap = new Map()
+
+      if (bookingsRes.status === 'fulfilled' && bookingsRes.value?.success && Array.isArray(bookingsRes.value.data)) {
+        bookingsRes.value.data.forEach(b => {
+          bookingMap.set(b.id, b)
+        })
+      }
 
       if (queueRes.status === 'fulfilled' && queueRes.value?.success && Array.isArray(queueRes.value.data)) {
         queueItems = queueRes.value.data.map((q) => {
           if (q.bookingId) checkedInBookingIds.add(q.bookingId)
+          const bInfo = q.bookingId ? bookingMap.get(q.bookingId) : null
           const timeFormatted = q.scheduledStartDateTime
             ? new Date(q.scheduledStartDateTime).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
             : (q.checkInTime ? new Date(q.checkInTime).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : '-')
@@ -42,16 +50,16 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
             queueNo: q.queueNumber || `Q-${q.queueId}`,
             bookingCode: q.bookingReferenceCode || (q.bookingId ? `BK-${q.bookingId}` : '-'),
             bookingId: q.bookingId,
-            customerName: q.customerName || 'ลูกค้าหน้าร้าน',
-            phone: '—',
-            serviceName: q.serviceName || 'นวดแผนไทย',
-            durationMinutes: 60,
-            therapistName: q.therapistName || null,
-            roomNo: q.roomNumber || null,
+            customerName: q.customerName || bInfo?.customerName || 'ลูกค้าหน้าร้าน',
+            phone: bInfo?.customerPhone || '—',
+            serviceName: q.serviceName || bInfo?.serviceName || 'นวดแผนไทย',
+            durationMinutes: bInfo?.durationMinutes || 60,
+            therapistName: q.therapistName || bInfo?.therapistName || null,
+            roomNo: q.roomNumber || bInfo?.roomNumber || null,
             status: q.queueStatus, // WAITING, CALLED, IN_SERVICE, COMPLETED, CANCELLED
-            type: 'ONLINE',
+            type: bInfo?.bookingChannel || 'ONLINE',
             time: timeFormatted,
-            price: 600,
+            price: bInfo?.totalPrice || 600,
             isAwaitingArrival: false
           }
         })
@@ -98,6 +106,14 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
 
   useEffect(() => {
     fetchDailyQueue()
+
+    const handleQueueUpdated = () => {
+      fetchDailyQueue()
+    }
+    window.addEventListener('fiwdee_queue_updated', handleQueueUpdated)
+    return () => {
+      window.removeEventListener('fiwdee_queue_updated', handleQueueUpdated)
+    }
   }, [fetchDailyQueue])
 
   // Current display items from live DB

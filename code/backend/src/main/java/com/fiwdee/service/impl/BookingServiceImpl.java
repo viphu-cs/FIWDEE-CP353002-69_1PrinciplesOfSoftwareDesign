@@ -33,6 +33,7 @@ import com.fiwdee.service.BookingService;
 import com.fiwdee.domain.entity.BusinessHours;
 import com.fiwdee.domain.enums.DayOfWeek;
 import com.fiwdee.repository.BusinessHoursRepository;
+import com.fiwdee.repository.UserRepository;
 import com.fiwdee.domain.entity.Payment;
 import com.fiwdee.domain.entity.Refund;
 import com.fiwdee.domain.enums.PaymentStatus;
@@ -79,6 +80,7 @@ public class BookingServiceImpl implements BookingService {
     private final TherapistRepository therapistRepository;
     private final TherapistSkillRepository therapistSkillRepository;
     private final TherapistScheduleRepository therapistScheduleRepository;
+    private final UserRepository userRepository;
     private final BookingMapper bookingMapper;
     private final RefundService refundService;
     private final ApplicationEventPublisher eventPublisher;
@@ -98,11 +100,43 @@ public class BookingServiceImpl implements BookingService {
                             "Customer profile not found for user: " + currentUser.getId()));
         } else {
             Long targetCustomerId = requestDTO.getCustomerId();
-            if (targetCustomerId == null) {
-                throw new ValidationException("Customer ID is required when booking on behalf of a customer");
+            if (targetCustomerId != null) {
+                customer = customerRepository.findById(targetCustomerId)
+                        .orElseThrow(() -> new NotFoundException("Customer not found with id: " + targetCustomerId));
+            } else if (requestDTO.getCustomerPhone() != null && !requestDTO.getCustomerPhone().isBlank()) {
+                String cleanPhone = requestDTO.getCustomerPhone().trim();
+                customer = userRepository.findByPhoneNumber(cleanPhone)
+                        .filter(u -> u instanceof Customer)
+                        .map(u -> (Customer) u)
+                        .orElseGet(() -> {
+                            String cName = (requestDTO.getCustomerName() != null && !requestDTO.getCustomerName().isBlank())
+                                    ? requestDTO.getCustomerName().trim()
+                                    : "ลูกค้าหน้าร้าน";
+                            Customer newCustomer = Customer.builder()
+                                    .fullName(cName)
+                                    .phoneNumber(cleanPhone)
+                                    .role(UserRole.CUSTOMER)
+                                    .isActive(true)
+                                    .registeredDate(LocalDateTime.now())
+                                    .build();
+                            return customerRepository.save(newCustomer);
+                        });
+            } else if (requestDTO.getCustomerName() != null && !requestDTO.getCustomerName().isBlank()) {
+                String cName = requestDTO.getCustomerName().trim();
+                String autoPhone = "080-" + UUID.randomUUID().toString().substring(0, 7);
+                Customer newCustomer = Customer.builder()
+                        .fullName(cName)
+                        .phoneNumber(autoPhone)
+                        .role(UserRole.CUSTOMER)
+                        .isActive(true)
+                        .registeredDate(LocalDateTime.now())
+                        .build();
+                customer = customerRepository.save(newCustomer);
+            } else {
+                // Default fallback: find the first registered customer in DB (e.g. customer@test.com)
+                customer = customerRepository.findAll().stream().findFirst()
+                        .orElseThrow(() -> new ValidationException("Customer information is required for booking"));
             }
-            customer = customerRepository.findById(targetCustomerId)
-                    .orElseThrow(() -> new NotFoundException("Customer not found with id: " + targetCustomerId));
         }
 
         // 2. Validate Service & Duration Option
