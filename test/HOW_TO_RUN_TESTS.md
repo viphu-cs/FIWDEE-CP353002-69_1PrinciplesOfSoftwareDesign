@@ -258,22 +258,7 @@ cd code\backend
 
 ---
 
-## 10. GitHub Actions (รันอัตโนมัติ)
-
-ไฟล์ `.github/workflows/ci.yml` รันเมื่อ push หรือเปิด pull request เข้า `main` / `develop` โดยแบ่งเป็น 4 งาน
-
-| งาน | ทำอะไร | ล้มแล้วทำให้ PR แดงไหม |
-| --- | --- | --- |
-| unit-test | `./mvnw test -Dtest="UT*" -DexcludedGroups=known-defect` | แดง |
-| integration-test | เปิด PostgreSQL service แล้ว `./mvnw test -Dtest='IT*,FiwdeeApplicationTests' -DexcludedGroups=known-defect` | แดง |
-| known-defects | รันเฉพาะเคส `known-defect` เพื่อดูว่า defect ไหนแก้แล้ว | ไม่แดง (`continue-on-error`) |
-| build | build frontend และ `docker compose build` | แดง |
-
-ดูผลได้ที่แท็บ **Actions** ของ repo บน GitHub
-
----
-
-## 11. ลำดับที่แนะนำทุกครั้งที่แก้โค้ด
+## 10. ลำดับที่แนะนำทุกครั้งที่แก้โค้ด
 
 1. `.\mvnw.cmd clean test "-Dtest=UT*"` ต้องไม่มี Failures / Errors
 2. เปิด postgres แล้ว `.\mvnw.cmd test "-Dgroups=integration"`
