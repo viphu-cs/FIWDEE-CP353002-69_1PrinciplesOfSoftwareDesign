@@ -205,12 +205,101 @@ export function AdminAuthProvider({ children }) {
     window.location.hash = '#top'
   }
 
-  // Shared domain state (mock — รอโมดูลของ Dev 2–5 ตาม BACKEND_TEAM_ROLES.md)
+  // Shared domain state
   const [rooms, setRooms] = useState(initialRooms)
   const [therapists, setTherapists] = useState(initialTherapists)
   const [queueItems, setQueueItems] = useState(initialQueueItems)
   const [bookings, setBookings] = useState(initialBookings)
   const [services, setServices] = useState(initialServices)
+
+  // ซิงก์ข้อมูลจริงจาก Database เมื่อล็อกอินสำเร็จ
+  React.useEffect(() => {
+    let isMounted = true
+    if (!isAuthenticated) return
+
+    // 1. ดึงผังห้องนวดจริง
+    api.get('/admin/rooms').then((res) => {
+      if (isMounted && res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+        setRooms(res.data.map(r => ({
+          id: r.roomNumber || `RM-${r.id}`,
+          backendId: r.id,
+          name: `ห้อง ${r.roomNumber}`,
+          type: r.roomType || 'SINGLE',
+          status: r.roomStatus || 'AVAILABLE',
+          capacity: r.capacity || 1,
+          cleaningBufferMinutes: r.cleaningBufferMinutes || 15,
+          currentBooking: null,
+          therapist: null,
+          service: null
+        })))
+      }
+    }).catch(() => {})
+
+    // 2. ดึงเมนูบริการจริง
+    api.get('/admin/services').then((res) => {
+      if (isMounted && res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+        setServices(res.data.map(s => ({
+          id: s.id,
+          code: s.serviceCode,
+          name: s.serviceName,
+          category: s.category || 'Massage',
+          description: s.description,
+          durations: (s.durationOptions || []).map(d => ({
+            id: d.id,
+            minutes: d.durationMinutes,
+            price: Number(d.price)
+          })),
+          isActive: s.isActive
+        })))
+      }
+    }).catch(() => {})
+
+    // 3. ดึงคิวสดประจำวัน
+    const todayStr = new Date().toISOString().slice(0, 10)
+    api.get(`/admin/queue?date=${todayStr}`).then((res) => {
+      if (isMounted && res && res.success && Array.isArray(res.data)) {
+        if (res.data.length > 0) {
+          setQueueItems(res.data.map(q => {
+            const timeFormatted = q.scheduledStartDateTime
+              ? new Date(q.scheduledStartDateTime).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+              : (q.checkInTime ? new Date(q.checkInTime).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : '-')
+
+            return {
+              queueId: q.queueId,
+              queueNo: q.queueNumber || `Q-${q.queueId}`,
+              bookingCode: q.bookingId ? `BK-${q.bookingId}` : '-',
+              bookingId: q.bookingId,
+              customerName: q.customerName || 'ลูกค้าหน้าร้าน',
+              phone: '—',
+              serviceName: q.serviceName || 'นวดแผนไทย',
+              durationMinutes: 60,
+              therapistName: q.therapistName || null,
+              roomNo: q.roomNumber || null,
+              status: q.queueStatus,
+              type: 'ONLINE',
+              time: timeFormatted,
+              price: 600,
+            }
+          }))
+        } else {
+          // หากไม่มีคิวจริงในวันนี้ ล้างคิวม็อกออก
+          setQueueItems([])
+        }
+      }
+    }).catch(() => {})
+
+    // 4. ดึงตารางการจองจริง
+    api.get('/admin/bookings?size=20').then((res) => {
+      if (isMounted && res && res.success && res.data) {
+        const content = res.data.content || (Array.isArray(res.data) ? res.data : [])
+        if (content.length > 0) {
+          setBookings(content)
+        }
+      }
+    }).catch(() => {})
+
+    return () => { isMounted = false }
+  }, [isAuthenticated])
 
   // Multi-day Work Shift Manager
   const updateTherapistShiftForDate = (therapistId, dateStr, shiftType) => {
