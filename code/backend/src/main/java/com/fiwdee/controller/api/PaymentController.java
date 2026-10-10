@@ -1,0 +1,90 @@
+package com.fiwdee.controller.api;
+
+import com.fiwdee.common.ApiResponse;
+import com.fiwdee.dto.request.PaymentRequestDTO;
+import com.fiwdee.dto.response.PaymentResponseDTO;
+import com.fiwdee.dto.response.ReceiptResponseDTO;
+import com.fiwdee.service.PaymentService;
+import com.fiwdee.domain.entity.User;
+import com.fiwdee.service.BookingService;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * Controller for handling payment processing and receipt generation.
+ */
+@Tag(name = "Payment", description = "ระบบชำระเงิน (รองรับ เงินสด, QR PromptPay, บัตรเครดิต ด้วย GoF Strategy Pattern)")
+@RestController
+@RequestMapping("/api")
+@RequiredArgsConstructor
+public class PaymentController {
+
+    private final PaymentService paymentService;
+    private final BookingService bookingService;
+
+    /**
+     * Process payment for a booking (UC-19).
+     * Accessible by Customer (for online prepayment) and Staff/Receptionist.
+     */
+    @PostMapping("/bookings/{id}/payment")
+    public ResponseEntity<ApiResponse<PaymentResponseDTO>> processPayment(
+            @PathVariable("id") Long bookingId,
+            @Valid @RequestBody PaymentRequestDTO request) {
+
+        PaymentResponseDTO response = paymentService.processPayment(bookingId, request);
+        return ResponseEntity.ok(ApiResponse.success("ชำระเงินสำเร็จ", response));
+    }
+
+    /**
+     * Retrieves the receipt for a completed payment transaction (UC-20).
+     */
+    @GetMapping("/payments/{id}/receipt")
+    public ResponseEntity<ApiResponse<ReceiptResponseDTO>> getReceipt(
+            @PathVariable("id") Long paymentId) {
+
+        ReceiptResponseDTO receipt = paymentService.getReceipt(paymentId);
+        return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลใบเสร็จรับเงินสำเร็จ", receipt));
+    }
+
+    /**
+     * Retrieves payment information by booking ID.
+     */
+    @GetMapping("/bookings/{id}/payment")
+    public ResponseEntity<ApiResponse<PaymentResponseDTO>> getPaymentByBooking(
+            @PathVariable("id") Long bookingId,
+            @AuthenticationPrincipal User currentUser) {
+
+        // DEF-016: ตรวจสิทธิ์ดู booking ก่อน (ลูกค้าคนอื่น → 403, ไม่มี booking → 404)
+        bookingService.getBookingById(bookingId, currentUser);
+
+        PaymentResponseDTO response = paymentService.getPaymentByBookingId(bookingId);
+        return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลการชำระเงินสำเร็จ", response));
+    }
+
+    /**
+     * Validates and quotes promo code discount server-side via GoF DiscountStrategy.
+     */
+    @io.swagger.v3.oas.annotations.Operation(
+            summary = "คำนวณและตรวจสอบรหัสโปรโมชั่น (Server-Side Discount Quotation)",
+            description = "คำนวณส่วนลดและยอดสุทธิผ่าน GoF DiscountStrategy โดย Backend เป็น Single Source of Truth ป้องกันการคำนวณราคาบน Frontend"
+    )
+    @PostMapping("/payments/promotions/validate")
+    public ResponseEntity<ApiResponse<com.fiwdee.dto.response.PromoValidationResponseDTO>> validatePromotion(
+            @Valid @RequestBody com.fiwdee.dto.request.ValidatePromoRequestDTO request) {
+
+        com.fiwdee.dto.response.PromoValidationResponseDTO response = paymentService.calculatePromotion(request);
+        if (!response.isValid()) {
+            return ResponseEntity.ok(ApiResponse.error(response.getMessage(), response));
+        }
+        return ResponseEntity.ok(ApiResponse.success(response.getMessage(), response));
+    }
+}

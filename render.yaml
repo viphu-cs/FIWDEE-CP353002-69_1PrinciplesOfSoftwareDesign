@@ -1,0 +1,34 @@
+# Render Blueprint specification for FIWDEE (Backend only, using Supabase PostgreSQL)
+# https://render.com/docs/blueprint-spec
+version: "1"
+
+services:
+  # -------------------------------------------------------------
+  # Backend: Spring Boot Application (Docker Web Service)
+  # -------------------------------------------------------------
+  - type: web
+    name: fiwdee-backend
+    runtime: docker
+    dockerfilePath: ./code/backend/Dockerfile
+    dockerContext: ./code/backend
+    plan: free
+    region: singapore
+    envVars:
+      - key: SERVER_PORT
+        value: "8080"
+      # Supabase Connection URL (แนะนำให้ใช้ Session Pooler หรือ Direct URL ที่มี sslmode=require)
+      # ตัวอย่าง: jdbc:postgresql://aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: SPRING_JPA_HIBERNATE_DDL_AUTO
+        value: "update"
+      - key: SPRING_SQL_INIT_MODE
+        value: "always"
+      - key: FIWDEE_JWT_SECRET
+        generateValue: true
+      - key: FIWDEE_JWT_EXPIRATION_MS
+        value: "86400000"
