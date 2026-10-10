@@ -116,6 +116,12 @@ export const th = {
     viewAllTherapists: 'แสดงรายชื่อหมอนวดทั้งหมด',
     hideTherapistList: 'ซ่อนรายชื่อ',
     experienceYears: 'ประสบการณ์ {n} ปี',
+    therapistNotQualified: 'หมอนวดท่านนี้ไม่เชี่ยวชาญบริการนี้',
+    autoSwitchedServiceNotice: 'ระบบปรับรายการบำบัดเป็น "{service}" อัตโนมัติให้ตรงกับความเชี่ยวชาญของ {therapist}',
+    serviceMatchesTherapist: 'ตรงตามความเชี่ยวชาญของหมอนวด',
+    filterByCurrentService: 'เฉพาะผู้เชี่ยวชาญที่ให้บริการนี้ได้',
+    allTherapistsCount: 'หมอนวดทั้งหมด ({count} ท่าน)',
+    servicesAvailableForTherapist: 'บริการที่ผู้บำบัดเชี่ยวชาญ ({count} รายการ)',
   },
   specialties: {
     thai: 'นวดไทย',

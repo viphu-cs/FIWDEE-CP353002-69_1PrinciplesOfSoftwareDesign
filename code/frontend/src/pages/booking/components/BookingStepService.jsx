@@ -1,5 +1,9 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, useMemo } from 'react'
 import { useLanguage } from '../../../i18n/useLanguage.js'
+import {
+  therapistCanPerformService,
+  getTherapistsForService,
+} from '../../../services/skillMatcher.js'
 
 /**
  * BookingStepService - ขั้นตอนที่ 1: เลือกหมอนวดและบริการบำบัด (SRP: จัดการเฉพาะ Step 1 UI)
@@ -16,17 +20,33 @@ export default function BookingStepService({
   handleSelectService,
   handleSelectDuration,
   activeService,
+  autoSwitchNotice,
   onNext,
 }) {
   const { t } = useLanguage()
   const carouselRef = useRef(null)
   const [showChangeList, setShowChangeList] = useState(false)
+  const [filterQualifiedOnly, setFilterQualifiedOnly] = useState(false)
 
   const isFeaturedMode =
     isDirectTherapistBooking &&
     !showChangeList &&
     selectedTherapist &&
     !selectedTherapist.isConcierge
+
+  // Filtered therapists according to qualification toggle
+  const displayedTherapists = useMemo(() => {
+    if (!filterQualifiedOnly || !selectedService) return therapists
+    return getTherapistsForService(selectedService, therapists)
+  }, [filterQualifiedOnly, selectedService, therapists])
+
+  // Count qualified services for the selected therapist
+  const qualifiedServicesCount = useMemo(() => {
+    if (!selectedTherapist || selectedTherapist.id === 'any' || selectedTherapist.isConcierge) {
+      return services.length
+    }
+    return services.filter((svc) => therapistCanPerformService(selectedTherapist, svc)).length
+  }, [selectedTherapist, services])
 
   return (
     <>
@@ -43,6 +63,24 @@ export default function BookingStepService({
           </div>
         </div>
       </section>
+
+      {/* Auto-switch service toast / banner */}
+      {autoSwitchNotice && (
+        <section className="w-full pb-4">
+          <div className="max-w-7xl mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop">
+            <div className="bg-primary/10 border border-primary/30 rounded-xl p-4 flex items-center gap-3 text-primary animate-fade-in shadow-sm">
+              <span className="material-symbols-outlined text-[24px] flex-shrink-0">
+                auto_mode
+              </span>
+              <p className="font-body-md text-body-md">
+                {t('bookingWizard.autoSwitchedServiceNotice')
+                  .replace('{service}', autoSwitchNotice.serviceName)
+                  .replace('{therapist}', autoSwitchNotice.therapistName)}
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="w-full pb-space-xl">
         <div className="max-w-7xl mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop">
@@ -178,7 +216,7 @@ export default function BookingStepService({
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       {isDirectTherapistBooking && (
                         <button
                           type="button"
@@ -186,6 +224,23 @@ export default function BookingStepService({
                           className="mr-2 text-secondary hover:text-primary font-label-md text-label-md uppercase tracking-wider underline cursor-pointer"
                         >
                           {t('bookingWizard.hideTherapistList')}
+                        </button>
+                      )}
+                      {/* Filter by current service toggle button */}
+                      {selectedService && (
+                        <button
+                          type="button"
+                          onClick={() => setFilterQualifiedOnly((prev) => !prev)}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs transition-colors cursor-pointer border ${
+                            filterQualifiedOnly
+                              ? 'bg-primary text-on-primary border-primary'
+                              : 'bg-surface text-secondary border-outline-variant/60 hover:border-primary/50'
+                          }`}
+                        >
+                          <span className="material-symbols-outlined text-[16px]">
+                            {filterQualifiedOnly ? 'check_circle' : 'filter_alt'}
+                          </span>
+                          <span>{t('bookingWizard.filterByCurrentService')}</span>
                         </button>
                       )}
                       <button
@@ -212,8 +267,9 @@ export default function BookingStepService({
                     ref={carouselRef}
                     className="flex gap-space-md overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scroll-smooth no-scrollbar"
                   >
-                    {therapists.map((therapist) => {
+                    {displayedTherapists.map((therapist) => {
                       const isSelected = selectedTherapist.id === therapist.id
+                      const canDoSelectedService = therapistCanPerformService(therapist, selectedService)
                       return (
                         <div
                           key={therapist.id}
@@ -247,6 +303,12 @@ export default function BookingStepService({
                               <p className="font-body-sm text-body-sm text-secondary mt-1 max-w-[200px]">
                                 {therapist.exp}
                               </p>
+                              {selectedService && (
+                                <span className="mt-3 font-label-caps text-label-caps px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[11px] inline-flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                  {t('bookingWizard.serviceMatchesTherapist')}
+                                </span>
+                              )}
                             </div>
                           ) : (
                             <div className="relative h-[280px] w-full overflow-hidden bg-surface-container">
@@ -263,6 +325,13 @@ export default function BookingStepService({
                                 <h3 className="font-headline-sm text-headline-sm text-surface font-medium mt-0.5">
                                   {therapist.name}
                                 </h3>
+                                {/* Match badge for current selected service */}
+                                {selectedService && canDoSelectedService && (
+                                  <span className="mt-1.5 font-label-caps text-label-caps px-2 py-0.5 rounded bg-emerald-700/80 text-warm-ivory backdrop-blur-sm text-[11px] inline-flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-[13px]">check</span>
+                                    {t('bookingWizard.serviceMatchesTherapist')}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           )}
@@ -318,9 +387,9 @@ export default function BookingStepService({
 
               {/* Section 1.2: Treatment Selection */}
               <div className="space-y-space-sm pt-2">
-                <div className="flex items-baseline justify-between">
+                <div className="flex items-baseline justify-between flex-wrap gap-2">
                   <div>
-                    <span className="font-label-caps text-label-caps uppercase tracking-widest text-secondary font-semibold">
+                    <span className="font-label-caps text-label-caps uppercase tracking-widest text-primary font-semibold">
                       ขั้นตอน 1.2 • Select Treatment
                     </span>
                     <h2 className="font-headline-sm text-headline-sm text-on-surface mt-0.5">
@@ -328,18 +397,22 @@ export default function BookingStepService({
                     </h2>
                   </div>
                   <span className="font-body-sm text-body-sm text-secondary">
-                    4 รายการพร้อมบริการ
+                    {t('bookingWizard.servicesAvailableForTherapist').replace('{count}', qualifiedServicesCount)}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {services.map((svc) => {
                     const isSelected = selectedService.id === svc.id
+                    const isQualified = therapistCanPerformService(selectedTherapist, svc)
+
                     return (
                       <div
                         key={svc.id}
-                        className={`rounded-xl p-5 transition-all duration-200 flex flex-col justify-between gap-4 ${
-                          isSelected
+                        className={`rounded-xl p-5 transition-all duration-200 flex flex-col justify-between gap-4 relative ${
+                          !isQualified
+                            ? 'opacity-50 bg-surface-container-lowest border border-dashed border-outline-variant/60'
+                            : isSelected
                             ? 'bg-secondary-container border border-primary/40'
                             : 'bg-surface-container-low border border-transparent hover:bg-surface-container hover:border-outline-variant/40'
                         }`}
@@ -347,10 +420,15 @@ export default function BookingStepService({
                         {/* Service header & image */}
                         <button
                           type="button"
-                          onClick={() => handleSelectService(svc)}
-                          className="text-left cursor-pointer space-y-3 w-full group"
+                          disabled={!isQualified}
+                          onClick={() => {
+                            if (isQualified) handleSelectService(svc)
+                          }}
+                          className={`text-left space-y-3 w-full group ${
+                            isQualified ? 'cursor-pointer' : 'cursor-not-allowed'
+                          }`}
                         >
-                          <div className="w-full h-36 sm:h-44 rounded-lg overflow-hidden bg-surface-container flex-shrink-0">
+                          <div className="w-full h-36 sm:h-44 rounded-lg overflow-hidden bg-surface-container flex-shrink-0 relative">
                             <img
                               src={svc.image}
                               alt={svc.name}
@@ -359,25 +437,39 @@ export default function BookingStepService({
                                 e.currentTarget.onerror = null
                                 e.currentTarget.src = '/images/services/room-architecture.jpg'
                               }}
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                              className={`w-full h-full object-cover transition-transform duration-500 ${
+                                isQualified ? 'group-hover:scale-105' : 'grayscale'
+                              }`}
                             />
+                            {!isQualified && (
+                              <div className="absolute inset-0 bg-on-surface/40 flex items-center justify-center p-3 text-center">
+                                <span className="bg-surface/95 text-error px-2.5 py-1 rounded text-xs font-medium shadow-sm inline-flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-[15px]">block</span>
+                                  {t('bookingWizard.therapistNotQualified')}
+                                </span>
+                              </div>
+                            )}
                           </div>
                           <div className="flex items-start gap-3">
                             <div
                               className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                                isSelected ? 'border-primary bg-primary' : 'border-outline bg-transparent'
+                                !isQualified
+                                  ? 'border-outline-variant bg-transparent opacity-40'
+                                  : isSelected
+                                  ? 'border-primary bg-primary'
+                                  : 'border-outline bg-transparent'
                               }`}
                             >
                               <span
-                                className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-surface' : 'bg-transparent'}`}
+                                className={`w-1.5 h-1.5 rounded-full ${isSelected && isQualified ? 'bg-surface' : 'bg-transparent'}`}
                               ></span>
                             </div>
                             <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <h4 className="font-label-lg text-label-lg text-on-surface font-semibold">
                                   {svc.name}
                                 </h4>
-                                {svc.isPopular && (
+                                {svc.isPopular && isQualified && (
                                   <span className="font-label-caps text-label-caps px-1.5 py-0.5 rounded bg-primary text-surface text-[10px] font-medium flex-shrink-0">
                                     ยอดนิยม
                                   </span>
@@ -386,12 +478,18 @@ export default function BookingStepService({
                               <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
                                 {svc.desc}
                               </p>
+                              {!isQualified && (
+                                <p className="text-xs text-error/90 mt-1.5 font-medium flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-[14px]">info</span>
+                                  <span>{t('bookingWizard.therapistNotQualified')}</span>
+                                </p>
+                              )}
                             </div>
                           </div>
                         </button>
 
                         {/* อัตราราคาตามระยะเวลา */}
-                        <div className="bg-surface rounded-lg p-4 space-y-1.5">
+                        <div className={`bg-surface rounded-lg p-4 space-y-1.5 ${!isQualified ? 'opacity-50 pointer-events-none' : ''}`}>
                           <p className="font-label-caps text-label-caps text-secondary uppercase tracking-widest pb-1">
                             อัตราราคาตามระยะเวลา
                           </p>
@@ -402,30 +500,35 @@ export default function BookingStepService({
                               <button
                                 key={opt.minutes}
                                 type="button"
-                                onClick={() => handleSelectDuration(svc, opt)}
-                                className={`w-full flex items-center justify-between gap-3 px-2.5 py-2 rounded transition-all duration-200 cursor-pointer text-left ${
-                                  isDurationActive
-                                    ? 'bg-secondary-container ring-1 ring-primary/50'
-                                    : 'hover:bg-surface-container'
+                                disabled={!isQualified}
+                                onClick={() => {
+                                  if (isQualified) handleSelectDuration(svc, opt)
+                                }}
+                                className={`w-full flex items-center justify-between gap-3 px-2.5 py-2 rounded transition-all duration-200 text-left ${
+                                  !isQualified
+                                    ? 'cursor-not-allowed opacity-60'
+                                    : isDurationActive
+                                    ? 'bg-secondary-container ring-1 ring-primary/50 cursor-pointer'
+                                    : 'hover:bg-surface-container cursor-pointer'
                                 }`}
                               >
                                 <span className="flex items-center gap-2.5 min-w-0">
                                   <span
                                     className={`w-3 h-3 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                                      isDurationActive
+                                      isDurationActive && isQualified
                                         ? 'border-primary bg-primary'
                                         : 'border-outline bg-transparent'
                                     }`}
                                   >
                                     <span
                                       className={`w-1 h-1 rounded-full ${
-                                        isDurationActive ? 'bg-surface' : 'bg-transparent'
+                                        isDurationActive && isQualified ? 'bg-surface' : 'bg-transparent'
                                       }`}
                                     ></span>
                                   </span>
                                   <span
                                     className={`font-body-md text-body-md ${
-                                      isDurationActive ? 'text-primary font-semibold' : 'text-on-surface'
+                                      isDurationActive && isQualified ? 'text-primary font-semibold' : 'text-on-surface'
                                     }`}
                                   >
                                     {opt.minutes} นาที
@@ -433,7 +536,7 @@ export default function BookingStepService({
                                 </span>
                                 <span
                                   className={`font-headline-sm text-headline-sm font-normal ${
-                                    isDurationActive ? 'text-primary' : 'text-on-surface'
+                                    isDurationActive && isQualified ? 'text-primary' : 'text-on-surface'
                                   }`}
                                 >
                                   ฿{opt.price.toLocaleString('en-US')}

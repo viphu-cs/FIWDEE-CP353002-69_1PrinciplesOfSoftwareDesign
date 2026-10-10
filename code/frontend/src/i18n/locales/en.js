@@ -116,6 +116,12 @@ export const en = {
     viewAllTherapists: 'View all master therapists',
     hideTherapistList: 'Hide list',
     experienceYears: '{n} yrs experience',
+    therapistNotQualified: 'This therapist is not certified for this service',
+    autoSwitchedServiceNotice: 'Switched treatment to "{service}" to match {therapist}\'s specialty',
+    serviceMatchesTherapist: 'Matches therapist expertise',
+    filterByCurrentService: 'Certified for selected treatment',
+    allTherapistsCount: 'All Therapists ({count})',
+    servicesAvailableForTherapist: 'Specialist Treatments ({count})',
   },
   specialties: {
     thai: 'Thai',

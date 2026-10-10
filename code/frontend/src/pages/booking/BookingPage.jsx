@@ -7,6 +7,10 @@ import {
   dateOptions as initialDateOptions,
   timeSlots as initialTimeSlots,
 } from '../../services/bookingService.js'
+import {
+  therapistCanPerformService,
+  getAvailableServicesForTherapist,
+} from '../../services/skillMatcher.js'
 import { useCountdownTimer } from '../../hooks/useCountdownTimer.js'
 import { usePromoCode } from '../../hooks/usePromoCode.js'
 import BookingStepNav from './components/BookingStepNav.jsx'
@@ -163,11 +167,50 @@ export default function BookingPage({ onNavigate, initialStep = 1, initialTherap
   // Promotion code and discounts (100% server-side calculation)
   const promoState = usePromoCode(activeService.rawPrice, selectedService?.id)
 
+  // Toast/Notice when service is auto-switched to match therapist skills
+  const [autoSwitchNotice, setAutoSwitchNotice] = useState(null)
+
+  const handleSelectTherapist = useCallback(
+    (therapist) => {
+      setSelectedTherapist(therapist)
+      if (therapist.id === 'any' || therapist.isConcierge) {
+        setIsDirectTherapistBooking(false)
+        setAutoSwitchNotice(null)
+        return
+      }
+
+      setIsDirectTherapistBooking(true)
+
+      // Check if selected therapist can perform the currently selected service
+      const canPerform = therapistCanPerformService(therapist, selectedService)
+      if (!canPerform) {
+        // Auto-switch to the first compatible service
+        const compatibleServices = getAvailableServicesForTherapist(therapist, servicesList)
+        if (compatibleServices.length > 0) {
+          const newSvc = compatibleServices[0]
+          setSelectedService(newSvc)
+          const keepSameMinutes = newSvc.durationOptions?.find((o) => o.minutes === selectedDuration?.minutes)
+          setSelectedDuration(keepSameMinutes || newSvc.durationOptions?.[1] || newSvc.durationOptions?.[0])
+
+          setAutoSwitchNotice({
+            therapistName: therapist.shortName || therapist.name,
+            serviceName: newSvc.name,
+          })
+          setTimeout(() => setAutoSwitchNotice(null), 5000)
+        }
+      } else {
+        setAutoSwitchNotice(null)
+      }
+    },
+    [selectedService, selectedDuration?.minutes, servicesList]
+  )
+
   const handleSelectService = useCallback(
     (svc) => {
       setSelectedService(svc)
       const keepSameMinutes = svc.durationOptions?.find((o) => o.minutes === selectedDuration?.minutes)
       setSelectedDuration(keepSameMinutes || svc.durationOptions?.[1] || svc.durationOptions?.[0])
+      setAutoSwitchNotice(null)
     },
     [selectedDuration?.minutes]
   )
@@ -289,7 +332,7 @@ export default function BookingPage({ onNavigate, initialStep = 1, initialTherap
                   therapists={therapistsList}
                   services={servicesList}
                   selectedTherapist={selectedTherapist}
-                  setSelectedTherapist={setSelectedTherapist}
+                  setSelectedTherapist={handleSelectTherapist}
                   isDirectTherapistBooking={isDirectTherapistBooking}
                   setIsDirectTherapistBooking={setIsDirectTherapistBooking}
                   selectedService={selectedService}
@@ -297,6 +340,7 @@ export default function BookingPage({ onNavigate, initialStep = 1, initialTherap
                   handleSelectService={handleSelectService}
                   handleSelectDuration={handleSelectDuration}
                   activeService={activeService}
+                  autoSwitchNotice={autoSwitchNotice}
                   onNext={handleNextStep}
                 />
               )}
