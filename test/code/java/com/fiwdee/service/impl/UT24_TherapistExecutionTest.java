@@ -12,6 +12,7 @@ import com.fiwdee.domain.entity.Booking;
 import com.fiwdee.domain.entity.QueueItem;
 import com.fiwdee.domain.entity.Room;
 import com.fiwdee.domain.enums.BookingStatus;
+import com.fiwdee.domain.enums.PaymentStatus;
 import com.fiwdee.domain.enums.QueueStatus;
 import com.fiwdee.domain.enums.RoomStatus;
 import com.fiwdee.domain.enums.RoomType;
@@ -135,9 +136,10 @@ class UT24_TherapistExecutionTest {
     }
 
     @Test
-    @DisplayName("UT24-TC008 [R7] COMPLETE สำเร็จ → COMPLETED, ห้อง CLEANING, คิว COMPLETED, publish event")
+    @DisplayName("UT24-TC008 [R7] COMPLETE และชำระเงินแล้ว → COMPLETED, ห้อง CLEANING, คิว COMPLETED, publish event")
     void tc008() {
         given(BookingStatus.IN_SERVICE, QueueStatus.IN_SERVICE);
+        TestData.payment(1, booking, "600.00", PaymentStatus.COMPLETED);
 
         service.completeService(1L, 5L);
 
@@ -147,5 +149,19 @@ class UT24_TherapistExecutionTest {
         verify(queueService).updateQueueStatus(1L, QueueStatus.COMPLETED);
         assertThat(events()).singleElement().satisfies(e ->
                 assertThat(e.getNewStatus()).isEqualTo(BookingStatus.COMPLETED));
+    }
+
+    @Test
+    @DisplayName("UT24-TC009 [R8] COMPLETE แต่ยังไม่ชำระเงิน → booking ยัง IN_SERVICE รอชำระ, บันทึกเวลาจบ, ห้อง CLEANING, คิว COMPLETED, ไม่ publish [DEF-013]")
+    void tc009() {
+        given(BookingStatus.IN_SERVICE, QueueStatus.IN_SERVICE);   // ไม่มี payment
+
+        service.completeService(1L, 5L);
+
+        assertThat(booking.getStatus()).isEqualTo(BookingStatus.IN_SERVICE);
+        assertThat(booking.getActualEndTime()).isNotNull();
+        assertThat(room.getRoomStatus()).isEqualTo(RoomStatus.CLEANING);
+        verify(queueService).updateQueueStatus(1L, QueueStatus.COMPLETED);
+        assertThat(events()).isEmpty();
     }
 }

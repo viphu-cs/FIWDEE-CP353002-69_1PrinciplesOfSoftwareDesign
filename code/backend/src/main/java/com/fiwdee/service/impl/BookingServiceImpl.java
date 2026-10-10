@@ -162,6 +162,7 @@ public class BookingServiceImpl implements BookingService {
         }
         LocalDateTime endDateTime = startDateTime.plusMinutes(durationOption.getDurationMinutes());
         validateBookingTime(startDateTime, endDateTime, currentUser);
+        bookingRepository.lockBookingDay(startDateTime.toLocalDate().toEpochDay());
 
         // 3. Resolve or Auto-allocate Therapist
         Therapist therapist;

@@ -2,6 +2,7 @@ package com.fiwdee.service.impl;
 
 import com.fiwdee.domain.entity.Booking;
 import com.fiwdee.domain.entity.QueueItem;
+import com.fiwdee.domain.enums.PaymentStatus;
 import com.fiwdee.domain.enums.BookingStatus;
 import com.fiwdee.domain.enums.QueueStatus;
 import com.fiwdee.domain.enums.RoomStatus;
@@ -69,14 +70,25 @@ public class TherapistExecutionServiceImpl implements TherapistExecutionService 
         }
 
         BookingStatus oldStatus = booking.getStatus();
-        booking.setStatus(BookingStatus.COMPLETED);
+
         booking.setActualEndTime(LocalDateTime.now());
         if (booking.getRoom() != null) {
             booking.getRoom().setRoomStatus(RoomStatus.CLEANING);
         }
+
+        // Phase D: ปิด booking เฉพาะเมื่อชำระเงินแล้ว (ผ่าน State Pattern)
+        boolean paid = booking.getPayment() != null
+                && booking.getPayment().getPaymentStatus() == PaymentStatus.COMPLETED;
+        if (paid) {
+            booking.complete();
+        }
+
         bookingRepository.save(booking);
         QueueItem updatedQueueItem = queueService.updateQueueStatus(queueId, QueueStatus.COMPLETED);
-        eventPublisher.publishEvent(new BookingStatusChangedEvent(this, booking.getId(), oldStatus, booking.getStatus()));
+
+        if (booking.getStatus() != oldStatus) {
+            eventPublisher.publishEvent(new BookingStatusChangedEvent(this, booking.getId(), oldStatus, booking.getStatus()));
+        }
         return updatedQueueItem;
     }
 

@@ -74,6 +74,15 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(String.format("Required query parameter '%s' is missing", ex.getParameterName())));
     }
 
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Void>> handleTypeMismatchException(
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex) {
+        log.warn("Invalid value '{}' for parameter '{}'", ex.getValue(), ex.getName());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(String.format("Invalid value '%s' for parameter '%s'", ex.getValue(), ex.getName())));
+    }
+
     @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleNoResourceFoundException(org.springframework.web.servlet.resource.NoResourceFoundException ex) {
         log.warn("Resource/endpoint not found: {}", ex.getResourcePath());
