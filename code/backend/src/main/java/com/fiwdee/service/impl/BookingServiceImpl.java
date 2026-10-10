@@ -33,6 +33,15 @@ import com.fiwdee.service.BookingService;
 import com.fiwdee.domain.entity.BusinessHours;
 import com.fiwdee.domain.enums.DayOfWeek;
 import com.fiwdee.repository.BusinessHoursRepository;
+import com.fiwdee.domain.entity.Payment;
+import com.fiwdee.domain.entity.Refund;
+import com.fiwdee.domain.enums.PaymentStatus;
+import com.fiwdee.domain.enums.RefundStatus;
+import com.fiwdee.dto.request.RefundRequestDTO;
+import com.fiwdee.service.RefundService;
+import java.math.BigDecimal;
+import com.fiwdee.pattern.observer.BookingStatusChangedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -70,6 +79,8 @@ public class BookingServiceImpl implements BookingService {
     private final TherapistSkillRepository therapistSkillRepository;
     private final TherapistScheduleRepository therapistScheduleRepository;
     private final BookingMapper bookingMapper;
+    private final RefundService refundService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -298,6 +309,7 @@ public class BookingServiceImpl implements BookingService {
             }
         }
 
+        BookingStatus oldStatus = booking.getStatus(); 
         // State Pattern execution
         booking.cancel();
 
@@ -308,8 +320,11 @@ public class BookingServiceImpl implements BookingService {
         } else {
             booking.setSpecialNotes(cancelNote);
         }
+        
+        refundIfPaid(booking, reason, currentUser);
 
         Booking saved = bookingRepository.save(booking);
+        publishStatusChange(saved, oldStatus);
         return bookingMapper.toBookingResponse(saved);
     }
 
@@ -322,6 +337,7 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = bookingRepository.findDetailedById(id)
                 .orElseThrow(() -> new NotFoundException("Booking not found with id: " + id));
 
+        BookingStatus oldStatus = booking.getStatus();
         switch (newStatus) {
             case CONFIRMED -> booking.confirm();
             case CHECKED_IN -> booking.checkIn();
@@ -333,6 +349,7 @@ public class BookingServiceImpl implements BookingService {
         }
 
         Booking saved = bookingRepository.save(booking);
+        publishStatusChange(saved, oldStatus); 
         return bookingMapper.toBookingResponse(saved);
     }
 
@@ -389,6 +406,35 @@ public class BookingServiceImpl implements BookingService {
         boolean sameDay = end.toLocalDate().equals(start.toLocalDate());
         if (start.toLocalTime().isBefore(open) || !sameDay || end.toLocalTime().isAfter(close)) {
             throw new ValidationException("Booking must be within business hours " + open + "–" + close);
+        }
+    }
+
+        private void refundIfPaid(Booking booking, String reason, User currentUser) {
+        Payment payment = booking.getPayment();
+        if (payment == null || payment.getPaymentStatus() != PaymentStatus.COMPLETED) {
+            return;   // ยังไม่จ่าย หรือคืนครบไปแล้ว (REFUNDED) → ไม่ต้องทำอะไร
+        }
+        List<Refund> refunds = payment.getRefunds() == null ? List.of() : payment.getRefunds();
+        BigDecimal alreadyRefunded = refunds.stream()
+                .filter(r -> r.getStatus() == RefundStatus.COMPLETED)
+                .map(Refund::getRefundAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal remaining = payment.getNetAmount().subtract(alreadyRefunded);
+        if (remaining.signum() <= 0) {
+            return;
+        }
+        refundService.processRefund(RefundRequestDTO.builder()
+                .paymentId(payment.getId())
+                .refundAmount(remaining)
+                .reason("Booking cancelled: " + reason)
+                .processedByStaff(currentUser.getFullName())
+                .build());
+    }
+
+    private void publishStatusChange(Booking booking, BookingStatus oldStatus) {
+        if (booking.getStatus() != oldStatus) {
+            eventPublisher.publishEvent(new BookingStatusChangedEvent(
+                    this, booking.getId(), oldStatus, booking.getStatus()));
         }
     }
 }

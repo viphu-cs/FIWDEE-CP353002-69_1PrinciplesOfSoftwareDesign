@@ -131,10 +131,10 @@ class UT05_CancelBookingTest extends BookingWorldTestBase {
         bookingService.cancelBooking(14L, null, c1);
 
         assertThat(b.getStatus()).isEqualTo(BookingStatus.CANCELLED);
-        // UC-10 A1: ต้องคืนเงินเต็มจำนวน เมื่อทีมแก้แล้ว (เช่นเรียก RefundService) ให้เปลี่ยนเป็น verify(refundService)...
-        assertThat(b.getPayment().getPaymentStatus())
-                .as("ยกเลิกรายการที่จ่ายแล้วต้องคืนเงิน")
-                .isEqualTo(PaymentStatus.REFUNDED);
+        // UC-10 A1: ต้องส่งคืนเงินเต็มจำนวนผ่าน RefundService (วิธีแก้ที่แนะนำใน DEF-007)
+        org.mockito.Mockito.verify(refundService).processRefund(org.mockito.ArgumentMatchers.argThat(r ->
+                Long.valueOf(514L).equals(r.getPaymentId())
+                        && r.getRefundAmount().compareTo(new java.math.BigDecimal("600.00")) == 0));
     }
 
     @Test

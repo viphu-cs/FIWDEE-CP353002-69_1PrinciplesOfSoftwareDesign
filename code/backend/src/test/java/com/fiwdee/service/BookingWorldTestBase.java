@@ -1,5 +1,10 @@
 package com.fiwdee.service;
 
+import org.springframework.context.ApplicationEventPublisher;
+import org.mockito.MockedStatic;
+import com.fiwdee.service.RefundService;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static com.fiwdee.testsupport.TestData.DAY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -9,6 +14,7 @@ import static org.mockito.Mockito.when;
 
 import com.fiwdee.service.impl.BookingServiceImpl;
 import com.fiwdee.service.impl.AvailabilityServiceImpl;
+import com.fiwdee.service.impl.RefundServiceImpl;
 import com.fiwdee.domain.entity.Booking;
 import com.fiwdee.domain.entity.BusinessHours;
 import com.fiwdee.domain.entity.Customer;
@@ -52,11 +58,40 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+/**
+ * ฐานร่วมของเทสต์ Booking/Availability (UT01–UT05, UT07, UT10, UT11)
+ *
+ * <p>สร้าง "โลกจำลอง" ในหน่วยความจำ แล้วให้ทุก repository (mock) ตอบจากโลกนี้
+ * repository ที่เป็น JPQL ตอบด้วยเงื่อนไขเดียวกับ query จริง (b.start &lt; :end AND b.end &gt; :start)
+ * ส่วน default method findConflictingRoomBookingsWithCleaningBuffer เรียกโค้ดจริง (บวก/ลบ buffer 15 นาที)
+ *
+ * <p>ข้อมูลตั้งต้นตรงกับ "ข้อมูลจำลอง" ใน Excel:
+ * S1 active (SINGLE), S2 active, S3 inactive • O11 = S1/60/600 • O12 = S1 inactive • O21 = S2 • O31 = S3
+ * T1, T2, T5, T8 active มีทักษะ S1 • T6 ไม่มีทักษะ • T7 inactive • R101, R102 SINGLE • R201 COUPLE • R103 inactive
+ */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 abstract class BookingWorldTestBase {
 
     static final LocalDateTime START = DAY.atTime(15, 30);
+
+    /**
+     * ตรึง LocalDateTime.now() = TestData.NOW (2026-11-02 15:00) ให้คลาสที่เรียก createBooking
+     * เพื่อให้เคสยังผ่านหลังทีมแก้ DEF-004 (ตรวจเวลาจองล่วงหน้า 30 นาที – 14 วัน)
+     */
+    private MockedStatic<LocalDateTime> frozenClock;
+
+    void freezeClock() {
+        frozenClock = mockStatic(LocalDateTime.class, CALLS_REAL_METHODS);
+        frozenClock.when(LocalDateTime::now).thenReturn(TestData.NOW);
+    }
+
+    void releaseClock() {
+        if (frozenClock != null) {
+            frozenClock.close();
+            frozenClock = null;
+        }
+    }
 
     @Mock BookingRepository bookingRepository;
     @Mock CustomerRepository customerRepository;
@@ -68,6 +103,9 @@ abstract class BookingWorldTestBase {
     @Mock TherapistScheduleRepository therapistScheduleRepository;
     @Mock BusinessHoursRepository businessHoursRepository;
     @Mock BookingMapper bookingMapper;
+    /** ยังไม่ถูกใช้ในโค้ดปัจจุบัน • เตรียมไว้ให้ constructor ใหม่หลังแก้ DEF-008 (publish event) และ DEF-007 (คืนเงิน) */
+    @Mock ApplicationEventPublisher eventPublisher;
+    @Mock RefundService refundService;
 
     @InjectMocks BookingServiceImpl bookingService;
     @InjectMocks AvailabilityServiceImpl availabilityService;
