@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 
 const CustomerAuthContext = createContext()
 
@@ -20,6 +20,24 @@ export function CustomerAuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(
     () => !!localStorage.getItem(TOKEN_KEY) && !!readStoredProfile()
   )
+
+  // ซิงก์สถานะกับ storage เสมอเมื่อมีการเปลี่ยนแปลง (เช่น logout จากฝั่ง Admin หรือแท็บอื่น)
+  // และซิงก์เมื่อ hash เปลี่ยนกลับมาที่หน้าเว็บหลัก
+  useEffect(() => {
+    const syncState = () => {
+      const stored = readStoredProfile()
+      const hasToken = !!localStorage.getItem(TOKEN_KEY)
+      setUser(stored)
+      setIsAuthenticated(hasToken && !!stored)
+    }
+
+    window.addEventListener('storage', syncState)
+    window.addEventListener('hashchange', syncState)
+    return () => {
+      window.removeEventListener('storage', syncState)
+      window.removeEventListener('hashchange', syncState)
+    }
+  }, [])
 
   // เขียนโปรไฟล์ลง storage เดิมที่ใช้ก่อนหน้า (localStorage มี priority เพราะ "คงสถานะ")
   const persistProfile = (profile) => {

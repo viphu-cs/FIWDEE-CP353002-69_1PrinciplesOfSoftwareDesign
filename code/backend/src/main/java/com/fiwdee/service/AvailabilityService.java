@@ -18,4 +18,11 @@ public interface AvailabilityService {
      * @return calculated availability response containing available slots and allocated resources
      */
     AvailabilityResponseDTO checkAvailability(LocalDate date, Long serviceId, Integer durationMinutes);
+
+    /**
+     * Overloaded method supporting custom time step interval (e.g. 30 minutes for flexible timeline).
+     */
+    default AvailabilityResponseDTO checkAvailability(LocalDate date, Long serviceId, Integer durationMinutes, Integer stepMinutes) {
+        return checkAvailability(date, serviceId, durationMinutes);
+    }
 }

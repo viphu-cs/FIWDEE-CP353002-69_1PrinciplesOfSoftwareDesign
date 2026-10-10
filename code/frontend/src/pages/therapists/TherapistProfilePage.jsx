@@ -129,9 +129,9 @@ export default function TherapistProfilePage({ therapist, onNavigate }) {
                     {therapist.nickname}
                   </h1>
                   <p className="font-title-md text-title-md text-charcoal-soft font-normal">
-                    {therapist.specialties
-                      .map((key) => t(`specialties.${key}`))
-                      .join(' · ')}
+                    {Array.isArray(therapist.skills) && therapist.skills.length > 0
+                      ? therapist.skills.join(' · ')
+                      : (therapist.specialties || []).map((key) => t(`specialties.${key}`)).join(' · ')}
                   </p>
                 </div>
 

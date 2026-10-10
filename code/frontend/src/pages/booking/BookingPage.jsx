@@ -1,12 +1,18 @@
 import { useState, useCallback, useEffect } from 'react'
 import { motion } from 'motion/react'
+import { useCustomerAuth } from '../../context/CustomerAuthContext.jsx'
 import {
   bookingService,
+  formatLocalDateISO,
   therapistsData as initialTherapists,
   servicesData as initialServices,
   dateOptions as initialDateOptions,
   timeSlots as initialTimeSlots,
 } from '../../services/bookingService.js'
+import {
+  therapistCanPerformService,
+  getAvailableServicesForTherapist,
+} from '../../services/skillMatcher.js'
 import { useCountdownTimer } from '../../hooks/useCountdownTimer.js'
 import { usePromoCode } from '../../hooks/usePromoCode.js'
 import BookingStepNav from './components/BookingStepNav.jsx'
@@ -26,6 +32,7 @@ const EASE_ENTER = [0.22, 1, 0.36, 1]
  * - DIP: ดึงข้อมูลผ่าน bookingService abstraction layer
  */
 export default function BookingPage({ onNavigate, initialStep = 1, initialTherapistId = null }) {
+  const { user } = useCustomerAuth()
   const [step, setStep] = useState(initialStep)
 
   // Dataset states loaded asynchronously from backend with instant fallback
@@ -52,7 +59,7 @@ export default function BookingPage({ onNavigate, initialStep = 1, initialTherap
   )
   const [selectedService, setSelectedService] = useState(initialServices[0])
   const [selectedDuration, setSelectedDuration] = useState(
-    initialServices[0]?.durationOptions?.[1] || initialServices[0]?.durationOptions?.[0]
+    initialServices[0]?.durationOptions?.[0]
   )
   const [selectedDate, setSelectedDate] = useState(initialDateOptions[0])
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(initialTimeSlots[2] || initialTimeSlots[0])
@@ -60,6 +67,8 @@ export default function BookingPage({ onNavigate, initialStep = 1, initialTherap
   const [specialNotes, setSpecialNotes] = useState(
     'ปวดตึงกล้ามเนื้อบริเวณสะบักและคอเป็นพิเศษจากการทำงานหน้าจอคอมพิวเตอร์'
   )
+  const [recipientName, setRecipientName] = useState(user?.name || '')
+  const [recipientPhone, setRecipientPhone] = useState(user?.phone || user?.phoneNumber || '')
   const [paymentMethod, setPaymentMethod] = useState('promptpay')
   const [isConfirmed, setIsConfirmed] = useState(false)
   const [confirmedBooking, setConfirmedBooking] = useState(null)
@@ -117,6 +126,16 @@ export default function BookingPage({ onNavigate, initialStep = 1, initialTherap
     }
   }, [])
 
+  // Sync recipient defaults when logged in user profile becomes available
+  useEffect(() => {
+    if (user) {
+      if (!recipientName && user.name) setRecipientName(user.name)
+      if (!recipientPhone && (user.phone || user.phoneNumber)) {
+        setRecipientPhone(user.phone || user.phoneNumber)
+      }
+    }
+  }, [user])
+
   // Dynamic slot availability fetch when date, service or duration changes
   useEffect(() => {
     let isMounted = true
@@ -128,13 +147,27 @@ export default function BookingPage({ onNavigate, initialStep = 1, initialTherap
       .getAvailability(selectedDate.isoDate, selectedService.id, selectedDuration.minutes)
       .then((liveSlots) => {
         if (isMounted && Array.isArray(liveSlots) && liveSlots.length > 0) {
-          setSlotsList(liveSlots)
+          // If a specific therapist is selected, adjust slot availability based on therapist's presence
+          const processedSlots = liveSlots.map((slot) => {
+            if (selectedTherapist?.backendId) {
+              const hasTherapist = Array.isArray(slot.availableTherapists) &&
+                slot.availableTherapists.some((t) => Number(t.id) === Number(selectedTherapist.backendId))
+              return {
+                ...slot,
+                available: slot.available && hasTherapist,
+                label: slot.available && hasTherapist ? 'ว่างสำหรับนัดหมาย' : 'คิวเต็มสำหรับผู้บำบัดนี้',
+              }
+            }
+            return slot
+          })
+
+          setSlotsList(processedSlots)
           // Keep current selection if still available, else select first available
-          const currentValid = liveSlots.find((s) => s.time === selectedTimeSlot?.time && s.available)
+          const currentValid = processedSlots.find((s) => s.time === selectedTimeSlot?.time && s.available)
           if (currentValid) {
             setSelectedTimeSlot(currentValid)
           } else {
-            const firstAvail = liveSlots.find((s) => s.available)
+            const firstAvail = processedSlots.find((s) => s.available)
             if (firstAvail) setSelectedTimeSlot(firstAvail)
           }
         }
@@ -144,7 +177,7 @@ export default function BookingPage({ onNavigate, initialStep = 1, initialTherap
     return () => {
       isMounted = false
     }
-  }, [selectedDate?.isoDate, selectedService?.id, selectedDuration?.minutes])
+  }, [selectedDate?.isoDate, selectedService?.id, selectedDuration?.minutes, selectedTherapist?.backendId])
 
   // Active service presentation object
   const activeService = {
@@ -163,11 +196,50 @@ export default function BookingPage({ onNavigate, initialStep = 1, initialTherap
   // Promotion code and discounts (100% server-side calculation)
   const promoState = usePromoCode(activeService.rawPrice, selectedService?.id)
 
+  // Toast/Notice when service is auto-switched to match therapist skills
+  const [autoSwitchNotice, setAutoSwitchNotice] = useState(null)
+
+  const handleSelectTherapist = useCallback(
+    (therapist) => {
+      setSelectedTherapist(therapist)
+      if (therapist.id === 'any' || therapist.isConcierge) {
+        setIsDirectTherapistBooking(false)
+        setAutoSwitchNotice(null)
+        return
+      }
+
+      setIsDirectTherapistBooking(true)
+
+      // Check if selected therapist can perform the currently selected service
+      const canPerform = therapistCanPerformService(therapist, selectedService)
+      if (!canPerform) {
+        // Auto-switch to the first compatible service
+        const compatibleServices = getAvailableServicesForTherapist(therapist, servicesList)
+        if (compatibleServices.length > 0) {
+          const newSvc = compatibleServices[0]
+          setSelectedService(newSvc)
+          const keepSameMinutes = newSvc.durationOptions?.find((o) => o.minutes === selectedDuration?.minutes)
+          setSelectedDuration(keepSameMinutes || newSvc.durationOptions?.[1] || newSvc.durationOptions?.[0])
+
+          setAutoSwitchNotice({
+            therapistName: therapist.shortName || therapist.name,
+            serviceName: newSvc.name,
+          })
+          setTimeout(() => setAutoSwitchNotice(null), 5000)
+        }
+      } else {
+        setAutoSwitchNotice(null)
+      }
+    },
+    [selectedService, selectedDuration?.minutes, servicesList]
+  )
+
   const handleSelectService = useCallback(
     (svc) => {
       setSelectedService(svc)
       const keepSameMinutes = svc.durationOptions?.find((o) => o.minutes === selectedDuration?.minutes)
       setSelectedDuration(keepSameMinutes || svc.durationOptions?.[1] || svc.durationOptions?.[0])
+      setAutoSwitchNotice(null)
     },
     [selectedDuration?.minutes]
   )
@@ -192,17 +264,32 @@ export default function BookingPage({ onNavigate, initialStep = 1, initialTherap
     setSubmitError(null)
 
     try {
-      const dateStr = selectedDate?.isoDate || new Date().toISOString().slice(0, 10)
+      const dateStr = selectedDate?.isoDate || formatLocalDateISO(new Date())
       const timeStr = selectedTimeSlot?.time || '10:00'
       const startDateTime = `${dateStr}T${timeStr.length === 5 ? timeStr + ':00' : timeStr}`
 
+      const customerNotes = [
+        recipientName ? `ผู้รับบริการ: ${recipientName}` : '',
+        recipientPhone ? `เบอร์ติดต่อ: ${recipientPhone}` : '',
+        pressureLevel ? `ระดับน้ำหนัก: ${pressureLevel}` : '',
+        specialNotes ? `รายละเอียดเพิ่มเติม: ${specialNotes}` : '',
+        promoState.promoApplied
+          ? `โปรโมชั่น: ${promoState.promoInfo.code} (ส่วนลด ฿${promoState.discountAmount.toLocaleString('en-US')}, ยอดสุทธิ ฿${promoState.finalPrice.toLocaleString('en-US')})`
+          : '',
+      ].filter(Boolean).join(' | ')
+
+      const resolvedDurationId =
+        selectedDuration?.id ||
+        selectedService?.durationOptions?.find((d) => d.minutes === selectedDuration?.minutes)?.id ||
+        1
+
       const bookingPayload = {
         serviceId: selectedService.id,
-        durationOptionId: selectedDuration?.id || 1,
+        durationOptionId: resolvedDurationId,
         therapistId: selectedTherapist?.backendId || null,
         startDateTime,
         bookingChannel: 'ONLINE',
-        specialNotes: `ระดับน้ำหนัก: ${pressureLevel} | รายละเอียดเพิ่มเติม: ${specialNotes}`,
+        specialNotes: customerNotes,
       }
 
       const res = await bookingService.createBooking(bookingPayload)
@@ -233,9 +320,7 @@ export default function BookingPage({ onNavigate, initialStep = 1, initialTherap
       }
     } catch (err) {
       console.error('Booking confirmation failed:', err)
-      // Fallback in case backend has a temporary connection issue: allow user confirmation to succeed gracefully
-      setIsConfirmed(true)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+      setSubmitError(err.message || 'เกิดข้อผิดพลาดในการสร้างการจอง กรุณาลองใหม่อีกครั้งหรือติดต่อเจ้าหน้าที่')
     } finally {
       setIsSubmitting(false)
     }
@@ -247,6 +332,8 @@ export default function BookingPage({ onNavigate, initialStep = 1, initialTherap
     selectedTimeSlot,
     pressureLevel,
     specialNotes,
+    recipientName,
+    recipientPhone,
     paymentMethod,
     promoState,
   ])
@@ -274,6 +361,8 @@ export default function BookingPage({ onNavigate, initialStep = 1, initialTherap
           {isConfirmed ? (
             <BookingConfirmation
               bookingRef={bookingRef}
+              recipientName={recipientName}
+              recipientPhone={recipientPhone}
               selectedTherapist={selectedTherapist}
               selectedService={selectedService}
               activeService={activeService}
@@ -289,7 +378,7 @@ export default function BookingPage({ onNavigate, initialStep = 1, initialTherap
                   therapists={therapistsList}
                   services={servicesList}
                   selectedTherapist={selectedTherapist}
-                  setSelectedTherapist={setSelectedTherapist}
+                  setSelectedTherapist={handleSelectTherapist}
                   isDirectTherapistBooking={isDirectTherapistBooking}
                   setIsDirectTherapistBooking={setIsDirectTherapistBooking}
                   selectedService={selectedService}
@@ -297,6 +386,7 @@ export default function BookingPage({ onNavigate, initialStep = 1, initialTherap
                   handleSelectService={handleSelectService}
                   handleSelectDuration={handleSelectDuration}
                   activeService={activeService}
+                  autoSwitchNotice={autoSwitchNotice}
                   onNext={handleNextStep}
                 />
               )}
@@ -323,6 +413,8 @@ export default function BookingPage({ onNavigate, initialStep = 1, initialTherap
 
               {step === 3 && (
                 <BookingStepPayment
+                  recipientName={recipientName}
+                  recipientPhone={recipientPhone}
                   paymentMethod={paymentMethod}
                   setPaymentMethod={setPaymentMethod}
                   activeService={activeService}

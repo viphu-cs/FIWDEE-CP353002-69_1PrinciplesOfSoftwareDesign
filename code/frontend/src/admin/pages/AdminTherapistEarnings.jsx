@@ -1,24 +1,60 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAdminAuth } from '../context/AdminAuthContext.jsx'
 import { useLanguage } from '../../i18n/useLanguage.js'
 import StatusBadge from '../components/StatusBadge.jsx'
+import { api } from '../../lib/api.js'
 
 export default function AdminTherapistEarnings() {
   const { user, queueItems } = useAdminAuth()
   const { lang } = useLanguage()
+  const [reportLoading, setReportLoading] = useState(false)
+  const [commissionSummary, setCommissionSummary] = useState(null)
 
   const therapistName = user?.name || ''
+  const therapistId = user?.id || 1
+
+  useEffect(() => {
+    let isMounted = true
+    setReportLoading(true)
+
+    api.get('/admin/reports/commissions')
+      .then((res) => {
+        if (isMounted && res.success && res.data && Array.isArray(res.data.therapistSummaries)) {
+          const match = res.data.therapistSummaries.find(
+            (t) => t.therapistId === therapistId || (t.therapistName && therapistName.includes(t.therapistName))
+          )
+          if (match) {
+            setCommissionSummary(match)
+          }
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (isMounted) setReportLoading(false)
+      })
+
+    return () => { isMounted = false }
+  }, [therapistId, therapistName])
+
+  // Fallback calculation from local state
   const myCompletedJobs = queueItems.filter(q => {
     if (!q.therapistName) return false
     const matchName = therapistName.includes(q.therapistName) || q.therapistName.includes(therapistName)
     return matchName && q.status === 'COMPLETED'
   })
 
-  // Commission standard rate: 40% of service price
-  const COMMISSION_RATE = 0.40
+  const COMMISSION_RATE = commissionSummary?.commissionRate ? Number(commissionSummary.commissionRate) : 0.40
+  const totalServiceSales = commissionSummary
+    ? Number(commissionSummary.totalServiceRevenue || 0)
+    : myCompletedJobs.reduce((sum, q) => sum + (q.price || 0), 0)
 
-  const totalServiceSales = myCompletedJobs.reduce((sum, q) => sum + (q.price || 0), 0)
-  const totalCommission = Math.round(totalServiceSales * COMMISSION_RATE)
+  const totalCommission = commissionSummary
+    ? Number(commissionSummary.commissionEarned || 0)
+    : Math.round(totalServiceSales * COMMISSION_RATE)
+
+  const completedCount = commissionSummary
+    ? Number(commissionSummary.completedServicesCount || 0)
+    : myCompletedJobs.length
 
   return (
     <div className="space-y-6 text-on-surface font-body-md">
@@ -33,8 +69,8 @@ export default function AdminTherapistEarnings() {
         </h1>
         <p className="text-xs sm:text-sm text-charcoal-muted mt-0.5">
           {lang === 'th'
-            ? 'สรุปจำนวนรอบการให้บริการ ค่ามือ และค่าคอมมิชชันสะสมของตนเอง'
-            : 'Track your completed services, service revenues, and personal commission payout'}
+            ? 'สรุปจำนวนรอบการให้บริการ ค่ามือ และค่าคอมมิชชันสะสมของตนเองตามรายงานระบบจริง'
+            : 'Track your completed services, service revenues, and personal commission payout based on real reports'}
         </p>
       </div>
 
@@ -42,13 +78,13 @@ export default function AdminTherapistEarnings() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-surface rounded-2xl border border-outline-variant p-5 shadow-[var(--admin-shadow-sm)]">
           <div className="text-xs font-semibold text-charcoal-muted uppercase">
-            {lang === 'th' ? 'ค่าคอมมิชชันสะสม (40%)' : 'Estimated Commission'}
+            {lang === 'th' ? `ค่าคอมมิชชันสะสม (${Math.round(COMMISSION_RATE * 100)}%)` : 'Estimated Commission'}
           </div>
           <div className="text-3xl font-headline font-bold text-teak-dark mt-1">
             ฿{totalCommission.toLocaleString()}
           </div>
           <div className="text-[11px] text-charcoal-muted mt-1">
-            {lang === 'th' ? 'คำนวณจาก 40% ของยอดค่าบริการ' : 'Calculated at 40% standard rate'}
+            {lang === 'th' ? `คำนวณจาก ${Math.round(COMMISSION_RATE * 100)}% ของยอดค่าบริการ` : `Calculated at ${Math.round(COMMISSION_RATE * 100)}% standard rate`}
           </div>
         </div>
 
@@ -60,69 +96,56 @@ export default function AdminTherapistEarnings() {
             ฿{totalServiceSales.toLocaleString()}
           </div>
           <div className="text-[11px] text-charcoal-muted mt-1">
-            {lang === 'th' ? 'ยอดรวมก่อนหักส่วนแบ่ง' : 'Gross booking sales value'}
+            {lang === 'th' ? 'ยอดค่าบริการก่อนหักส่วนแบ่ง' : 'Gross revenue generated'}
           </div>
         </div>
 
         <div className="bg-surface rounded-2xl border border-outline-variant p-5 shadow-[var(--admin-shadow-sm)]">
           <div className="text-xs font-semibold text-charcoal-muted uppercase">
-            {lang === 'th' ? 'รอบที่ให้บริการเสร็จ' : 'Completed Sessions'}
+            {lang === 'th' ? 'จำนวนงานที่เสร็จสิ้น' : 'Completed Sessions'}
           </div>
           <div className="text-3xl font-headline font-bold text-teak-dark mt-1">
-            {myCompletedJobs.length} <span className="text-xs font-normal text-charcoal-muted">{lang === 'th' ? 'รอบ' : 'sessions'}</span>
+            {completedCount} {lang === 'th' ? 'รอบ' : 'jobs'}
           </div>
           <div className="text-[11px] text-charcoal-muted mt-1">
-            {lang === 'th' ? 'รอบงานที่มีการบันทึกจบงาน' : 'Successfully completed treatments'}
+            {lang === 'th' ? 'คิดเป็นเฉลี่ย 1.5 ชม./รอบ' : 'Avg. 1.5 hrs / job'}
           </div>
         </div>
       </div>
 
-      {/* List of completed treatments */}
-      <div className="bg-surface rounded-2xl border border-outline-variant shadow-[var(--admin-shadow-sm)] overflow-hidden">
-        <div className="px-5 py-4 border-b border-outline-variant flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-teak-dark">
-            {lang === 'th' ? 'รายการงานที่ได้รับค่ามือ' : 'Completed Treatment Details'}
+      {/* Job breakdown */}
+      <div className="bg-surface rounded-2xl border border-outline-variant shadow-[var(--admin-shadow-sm)] p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-teak-deep uppercase tracking-wider">
+            {lang === 'th' ? 'รายการงานที่คำนวณค่ามือ' : 'Service Commission Breakdown'}
           </h2>
           <span className="text-xs text-charcoal-muted">
-            {myCompletedJobs.length} {lang === 'th' ? 'รายการ' : 'records'}
+            {lang === 'th' ? 'อัตราส่วนแบ่ง: ' : 'Payout Share: '}
+            <strong className="text-teak-dark">{Math.round(COMMISSION_RATE * 100)}%</strong>
           </span>
         </div>
 
-        {myCompletedJobs.length === 0 ? (
-          <div className="p-10 text-center text-xs text-charcoal-muted">
-            {lang === 'th' ? 'ยังไม่มีประวัติการนวดที่เสร็จสิ้น' : 'No completed treatments recorded yet'}
+        {myCompletedJobs.length === 0 && !commissionSummary ? (
+          <div className="p-8 text-center text-charcoal-muted text-xs">
+            {lang === 'th' ? 'ยังไม่มีรอบงานที่เสร็จสิ้นสำหรับคำนวณค่าคอมมิชชันในวันนี้' : 'No completed jobs recorded yet'}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="bg-surface-container-low border-b border-outline-variant text-[11px] text-charcoal-muted uppercase">
-                  <th className="py-3 px-4">{lang === 'th' ? 'รหัสคิว' : 'Queue No'}</th>
-                  <th className="py-3 px-4">{lang === 'th' ? 'ลูกค้า' : 'Customer'}</th>
-                  <th className="py-3 px-4">{lang === 'th' ? 'หัตถการ' : 'Treatment'}</th>
-                  <th className="py-3 px-4 text-right">{lang === 'th' ? 'ราคา' : 'Price'}</th>
-                  <th className="py-3 px-4 text-right">{lang === 'th' ? 'ค่ามือ (40%)' : 'Commission (40%)'}</th>
-                  <th className="py-3 px-4 text-center">{lang === 'th' ? 'สถานะ' : 'Status'}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-outline-variant">
-                {myCompletedJobs.map((q) => {
-                  const comm = Math.round((q.price || 0) * COMMISSION_RATE)
-                  return (
-                    <tr key={q.queueNo} className="hover:bg-surface-container-low transition-colors">
-                      <td className="py-3 px-4 font-bold text-teak-dark">{q.queueNo}</td>
-                      <td className="py-3 px-4 font-semibold text-on-surface">{q.customerName}</td>
-                      <td className="py-3 px-4 text-charcoal-muted">{q.serviceName} ({q.durationMinutes} นาที)</td>
-                      <td className="py-3 px-4 text-right font-medium">฿{q.price?.toLocaleString()}</td>
-                      <td className="py-3 px-4 text-right font-bold text-teak-dark">฿{comm.toLocaleString()}</td>
-                      <td className="py-3 px-4 text-center">
-                        <StatusBadge status="COMPLETED" size="sm" />
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+          <div className="divide-y divide-outline-variant/60">
+            {myCompletedJobs.map((q) => {
+              const myPay = Math.round((q.price || 0) * COMMISSION_RATE)
+              return (
+                <div key={q.queueNo} className="py-3 flex items-center justify-between text-xs hover:bg-surface-container-low/50 px-2 rounded-xl transition-colors">
+                  <div>
+                    <div className="font-semibold text-teak-dark">{q.serviceName}</div>
+                    <div className="text-[11px] text-charcoal-muted">{q.customerName} • รหัสคิว {q.queueNo} • {q.time} น.</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-teak-deep">฿{myPay.toLocaleString()}</div>
+                    <div className="text-[10px] text-charcoal-muted">{lang === 'th' ? 'จากยอดเต็ม ฿' : 'from ฿'}{(q.price || 0).toLocaleString()}</div>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>

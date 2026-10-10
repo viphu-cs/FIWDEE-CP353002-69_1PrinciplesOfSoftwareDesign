@@ -1,10 +1,11 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { api } from '../../lib/api.js'
 import { useAdminAuth } from '../context/AdminAuthContext.jsx'
 import { useLanguage } from '../../i18n/useLanguage.js'
 import StatusBadge from '../components/StatusBadge.jsx'
 
 export default function AdminTherapists() {
-  const { user, therapists, updateTherapistStatus, updateTherapistShiftForDate, getTherapistShiftForDate, setTherapists } = useAdminAuth()
+  const { user, therapists, updateTherapistStatus, updateTherapistShiftForDate, getTherapistShiftForDate, setTherapists, addTherapist } = useAdminAuth()
   const { lang, t } = useLanguage()
   const today = new Date()
   const formatDateKey = (d) => {
@@ -36,27 +37,369 @@ export default function AdminTherapists() {
 
   const [filterDuty, setFilterDuty] = useState('ALL')
   const [selectedShiftDate, setSelectedShiftDate] = useState(todayStr)
+  const [liveServices, setLiveServices] = useState([])
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [editingTherapist, setEditingTherapist] = useState(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [modalError, setModalError] = useState('')
+  const [successToast, setSuccessToast] = useState('')
 
-  const isOwner = user.role === 'OWNER'
+  const [newTherapist, setNewTherapist] = useState({
+    fullName: '',
+    nickname: '',
+    username: '',
+    email: '',
+    password: '',
+    phone: '',
+    bio: '',
+    commissionRate: 30.0,
+    selectedServiceIds: [],
+    initialShift: 'FULL_DAY',
+  })
+
+  const [editFormData, setEditFormData] = useState({
+    id: null,
+    fullName: '',
+    nickname: '',
+    username: '',
+    email: '',
+    phoneNumber: '',
+    bio: '',
+    commissionRate: 30.0,
+    selectedServiceIds: [],
+  })
+
+  const isOwner = user?.role === 'OWNER'
+
+  // โหลดรายการ Services จริงจาก Backend API
+  useEffect(() => {
+    let isMounted = true
+    api.get('/admin/services')
+      .then((res) => {
+        if (isMounted && res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+          setLiveServices(res.data)
+        }
+      })
+      .catch(() => {})
+    return () => { isMounted = false }
+  }, [])
+
+  // โหลดรายการ Therapists จาก Backend API
+  const fetchTherapists = React.useCallback(() => {
+    api.get('/admin/therapists').then((res) => {
+      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+        setTherapists((prev) => {
+          return res.data.map((bt) => {
+            const matched = prev.find(p => p.id === bt.id || (p.nickname && bt.nickname && p.nickname.toLowerCase() === bt.nickname.toLowerCase()))
+            return {
+              id: bt.id,
+              nickname: bt.nickname,
+              fullName: bt.fullName,
+              email: bt.email || matched?.email || '',
+              phoneNumber: bt.phoneNumber || matched?.phoneNumber || '',
+              bio: bt.bio || matched?.bio || '',
+              commissionRate: bt.commissionRate !== undefined && bt.commissionRate !== null ? Number(bt.commissionRate) : (matched?.commissionRate || 30.0),
+              status: bt.isActive ? (matched?.status || 'ON_DUTY') : 'OFF_DUTY',
+              skills: bt.skills && bt.skills.length > 0 ? bt.skills : (matched?.skills || []),
+              shiftsByDate: matched?.shiftsByDate || {},
+              totalJobsToday: matched?.totalJobsToday || 0,
+              currentRoom: matched?.currentRoom || null
+            }
+          })
+        })
+      }
+    }).catch(() => {})
+  }, [setTherapists])
+
+  useEffect(() => {
+    fetchTherapists()
+  }, [fetchTherapists])
+
+  // แสดง toast แจ้งเตือนสั้นๆ
+  const showToast = (msg) => {
+    setSuccessToast(msg)
+    setTimeout(() => {
+      setSuccessToast('')
+    }, 3000)
+  }
+
+  // คำนวณรายชื่อ service ที่ใช้แสดงและเลือก
+  const availableServiceOptions = liveServices.length > 0
+    ? liveServices.map(s => ({ id: s.id, name: s.serviceName }))
+    : [
+        { id: 1, name: 'Traditional Thai Massage' },
+        { id: 2, name: 'Aroma Therapy Massage' },
+        { id: 3, name: 'Foot Reflexology' },
+        { id: 4, name: 'FIWDEE Royal Herbal Spa' },
+        { id: 5, name: 'Deep Tissue' },
+        { id: 6, name: 'Hot Stone' },
+      ]
 
   const filteredTherapists = therapists.filter(t => {
     if (filterDuty === 'ALL') return true
     return t.status === filterDuty
   })
 
-  const handleSkillToggle = (therapistId, skill) => {
+  // Quick Skill Toggle: อัปเดต skill ของหมอนวดแล้วบันทึกลง Backend ทันที
+  const handleQuickSkillToggle = async (tItem, serviceName) => {
     if (!isOwner) {
-      alert('สิทธิ์เฉพาะผู้จัดการ (OWNER) เท่านั้นในการแก้ไขทักษะของหมอนวด')
+      alert(t('admin.ownerOnlySkills'))
       return
     }
-    setTherapists(prev => prev.map(t => {
-      if (t.id === therapistId) {
-        const hasSkill = t.skills.includes(skill)
-        const newSkills = hasSkill ? t.skills.filter(s => s !== skill) : [...t.skills, skill]
-        return { ...t, skills: newSkills }
+
+    const currentSkills = Array.isArray(tItem.skills) ? tItem.skills : []
+    const hasSkill = currentSkills.includes(serviceName)
+    const nextSkills = hasSkill
+      ? currentSkills.filter(s => s !== serviceName)
+      : [...currentSkills, serviceName]
+
+    // หา serviceIds ที่ตรงกับ nextSkills
+    const nextServiceIds = nextSkills
+      .map(skillName => {
+        const found = availableServiceOptions.find(opt => opt.name === skillName)
+        return found ? found.id : null
+      })
+      .filter(Boolean)
+
+    // อัปเดต UI ทันที (Optimistic update)
+    setTherapists(prev => prev.map(t => t.id === tItem.id ? { ...t, skills: nextSkills } : t))
+
+    // ยิงบันทึกลง Backend
+    try {
+      const payload = {
+        username: tItem.email || `therapist_${tItem.id}@fiwdee-massage.co.th`,
+        fullName: tItem.fullName || tItem.nickname,
+        email: tItem.email || null,
+        phoneNumber: tItem.phoneNumber || '0800000000',
+        nickname: tItem.nickname,
+        bio: tItem.bio || `หมอนวดผู้เชี่ยวชาญ ${nextSkills.join(', ')}`,
+        commissionRate: tItem.commissionRate || 30.0,
+        serviceIds: nextServiceIds
       }
-      return t
-    }))
+      await api.put(`/admin/therapists/${tItem.id}`, payload)
+      showToast(t('admin.therapistUpdateSuccess'))
+    } catch (err) {
+      console.warn('Backend update failed:', err)
+    }
+  }
+
+  // เปลี่ยนกะงาน (Shift) พร้อมบันทึกลง Backend API
+  const handleShiftChange = async (therapistId, dateStr, shiftType) => {
+    // 1. อัปเดต local context
+    updateTherapistShiftForDate(therapistId, dateStr, shiftType)
+
+    // 2. ซิงก์กะงานไปยัง backend PUT /api/admin/therapists/{id}/schedules
+    try {
+      const isDayOff = shiftType === 'OFF'
+      let shifts = []
+      if (shiftType === 'MORNING') {
+        shifts = [{ shiftName: 'กะเช้า (Morning)', startTime: '10:00:00', endTime: '19:00:00', shiftStatus: 'ACTIVE' }]
+      } else if (shiftType === 'EVENING') {
+        shifts = [{ shiftName: 'กะบ่าย (Evening)', startTime: '13:00:00', endTime: '22:00:00', shiftStatus: 'ACTIVE' }]
+      } else if (shiftType === 'FULL_DAY') {
+        shifts = [{ shiftName: 'เต็มวัน (Full Day)', startTime: '10:00:00', endTime: '22:00:00', shiftStatus: 'ACTIVE' }]
+      }
+
+      await api.put(`/admin/therapists/${therapistId}/schedules`, {
+        scheduleDate: dateStr,
+        dayOff: isDayOff,
+        leaveReason: isDayOff ? 'Scheduled Day Off' : null,
+        notes: `Shift changed to ${shiftType}`,
+        shifts
+      })
+      showToast(t('admin.therapistShiftUpdateSuccess'))
+    } catch (err) {
+      console.warn('Backend schedule update note:', err)
+    }
+  }
+
+  // เปิด Edit Modal
+  const openEditModal = (tItem) => {
+    setModalError('')
+    setEditingTherapist(tItem)
+
+    // หา serviceIds ที่ตรงกับ skills ของหมอนวด
+    const currentServiceIds = (tItem.skills || [])
+      .map(sName => {
+        const match = availableServiceOptions.find(opt => opt.name === sName)
+        return match ? match.id : null
+      })
+      .filter(Boolean)
+
+    setEditFormData({
+      id: tItem.id,
+      fullName: tItem.fullName || '',
+      nickname: tItem.nickname || '',
+      username: tItem.email || `therapist_${tItem.id}@fiwdee-massage.co.th`,
+      email: tItem.email || '',
+      phoneNumber: tItem.phoneNumber || '',
+      bio: tItem.bio || '',
+      commissionRate: tItem.commissionRate || 30.0,
+      selectedServiceIds: currentServiceIds,
+    })
+    setIsEditModalOpen(true)
+  }
+
+  // Handle Edit Submit
+  const handleEditSubmit = async (e) => {
+    e.preventDefault()
+    setModalError('')
+
+    if (!editFormData.fullName.trim() || !editFormData.nickname.trim()) {
+      setModalError(lang === 'th' ? 'กรุณากรอกชื่อ-นามสกุล และชื่อเล่น' : 'Please provide full name and nickname.')
+      return
+    }
+    if (editFormData.selectedServiceIds.length === 0) {
+      setModalError(lang === 'th' ? 'กรุณาเลือกบริการที่เชี่ยวชาญอย่างน้อย 1 รายการ' : 'Please select at least 1 service.')
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const updatedSkills = editFormData.selectedServiceIds
+        .map(id => availableServiceOptions.find(s => s.id === id)?.name)
+        .filter(Boolean)
+
+      const payload = {
+        username: editFormData.username.trim() || `therapist_${editFormData.id}@fiwdee-massage.co.th`,
+        fullName: editFormData.fullName.trim(),
+        email: editFormData.email.trim() || null,
+        phoneNumber: editFormData.phoneNumber.trim() || '0800000000',
+        nickname: editFormData.nickname.trim(),
+        bio: editFormData.bio.trim() || `หมอนวดผู้เชี่ยวชาญ ${updatedSkills.join(', ')}`,
+        commissionRate: parseFloat(editFormData.commissionRate) || 30.0,
+        serviceIds: editFormData.selectedServiceIds
+      }
+
+      await api.put(`/admin/therapists/${editFormData.id}`, payload)
+
+      // อัปเดต local context
+      setTherapists(prev => prev.map(t => {
+        if (t.id === editFormData.id) {
+          return {
+            ...t,
+            fullName: payload.fullName,
+            nickname: payload.nickname,
+            email: payload.email,
+            phoneNumber: payload.phoneNumber,
+            bio: payload.bio,
+            commissionRate: payload.commissionRate,
+            skills: updatedSkills
+          }
+        }
+        return t
+      }))
+
+      setIsEditModalOpen(false)
+      showToast(t('admin.therapistUpdateSuccess'))
+    } catch (err) {
+      setModalError(err.message || 'Error updating therapist')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Handle Add Therapist
+  const handleAddModalSkillToggle = (serviceId) => {
+    setNewTherapist(prev => {
+      const exists = prev.selectedServiceIds.includes(serviceId)
+      const next = exists
+        ? prev.selectedServiceIds.filter(id => id !== serviceId)
+        : [...prev.selectedServiceIds, serviceId]
+      return { ...prev, selectedServiceIds: next }
+    })
+  }
+
+  const handleEditModalSkillToggle = (serviceId) => {
+    setEditFormData(prev => {
+      const exists = prev.selectedServiceIds.includes(serviceId)
+      const next = exists
+        ? prev.selectedServiceIds.filter(id => id !== serviceId)
+        : [...prev.selectedServiceIds, serviceId]
+      return { ...prev, selectedServiceIds: next }
+    })
+  }
+
+  const handleAddTherapistSubmit = async (e) => {
+    e.preventDefault()
+    setModalError('')
+    if (!newTherapist.fullName.trim() || !newTherapist.nickname.trim()) {
+      setModalError(lang === 'th' ? 'กรุณากรอกชื่อ-นามสกุล และชื่อเล่นของหมอนวด' : 'Please provide full name and nickname.')
+      return
+    }
+    if (newTherapist.selectedServiceIds.length === 0) {
+      setModalError(lang === 'th' ? 'กรุณาเลือกบริการที่เชี่ยวชาญอย่างน้อย 1 รายการ' : 'Please select at least 1 service.')
+      return
+    }
+
+    const defaultUsername = newTherapist.username.trim() || `therapist_${Date.now()}@fiwdee-massage.co.th`
+    const defaultPhone = newTherapist.phone.trim() || `08${Math.floor(10000000 + Math.random() * 90000000)}`
+    const rawPassword = newTherapist.password.trim() || 'therapist1234'
+
+    const selectedSkillNames = newTherapist.selectedServiceIds
+      .map(id => availableServiceOptions.find(s => s.id === id)?.name)
+      .filter(Boolean)
+
+    setIsSubmitting(true)
+    try {
+      const payload = {
+        username: defaultUsername,
+        password: rawPassword,
+        fullName: newTherapist.fullName.trim(),
+        email: newTherapist.email.trim() || (defaultUsername.includes('@') ? defaultUsername : null),
+        phoneNumber: defaultPhone,
+        nickname: newTherapist.nickname.trim(),
+        bio: newTherapist.bio.trim() || `หมอนวดผู้เชี่ยวชาญ ${selectedSkillNames.join(', ')}`,
+        commissionRate: parseFloat(newTherapist.commissionRate) || 30.0,
+        serviceIds: newTherapist.selectedServiceIds
+      }
+
+      let createdId = null
+      try {
+        const apiRes = await api.post('/admin/therapists', payload)
+        if (apiRes && apiRes.success && apiRes.data?.id) {
+          createdId = apiRes.data.id
+        }
+      } catch (apiErr) {
+        console.warn('Backend /admin/therapists unreachable, falling back to local context state:', apiErr)
+      }
+
+      const initialShifts = {}
+      initialShifts[todayStr] = newTherapist.initialShift
+
+      addTherapist({
+        id: createdId,
+        fullName: newTherapist.fullName.trim(),
+        nickname: newTherapist.nickname.trim(),
+        email: payload.email,
+        phoneNumber: payload.phoneNumber,
+        bio: payload.bio,
+        commissionRate: payload.commissionRate,
+        status: newTherapist.initialShift === 'OFF' ? 'OFF_DUTY' : 'ON_DUTY',
+        skills: selectedSkillNames,
+        shiftsByDate: initialShifts,
+      })
+
+      setIsAddModalOpen(false)
+      setNewTherapist({
+        fullName: '',
+        nickname: '',
+        username: '',
+        email: '',
+        password: '',
+        phone: '',
+        bio: '',
+        commissionRate: 30.0,
+        selectedServiceIds: [],
+        initialShift: 'FULL_DAY',
+      })
+      showToast(t('admin.therapistAddSuccess'))
+    } catch (err) {
+      setModalError(err.message || 'Error adding therapist')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const shiftLabels = {
@@ -68,6 +411,14 @@ export default function AdminTherapists() {
 
   return (
     <div className="space-y-6 text-on-surface font-body-md">
+      {/* Toast Notification */}
+      {successToast && (
+        <div className="fixed top-20 right-6 z-50 bg-teak-dark text-warm-ivory px-4 py-2.5 rounded-xl shadow-lg border border-teak-deep flex items-center gap-2 animate-fade-in text-xs font-semibold">
+          <span>✓</span>
+          <span>{successToast}</span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -76,10 +427,38 @@ export default function AdminTherapists() {
           </h2>
           <p className="text-xs sm:text-sm text-charcoal-muted mt-0.5">
             {lang === 'th'
-              ? 'จัดการสถานะการเข้างานวันนี้ (Duty Status), ทักษะความเชี่ยวชาญ (TherapistSkill) และตารางกะงานล่วงหน้า 7 วัน (Multi-day Shift Schedule)'
-              : 'Manage duty status, therapist skills, and 7-day advance work shifts'}
+              ? 'จัดการข้อมูลหมอนวด เชื่อมโยงรายการบริการที่เชี่ยวชาญ (TherapistSkill) และตารางกะงาน 7 วัน'
+              : 'Manage therapist profiles, linked specialty services, and 7-day shift schedules'}
           </p>
         </div>
+
+        {isOwner && (
+          <button
+            type="button"
+            onClick={() => {
+              setModalError('')
+              setNewTherapist({
+                fullName: '',
+                nickname: '',
+                username: '',
+                email: '',
+                password: '',
+                phone: '',
+                bio: '',
+                commissionRate: 30.0,
+                selectedServiceIds: availableServiceOptions.slice(0, 1).map(s => s.id),
+                initialShift: 'FULL_DAY',
+              })
+              setIsAddModalOpen(true)
+            }}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-teak-dark hover:bg-teak-deep text-warm-ivory text-xs font-semibold shadow-xs transition-colors cursor-pointer self-start sm:self-auto"
+          >
+            <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            <span>{t('admin.addTherapist')}</span>
+          </button>
+        )}
       </div>
 
       {/* Multi-day Shift Schedule Date Selector */}
@@ -89,7 +468,7 @@ export default function AdminTherapists() {
             {lang === 'th' ? 'ตารางกะงานล่วงหน้า 7 วัน (Shift Schedule):' : '7-Day Shift Schedule:'}
           </span>
           <span className="text-[11px] text-charcoal-muted font-medium bg-surface-container px-2.5 py-0.5 rounded border border-outline-variant/60">
-            {lang === 'th' ? 'เชื่อมโยงกับการจองล่วงหน้า' : 'Linked with advance bookings'}
+            {lang === 'th' ? 'เชื่อมโยงกับการจองล่วงหน้าและระบบ' : 'Linked with advance bookings'}
           </span>
         </div>
 
@@ -159,6 +538,18 @@ export default function AdminTherapists() {
                       </p>
                     </div>
                   </div>
+
+                  {/* Owner Edit Profile Action */}
+                  {isOwner && (
+                    <button
+                      type="button"
+                      onClick={() => openEditModal(tItem)}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-teak-deep bg-surface-container hover:bg-surface-container-high border border-outline-variant cursor-pointer transition-colors"
+                      title={t('admin.editTherapist')}
+                    >
+                      ✏️ {lang === 'th' ? 'แก้ไข' : 'Edit'}
+                    </button>
+                  )}
                 </div>
 
                 <div className="mt-3 flex items-center justify-between">
@@ -181,7 +572,7 @@ export default function AdminTherapists() {
 
                   <select
                     value={shiftOnSelectedDate}
-                    onChange={(e) => updateTherapistShiftForDate(tItem.id, selectedShiftDate, e.target.value)}
+                    onChange={(e) => handleShiftChange(tItem.id, selectedShiftDate, e.target.value)}
                     disabled={!isOwner}
                     className={`w-full px-3 py-2 rounded-xl border border-outline-variant bg-surface text-xs font-semibold text-on-surface hover:border-wood-deep cursor-pointer ${
                       !isOwner ? 'opacity-80 cursor-not-allowed' : ''
@@ -194,21 +585,21 @@ export default function AdminTherapists() {
                   </select>
                 </div>
 
-                {/* Skills (TherapistSkill) */}
+                {/* Skills (TherapistSkill linked to Services) */}
                 <div className="mt-4 pt-3 border-t border-outline-variant">
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-[11px] font-semibold text-charcoal-muted uppercase tracking-wider">
-                      ทักษะความเชี่ยวชาญ (Skills):
+                      {lang === 'th' ? 'ทักษะบริการที่เชี่ยวชาญ (Services):' : 'Specialty Services:'}
                     </label>
                     {!isOwner && <span className="text-[10px] text-charcoal-muted">🔒 เฉพาะผู้จัดการ</span>}
                   </div>
                   <div className="flex flex-wrap gap-1.5">
-                    {['Traditional Thai Massage', 'Aroma Therapy Massage', 'Foot Reflexology', 'FIWDEE Royal Herbal Spa', 'Deep Tissue', 'Hot Stone'].map((skill) => {
-                      const isSelected = tItem.skills.includes(skill)
+                    {availableServiceOptions.map((opt) => {
+                      const isSelected = (tItem.skills || []).includes(opt.name)
                       return (
                         <button
-                          key={skill}
-                          onClick={() => handleSkillToggle(tItem.id, skill)}
+                          key={opt.id}
+                          onClick={() => handleQuickSkillToggle(tItem, opt.name)}
                           disabled={!isOwner}
                           className={`px-2.5 py-1 rounded-lg text-[10px] transition-colors cursor-pointer border ${
                             isSelected
@@ -216,7 +607,7 @@ export default function AdminTherapists() {
                               : 'bg-surface-container-low text-charcoal-muted border-outline-variant hover:bg-surface-container'
                           } ${!isOwner ? 'cursor-default opacity-90' : ''}`}
                         >
-                          {skill}
+                          {isSelected ? '✓ ' : '+ '}{opt.name}
                         </button>
                       )
                     })}
@@ -254,6 +645,356 @@ export default function AdminTherapists() {
           )
         })}
       </div>
+
+      {/* Edit Therapist Modal Dialog */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in">
+          <div className="bg-surface w-full max-w-lg rounded-2xl border border-outline-variant shadow-2xl p-6 overflow-hidden max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-outline-variant">
+              <div>
+                <h3 className="text-lg font-headline font-bold text-teak-deep">
+                  {t('admin.editTherapist')}
+                </h3>
+                <p className="text-xs text-charcoal-muted mt-0.5">
+                  {lang === 'th' ? `ปรับแต่งข้อมูลและบริการของ คุณ${editFormData.nickname}` : `Configure details for ${editFormData.nickname}`}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-charcoal-muted hover:bg-surface-container cursor-pointer transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="space-y-4 pt-4">
+              {modalError && (
+                <div className="p-3 rounded-xl bg-error-container text-on-error-container text-xs font-medium">
+                  {modalError}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-charcoal-muted uppercase">
+                    {t('admin.therapistFullName')} *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editFormData.fullName}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, fullName: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl border border-outline-variant bg-surface text-xs text-on-surface focus:border-teak-dark outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-charcoal-muted uppercase">
+                    {t('admin.therapistNickname')} *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editFormData.nickname}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, nickname: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl border border-outline-variant bg-surface text-xs text-on-surface focus:border-teak-dark outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-charcoal-muted uppercase">
+                    {t('admin.therapistPhone')}
+                  </label>
+                  <input
+                    type="text"
+                    value={editFormData.phoneNumber}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                    placeholder="081-234-5678"
+                    className="w-full px-3 py-2 rounded-xl border border-outline-variant bg-surface text-xs text-on-surface focus:border-teak-dark outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-charcoal-muted uppercase">
+                    {t('admin.therapistCommissionRate')}
+                  </label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    max="100"
+                    value={editFormData.commissionRate}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, commissionRate: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl border border-outline-variant bg-surface text-xs text-on-surface focus:border-teak-dark outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-charcoal-muted uppercase">
+                  {t('admin.therapistBio')}
+                </label>
+                <textarea
+                  rows="2"
+                  value={editFormData.bio}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, bio: e.target.value }))}
+                  placeholder="ความเชี่ยวชาญ เทคนิคพิเศษ หรือคำแนะนำตัว..."
+                  className="w-full px-3 py-2 rounded-xl border border-outline-variant bg-surface text-xs text-on-surface focus:border-teak-dark outline-none resize-none"
+                />
+              </div>
+
+              {/* Specialty Services Checklist (Linked to DB Services) */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-charcoal-muted uppercase block">
+                  {t('admin.therapistSkillsSelect')} *
+                </label>
+                <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1">
+                  {availableServiceOptions.map((opt) => {
+                    const isSelected = editFormData.selectedServiceIds.includes(opt.id)
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => handleEditModalSkillToggle(opt.id)}
+                        className={`px-3 py-1.5 rounded-xl text-xs transition-colors cursor-pointer border ${
+                          isSelected
+                            ? 'bg-teak-deep text-warm-ivory border-teak-deep font-semibold shadow-xs'
+                            : 'bg-surface-container-low text-charcoal-muted border-outline-variant hover:bg-surface-container'
+                        }`}
+                      >
+                        {isSelected ? '✓ ' : '+ '}{opt.name}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-outline-variant">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-medium text-charcoal-muted hover:bg-surface-container cursor-pointer transition-colors"
+                >
+                  {t('admin.cancel')}
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-5 py-2 rounded-xl bg-teak-dark hover:bg-teak-deep text-warm-ivory text-xs font-semibold shadow-xs cursor-pointer transition-colors disabled:opacity-60"
+                >
+                  {isSubmitting ? (lang === 'th' ? 'กำลังบันทึก...' : 'Saving...') : t('admin.save')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Therapist Modal Dialog */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in">
+          <div className="bg-surface w-full max-w-lg rounded-2xl border border-outline-variant shadow-2xl p-6 overflow-hidden max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-outline-variant">
+              <div>
+                <h3 className="text-lg font-headline font-bold text-teak-deep">
+                  {t('admin.addTherapist')}
+                </h3>
+                <p className="text-xs text-charcoal-muted mt-0.5">
+                  {lang === 'th' ? 'เพิ่มข้อมูลหมอนวดคนใหม่พร้อมเชื่อมโยงบริการและกะงานเริ่มต้น' : 'Register a new therapist with skills and initial shift'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddModalOpen(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-charcoal-muted hover:bg-surface-container cursor-pointer transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleAddTherapistSubmit} className="space-y-4 pt-4">
+              {modalError && (
+                <div className="p-3 rounded-xl bg-error-container text-on-error-container text-xs font-medium">
+                  {modalError}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-charcoal-muted uppercase">
+                    {t('admin.therapistFullName')} *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newTherapist.fullName}
+                    onChange={(e) => setNewTherapist(prev => ({ ...prev, fullName: e.target.value }))}
+                    placeholder="เช่น สมพร รักสงบ"
+                    className="w-full px-3 py-2 rounded-xl border border-outline-variant bg-surface text-xs text-on-surface focus:border-teak-dark outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-charcoal-muted uppercase">
+                    {t('admin.therapistNickname')} *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newTherapist.nickname}
+                    onChange={(e) => setNewTherapist(prev => ({ ...prev, nickname: e.target.value }))}
+                    placeholder="เช่น พร"
+                    className="w-full px-3 py-2 rounded-xl border border-outline-variant bg-surface text-xs text-on-surface focus:border-teak-dark outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Account Credentials */}
+              <div className="p-3 bg-surface-container-low rounded-xl border border-outline-variant/70 space-y-3">
+                <div className="text-[11px] font-semibold text-teak-deep uppercase tracking-wider flex items-center justify-between">
+                  <span>ข้อมูลบัญชีผู้ใช้เข้าสู่ระบบ (User Account)</span>
+                  <span className="text-[10px] text-charcoal-muted font-normal">บทบาท: THERAPIST</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-medium text-charcoal-muted">
+                      {t('admin.therapistPhone')}
+                    </label>
+                    <input
+                      type="text"
+                      value={newTherapist.phone}
+                      onChange={(e) => setNewTherapist(prev => ({ ...prev, phone: e.target.value }))}
+                      placeholder="เช่น 081-999-8877"
+                      className="w-full px-3 py-1.5 rounded-lg border border-outline-variant bg-surface text-xs text-on-surface focus:border-teak-dark outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-medium text-charcoal-muted">
+                      {t('admin.therapistEmail')}
+                    </label>
+                    <input
+                      type="email"
+                      value={newTherapist.email}
+                      onChange={(e) => setNewTherapist(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="เช่น sorn@fiwdee-massage.co.th"
+                      className="w-full px-3 py-1.5 rounded-lg border border-outline-variant bg-surface text-xs text-on-surface focus:border-teak-dark outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-medium text-charcoal-muted">
+                      {t('admin.therapistUsername')}
+                    </label>
+                    <input
+                      type="text"
+                      value={newTherapist.username}
+                      onChange={(e) => setNewTherapist(prev => ({ ...prev, username: e.target.value }))}
+                      placeholder="เว้นว่างได้ (สร้างอัตโนมัติ)"
+                      className="w-full px-3 py-1.5 rounded-lg border border-outline-variant bg-surface text-xs text-on-surface focus:border-teak-dark outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-medium text-charcoal-muted">
+                      {t('admin.therapistPassword')}
+                    </label>
+                    <input
+                      type="password"
+                      value={newTherapist.password}
+                      onChange={(e) => setNewTherapist(prev => ({ ...prev, password: e.target.value }))}
+                      placeholder="ค่าเริ่มต้น therapist1234"
+                      className="w-full px-3 py-1.5 rounded-lg border border-outline-variant bg-surface text-xs text-on-surface focus:border-teak-dark outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-charcoal-muted uppercase">
+                    {lang === 'th' ? 'กะงานเริ่มต้นวันนี้' : 'Initial Shift Today'}
+                  </label>
+                  <select
+                    value={newTherapist.initialShift}
+                    onChange={(e) => setNewTherapist(prev => ({ ...prev, initialShift: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl border border-outline-variant bg-surface text-xs text-on-surface focus:border-teak-dark outline-none"
+                  >
+                    <option value="FULL_DAY">{shiftLabels.FULL_DAY}</option>
+                    <option value="MORNING">{shiftLabels.MORNING}</option>
+                    <option value="EVENING">{shiftLabels.EVENING}</option>
+                    <option value="OFF">{shiftLabels.OFF}</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-charcoal-muted uppercase">
+                    {t('admin.therapistCommissionRate')}
+                  </label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    max="100"
+                    value={newTherapist.commissionRate}
+                    onChange={(e) => setNewTherapist(prev => ({ ...prev, commissionRate: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl border border-outline-variant bg-surface text-xs text-on-surface focus:border-teak-dark outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Service Selection Checklist */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-charcoal-muted uppercase block">
+                  {t('admin.therapistSkillsSelect')} *
+                </label>
+                <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-1">
+                  {availableServiceOptions.map((opt) => {
+                    const isSelected = newTherapist.selectedServiceIds.includes(opt.id)
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => handleAddModalSkillToggle(opt.id)}
+                        className={`px-3 py-1.5 rounded-xl text-xs transition-colors cursor-pointer border ${
+                          isSelected
+                            ? 'bg-teak-deep text-warm-ivory border-teak-deep font-semibold shadow-xs'
+                            : 'bg-surface-container-low text-charcoal-muted border-outline-variant hover:bg-surface-container'
+                        }`}
+                      >
+                        {isSelected ? '✓ ' : '+ '}{opt.name}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-outline-variant">
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-medium text-charcoal-muted hover:bg-surface-container cursor-pointer transition-colors"
+                >
+                  {t('admin.cancel')}
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-5 py-2 rounded-xl bg-teak-dark hover:bg-teak-deep text-warm-ivory text-xs font-semibold shadow-xs cursor-pointer transition-colors disabled:opacity-60"
+                >
+                  {isSubmitting ? (lang === 'th' ? 'กำลังบันทึก...' : 'Saving...') : t('admin.save')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -14,7 +14,7 @@ public class ServiceMapper {
         List<DurationOptionDTO> options = service.getDurationOptions().stream()
                 .filter(option -> Boolean.TRUE.equals(option.getIsActive()))
                 .sorted(Comparator.comparing(option -> option.getDurationMinutes()))
-                .map(option -> new DurationOptionDTO(option.getDurationMinutes(), option.getPrice()))
+                .map(option -> new DurationOptionDTO(option.getId(), option.getDurationMinutes(), option.getPrice()))
                 .toList();
 
         return new ServiceResponseDTO(

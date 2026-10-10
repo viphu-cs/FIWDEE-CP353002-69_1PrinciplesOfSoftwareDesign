@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useAdminAuth } from '../context/AdminAuthContext.jsx'
 import { useLanguage } from '../../i18n/useLanguage.js'
 import StatusBadge from '../components/StatusBadge.jsx'
+import RefundModal from '../components/RefundModal.jsx'
 import { api } from '../../lib/api.js'
 
 export default function AdminBookings() {
@@ -16,6 +17,7 @@ export default function AdminBookings() {
   const [search, setSearch] = useState('')
   const [updatingId, setUpdatingId] = useState(null)
   const [toastMessage, setToastMessage] = useState(null)
+  const [refundTargetBooking, setRefundTargetBooking] = useState(null)
 
   const showToast = (msg) => {
     setToastMessage(msg)
@@ -60,7 +62,18 @@ export default function AdminBookings() {
   const handleUpdateStatus = async (bookingId, newStatus) => {
     setUpdatingId(bookingId)
     try {
-      const res = await api.patch(`/bookings/${bookingId}/status?status=${newStatus}`)
+      let res
+      if (newStatus === 'CHECKED_IN') {
+        // Call FrontDeskController to register arrival in queue system
+        res = await api.patch(`/bookings/${bookingId}/check-in`)
+        if (!res.success) {
+          // Fallback to generic status update
+          res = await api.patch(`/bookings/${bookingId}/status?status=${newStatus}`)
+        }
+      } else {
+        res = await api.patch(`/bookings/${bookingId}/status?status=${newStatus}`)
+      }
+
       if (res.success) {
         showToast(lang === 'th' ? `อัปเดตสถานะการจองเป็น ${newStatus} สำเร็จ` : `Updated status to ${newStatus}`)
         fetchBookings()
@@ -264,7 +277,18 @@ export default function AdminBookings() {
                             ))}
                           </div>
                         ) : (
-                          <span className="text-[11px] text-charcoal-muted italic">Closed</span>
+                          <div className="inline-flex items-center gap-1.5 justify-end">
+                            {b.status === 'CANCELLED' && (
+                              <button
+                                type="button"
+                                onClick={() => setRefundTargetBooking(b)}
+                                className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition-all cursor-pointer"
+                              >
+                                {lang === 'th' ? 'คืนเงิน (Refund)' : 'Refund'}
+                              </button>
+                            )}
+                            <span className="text-[11px] text-charcoal-muted italic">Closed</span>
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -300,6 +324,19 @@ export default function AdminBookings() {
           </div>
         )}
       </div>
+
+      {/* Refund Modal */}
+      {refundTargetBooking && (
+        <RefundModal
+          isOpen={Boolean(refundTargetBooking)}
+          onClose={() => setRefundTargetBooking(null)}
+          booking={refundTargetBooking}
+          onRefundProcessed={() => {
+            showToast(lang === 'th' ? 'ทำเรื่องคืนเงินสำเร็จ' : 'Refund processed successfully')
+            fetchBookings()
+          }}
+        />
+      )}
     </div>
   )
 }

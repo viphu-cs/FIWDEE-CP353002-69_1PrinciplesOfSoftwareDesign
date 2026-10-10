@@ -1,15 +1,37 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAdminAuth } from '../context/AdminAuthContext.jsx'
 import { useLanguage } from '../../i18n/useLanguage.js'
 import StatusBadge from '../components/StatusBadge.jsx'
+import { api } from '../../lib/api.js'
 
 export default function AdminTherapistSchedule() {
   const { user, therapists, getTherapistShiftForDate } = useAdminAuth()
   const { lang } = useLanguage()
+  const [liveAppointments, setLiveAppointments] = useState([])
+  const [loading, setLoading] = useState(false)
 
   // Match the therapist by name or take the first therapist as demo
   const therapistName = user?.name || ''
+  const therapistId = user?.id || 1
   const myData = therapists.find(t => therapistName.includes(t.fullName) || therapistName.includes(t.nickname)) || therapists[0]
+
+  useEffect(() => {
+    let isMounted = true
+    setLoading(true)
+
+    api.get(`/therapist/me/schedule?therapistId=${therapistId}`)
+      .then((res) => {
+        if (isMounted && res.success && Array.isArray(res.data)) {
+          setLiveAppointments(res.data)
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (isMounted) setLoading(false)
+      })
+
+    return () => { isMounted = false }
+  }, [therapistId])
 
   // 7-day dates window starting today
   const shiftDates = Array.from({ length: 7 }, (_, i) => {
@@ -58,76 +80,80 @@ export default function AdminTherapistSchedule() {
         </h1>
         <p className="text-xs sm:text-sm text-charcoal-muted mt-0.5">
           {lang === 'th'
-            ? 'ตรวจสอบช่วงเวลาเข้ากะทำงาน ประจำสัปดาห์ และทักษะหัตถการที่ผ่านการรับรอง'
-            : 'View your 7-day scheduled shifts, rest days, and certified massage techniques'}
+            ? 'ตรวจสอบรอบการเข้างาน กะเช้า/กะบ่าย/เต็มวัน หรือวันหยุด เพื่อเตรียมความพร้อมในการให้บริการ'
+            : 'Review your upcoming 7-day duty shifts, timings, and scheduled days off'}
         </p>
       </div>
 
-      {/* Info Card */}
-      <div className="bg-surface rounded-2xl border border-outline-variant p-5 shadow-[var(--admin-shadow-sm)] flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="text-xs text-charcoal-muted uppercase tracking-wider font-semibold">
-            {lang === 'th' ? 'สถานะการทำงานปัจจุบัน' : 'Current Duty Status'}
-          </div>
-          <div className="mt-1 flex items-center gap-2">
-            <StatusBadge status={myData?.status || 'ON_DUTY'} size="md" />
-            <span className="text-xs font-semibold text-teak-dark">
-              {myData?.nickname} ({myData?.fullName})
-            </span>
-          </div>
-        </div>
+      {/* 7-Day Shift Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+        {shiftDates.map((dateStr, idx) => {
+          const shift = getTherapistShiftForDate(myData, dateStr)
+          const badge = getShiftBadge(shift)
+          const isToday = idx === 0
 
-        <div>
-          <div className="text-xs text-charcoal-muted uppercase tracking-wider font-semibold mb-1.5">
-            {lang === 'th' ? 'ทักษะที่ผ่านการรับรอง' : 'Certified Skills'}
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {myData?.skills?.map((sk, idx) => (
-              <span key={idx} className="px-2.5 py-1 rounded-lg bg-surface-container text-[11px] font-medium text-on-surface border border-outline-variant">
-                {sk}
-              </span>
+          return (
+            <div
+              key={dateStr}
+              className={`p-4 rounded-2xl border flex flex-col justify-between space-y-3 transition-all ${
+                isToday
+                  ? 'bg-surface border-teak-dark/40 shadow-sm ring-1 ring-teak-dark/20'
+                  : 'bg-surface border-outline-variant shadow-[var(--admin-shadow-sm)]'
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-charcoal-muted uppercase">
+                    {formatHeaderDate(dateStr)}
+                  </span>
+                  {isToday && (
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-teak-dark text-warm-ivory">
+                      {lang === 'th' ? 'วันนี้' : 'Today'}
+                    </span>
+                  )}
+                </div>
+                <div className="text-lg font-headline font-bold text-teak-dark mt-1">
+                  {new Date(dateStr).getDate()}
+                </div>
+              </div>
+
+              <div>
+                <span className={`inline-block px-2.5 py-1 rounded-lg text-xs font-semibold w-full text-center ${badge.cls}`}>
+                  {badge.label}
+                </span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Live Appointments Breakdown if any */}
+      {liveAppointments.length > 0 && (
+        <div className="bg-surface rounded-2xl border border-outline-variant p-5 shadow-[var(--admin-shadow-sm)] space-y-3">
+          <h2 className="text-sm font-semibold text-teak-deep uppercase tracking-wider">
+            {lang === 'th' ? 'รายการนัดหมายที่เชื่อมโยงกับระบบวันนี้' : 'Live Booked Appointments Today'}
+          </h2>
+          <div className="divide-y divide-outline-variant/60 text-xs">
+            {liveAppointments.map(app => (
+              <div key={app.queueId} className="py-2.5 flex items-center justify-between">
+                <div>
+                  <span className="font-semibold text-teak-dark mr-2">{app.queueNumber}</span>
+                  <span>{app.customerName}</span>
+                  <span className="text-charcoal-muted ml-2">({app.serviceName})</span>
+                </div>
+                <StatusBadge status={app.queueStatus} size="sm" />
+              </div>
             ))}
           </div>
         </div>
-      </div>
+      )}
 
-      {/* 7-Day Schedule Matrix */}
-      <div className="bg-surface rounded-2xl border border-outline-variant shadow-[var(--admin-shadow-sm)] overflow-hidden">
-        <div className="px-5 py-4 border-b border-outline-variant">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-teak-dark">
-            {lang === 'th' ? 'ตารางเวร 7 วันข้างหน้า' : 'Upcoming 7-Day Shift Roster'}
-          </h2>
-        </div>
-
-        <div className="divide-y divide-outline-variant">
-          {shiftDates.map((dateStr, idx) => {
-            const shiftType = getTherapistShiftForDate(myData, dateStr)
-            const badge = getShiftBadge(shiftType)
-            const isToday = idx === 0
-
-            return (
-              <div key={dateStr} className={`p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${isToday ? 'bg-surface-container-low/60' : 'hover:bg-surface-container-low transition-colors'}`}>
-                <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-xl flex flex-col items-center justify-center text-xs font-bold ${isToday ? 'bg-teak-dark text-warm-ivory' : 'bg-surface-container text-on-surface'}`}>
-                    <span>{new Date(dateStr).getDate()}</span>
-                  </div>
-                  <div>
-                    <div className="font-semibold text-sm text-on-surface">
-                      {formatHeaderDate(dateStr)} {isToday && <span className="ml-2 text-[10px] font-bold text-secondary uppercase tracking-wider">({lang === 'th' ? 'วันนี้' : 'Today'})</span>}
-                    </div>
-                    <div className="text-[11px] text-charcoal-muted">{dateStr}</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <span className={`px-3 py-1.5 rounded-xl text-xs font-semibold ${badge.cls}`}>
-                    {badge.label}
-                  </span>
-                </div>
-              </div>
-            )
-          })}
-        </div>
+      {/* Policy Notice */}
+      <div className="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/60 text-xs text-charcoal-muted leading-relaxed">
+        <strong className="text-on-surface">{lang === 'th' ? 'หมายเหตุการขอสลับกะหรือลาหยุด:' : 'Shift swap policy:'}</strong>{' '}
+        {lang === 'th'
+          ? 'หากต้องการสลับเวรการทำงานหรือแจ้งวันหยุด กรุณาแจ้งผู้จัดการร้าน (Owner) ล่วงหน้าอย่างน้อย 2 วัน เพื่อให้ระบบจัดสรรหมอนวดสำรองได้อย่างราบรื่น'
+          : 'Please notify the store manager at least 2 days in advance for any shift swaps or time-off requests.'}
       </div>
     </div>
   )

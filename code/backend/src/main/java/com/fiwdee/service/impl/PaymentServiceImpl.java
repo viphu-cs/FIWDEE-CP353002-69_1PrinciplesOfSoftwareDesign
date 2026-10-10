@@ -135,6 +135,7 @@ public class PaymentServiceImpl implements PaymentService {
         } else if (booking.getStatus() == BookingStatus.PENDING) {
             booking.setStatus(BookingStatus.CONFIRMED);
         }
+        booking.setPayment(savedPayment);
         bookingRepository.save(booking);
 
         log.info("Payment successfully settled: ID={}, Ref={}, NetAmount={}", 

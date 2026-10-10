@@ -7,6 +7,8 @@ import { PaymentStrategyContent } from './payment/paymentStrategies.jsx'
  * ใช้ Payment Strategies ในการ render ฟอร์มชำระเงินแต่ละวิธี
  */
 export default function BookingStepPayment({
+  recipientName,
+  recipientPhone,
   paymentMethod,
   setPaymentMethod,
   activeService,
@@ -293,7 +295,8 @@ export default function BookingStepPayment({
                     ผู้รับบริการ
                   </span>
                   <span className="font-label-md text-label-md text-on-surface">
-                    คุณอภิสิทธิ์ วัฒนากุล
+                    {recipientName || 'ลูกค้าทั่วไป'}
+                    {recipientPhone ? <span className="text-xs text-secondary font-normal ml-2">({recipientPhone})</span> : null}
                   </span>
                 </div>
               </div>
