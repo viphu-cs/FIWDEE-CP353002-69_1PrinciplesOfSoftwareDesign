@@ -384,11 +384,13 @@ public class BookingServiceImpl implements BookingService {
     private void validateBookingTime(LocalDateTime start, LocalDateTime end, User currentUser) {
         LocalDateTime now = LocalDateTime.now();
 
-        // กฎล่วงหน้าใช้กับลูกค้าเท่านั้น พนักงานรับ walk-in ที่มาถึงร้านได้ทันที
+        // กฎล่วงหน้าใช้กับลูกค้าเท่านั้น: ต้องจองล่วงหน้าอย่างน้อย 1 วัน (เริ่มตั้งแต่พรุ่งนี้เป็นต้นไป)
+        // พนักงาน/แอดมินยังรับ walk-in หรือจองของวันนี้ได้ตามปกติ
         if (currentUser.getRole() == UserRole.CUSTOMER) {
-            if (start.isBefore(now.plusMinutes(MIN_LEAD_MINUTES))) {
+            LocalDate today = LocalDate.now();
+            if (!start.toLocalDate().isAfter(today)) {
                 throw new ValidationException(
-                        "Bookings must be made at least " + MIN_LEAD_MINUTES + " minutes in advance");
+                        "การจองออนไลน์ต้องทำล่วงหน้าอย่างน้อย 1 วัน (จองได้ตั้งแต่พรุ่งนี้เป็นต้นไป สำหรับบริการวันนี้กรุณาติดต่อหน้าร้าน)");
             }
             if (start.isAfter(now.plusDays(MAX_ADVANCE_DAYS))) {
                 throw new ValidationException(

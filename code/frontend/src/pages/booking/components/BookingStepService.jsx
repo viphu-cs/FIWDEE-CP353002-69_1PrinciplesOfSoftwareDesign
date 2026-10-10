@@ -268,7 +268,7 @@ export default function BookingStepService({
                     className="flex gap-space-md overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scroll-smooth no-scrollbar"
                   >
                     {displayedTherapists.map((therapist) => {
-                      const isSelected = selectedTherapist.id === therapist.id
+                      const isSelected = selectedTherapist?.id === therapist.id
                       const canDoSelectedService = therapistCanPerformService(therapist, selectedService)
                       return (
                         <div
@@ -403,7 +403,7 @@ export default function BookingStepService({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {services.map((svc) => {
-                    const isSelected = selectedService.id === svc.id
+                    const isSelected = selectedService?.id === svc.id
                     const isQualified = therapistCanPerformService(selectedTherapist, svc)
 
                     return (
@@ -592,10 +592,10 @@ export default function BookingStepService({
                       </span>
                       <div className="flex items-baseline justify-between">
                         <span className="font-label-md text-label-md text-on-surface font-semibold">
-                          {selectedTherapist.shortName}
+                          {selectedTherapist?.shortName || selectedTherapist?.name || 'ให้ร้านจัดสรรให้'}
                         </span>
                         <span className="font-body-sm text-body-sm text-secondary truncate max-w-[180px]">
-                          {selectedTherapist.role}
+                          {selectedTherapist?.role || ''}
                         </span>
                       </div>
                     </div>
@@ -606,10 +606,10 @@ export default function BookingStepService({
                       </span>
                       <div className="flex items-baseline justify-between">
                         <span className="font-label-md text-label-md text-on-surface font-semibold">
-                          {selectedService.name}
+                          {selectedService?.name || '—'}
                         </span>
                         <span className="font-body-sm text-body-sm text-secondary">
-                          {activeService.duration}
+                          {activeService?.duration || ''}
                         </span>
                       </div>
                     </div>

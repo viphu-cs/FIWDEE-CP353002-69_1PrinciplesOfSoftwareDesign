@@ -281,14 +281,23 @@ INSERT INTO payments (
     gross_amount, discount_amount, net_amount, payment_method, payment_status,
     paid_at, transaction_note
 )
-VALUES (
-    1, 1, 2,
-    'PAY-' || TO_CHAR(CURRENT_DATE - INTERVAL '7 days', 'YYYYMMDD') || '-7A1B2C',
-    'REC-' || TO_CHAR(CURRENT_DATE - INTERVAL '7 days', 'YYYYMMDD') || '-7A1B2C',
-    500.00, 0.00, 500.00, 'QR_PROMPTPAY', 'COMPLETED',
-    (CURRENT_DATE - INTERVAL '7 days') + TIME '15:00:00',
-    'ชำระผ่าน PromptPay QR เรียบร้อย ตรวจสอบยอดเงินแล้ว'
-)
+VALUES
+    (
+        1, 1, 2,
+        'PAY-' || TO_CHAR(CURRENT_DATE - INTERVAL '7 days', 'YYYYMMDD') || '-7A1B2C',
+        'REC-' || TO_CHAR(CURRENT_DATE - INTERVAL '7 days', 'YYYYMMDD') || '-7A1B2C',
+        500.00, 0.00, 500.00, 'QR_PROMPTPAY', 'COMPLETED',
+        (CURRENT_DATE - INTERVAL '7 days') + TIME '15:00:00',
+        'ชำระผ่าน PromptPay QR เรียบร้อย ตรวจสอบยอดเงินแล้ว'
+    ),
+    (
+        2, 3, 2,
+        'PAY-' || TO_CHAR(CURRENT_DATE, 'YYYYMMDD') || '-9C3E1A',
+        'REC-' || TO_CHAR(CURRENT_DATE, 'YYYYMMDD') || '-9C3E1A',
+        700.00, 0.00, 700.00, 'QR_PROMPTPAY', 'COMPLETED',
+        CURRENT_DATE + TIME '10:05:00',
+        'ชำระผ่าน PromptPay QR เรียบร้อย ยืนยันการจองล่วงหน้า'
+    )
 ON CONFLICT (id) DO UPDATE SET
     booking_id = EXCLUDED.booking_id,
     receptionist_id = EXCLUDED.receptionist_id,
