@@ -8,11 +8,11 @@
 
 | ลำดับ | ชื่อ-นามสกุล | รหัสนักศึกษา | Section | Branch | หน้าที่รับผิดชอบ |
 |:---:|---|:---:|:---:|---|---|
-| 1 | นายชาคริต พุกมี | 673380265-8 | 2 | `chakrit_673380265-8_sec2` | **Dev 1:** Authentication, Spring Security (JWT RBAC), User Management (`/admin/users`), Customer Profile & Booking History, ปรับปรุงสิทธิ์หน้าจอหมอนวด (Therapist UI Permissions) |
-| 2 | นายวิภู หิรัญรัศมี | 673380291-7 | 2 | `viphu_673380291-7_sec2` | **Dev 3 & 5:** Core Booking Engine, Availability Engine (Slot & Cleaning Buffer), GoF State Pattern, GoF Strategy Pattern (Payment & Discount), Financial Reports (`/admin/reports/*`), Cloud PaaS Deployment |
+| 1 | นายชาคริต พุกมี | 673380265-8 | 2 | `chakrit_673380265-8_sec2` | Authentication, Spring Security (JWT RBAC), User Management (`/admin/users`), Customer Profile & Booking History, Design and Develop Frontend Landing Page For Customer |
+| 2 | นายวิภู หิรัญรัศมี | 673380291-7 | 2 | `viphu_673380291-7_sec2` | Core Booking Engine, Availability Engine (Slot & Cleaning Buffer), GoF State Pattern, GoF Strategy Pattern (Payment & Discount), Financial Reports (`/admin/reports/*`), Cloud PaaS Deployment |
 | 3 | นายฐิติศักดิ์ บุญมี | 673380035-5 | 2 | `Titisak_673380035-5_sec2` | **Dev 4:** Front-Desk Queue Management, GoF Observer Pattern (Queue & Notifications), Service Execution, Customer Review System (`/reviews`), ปรับแต่งธีม Admin UI (Serene Thai Sanctuary) |
 | 4 | นายศุภเชษฐ์ ฤทธิ์คำรพ | 673380063-0 | 2 | `supached_673380063-0_sec2` | **Dev 2:** Shop Catalog (`/services`), Resource Management (Rooms, Therapists, Skills), Work Schedules & Shifts, Data Seeder & Database Migration Script (`schema.sql`, `data.sql`) |
-| 5 | นายปิยชยานันท์ ทองดอนพุ่ม | 673380049-4 | 2 | `piyachayanin_673380049-4_sec2` | **QA & Testing:** Automated Testing (36 Unit Tests + 12 Integration Tests), Test Design Documentation (`.xlsx`), Defect Tracking & Verification (DEF-001 ถึง DEF-019), Performance & Bug Fixing |
+| 5 | นายปิยชยานันท์ ทองดอนพุ่ม | 673380049-4 | 2 | `piyachayanin_673380049-4_sec2` | Automated Testing (36 Unit Tests + 12 Integration Tests), Test Design Documentation (`.xlsx`), Defect Tracking & Verification (DEF-001 ถึง DEF-019), Performance & Bug Fixing |
 
 ---
 
