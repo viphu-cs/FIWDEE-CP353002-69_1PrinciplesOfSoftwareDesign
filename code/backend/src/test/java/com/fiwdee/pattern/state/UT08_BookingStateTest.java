@@ -26,8 +26,8 @@ class UT08_BookingStateTest {
         Booking booking = Booking.builder()
                 .id(1L)
                 .bookingReferenceCode("BK-20261109-ABC123")
-                .startDateTime(LocalDateTime.of(2026, 11, 9, 15, 30))
-                .endDateTime(LocalDateTime.of(2026, 11, 9, 16, 30))
+                .startDateTime(LocalDateTime.now().minusMinutes(16))
+                .endDateTime(LocalDateTime.now().plusMinutes(44))
                 .totalPrice(new BigDecimal("600.00"))
                 .status(status)
                 .build();

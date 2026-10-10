@@ -9,6 +9,7 @@ import com.fiwdee.domain.enums.BookingStatus;
 import com.fiwdee.exception.ConflictException;
 import com.fiwdee.exception.ValidationException;
 import java.time.LocalTime;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,7 +23,13 @@ class UT02_CreateBookingResourceTest extends BookingWorldTestBase {
 
     @BeforeEach
     void onlyT5AndT8() {
+        freezeClock();
         onlyQualified(s1, 5L, 8L);
+    }
+
+    @AfterEach
+    void releaseTestClock() {
+        releaseClock();
     }
 
     @Test
