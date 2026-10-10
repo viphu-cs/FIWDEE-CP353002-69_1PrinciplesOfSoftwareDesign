@@ -23,7 +23,7 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
     try {
       const todayStr = new Date().toISOString().slice(0, 10)
       const res = await api.get(`/admin/queue?date=${todayStr}`)
-      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+      if (res && res.success && Array.isArray(res.data)) {
         const mapped = res.data.map((q) => {
           const timeFormatted = q.scheduledStartDateTime
             ? new Date(q.scheduledStartDateTime).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
@@ -48,22 +48,21 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
         })
         setLiveQueueItems(mapped)
       } else {
-        // Fallback to local context state
-        setLiveQueueItems(fallbackQueueItems)
+        setLiveQueueItems([])
       }
     } catch {
-      setLiveQueueItems(fallbackQueueItems)
+      setLiveQueueItems([])
     } finally {
       setLoading(false)
     }
-  }, [fallbackQueueItems])
+  }, [])
 
   useEffect(() => {
     fetchDailyQueue()
   }, [fetchDailyQueue])
 
-  // Current display items
-  const displayItems = liveQueueItems.length > 0 ? liveQueueItems : fallbackQueueItems
+  // Current display items from live DB
+  const displayItems = liveQueueItems
 
   const handleCallNext = async () => {
     try {

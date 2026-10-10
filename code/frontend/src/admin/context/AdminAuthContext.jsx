@@ -384,6 +384,10 @@ export function AdminAuthProvider({ children }) {
 
     // Update Room status to OCCUPIED
     updateRoomStatus(selectedRoomNo, 'OCCUPIED', targetQueue.bookingCode, selectedTherapistName, selectedServiceName)
+    const targetRoomObj = rooms.find(r => r.id === selectedRoomNo)
+    if (targetRoomObj?.backendId) {
+      api.patch(`/admin/rooms/${targetRoomObj.backendId}/status`, { roomStatus: 'OCCUPIED' }).catch(() => {})
+    }
 
     // Update Therapist status to IN_SERVICE
     setTherapists(prev => prev.map(t => (t.fullName === selectedTherapistName || t.nickname === selectedTherapistName) ? { ...t, status: 'IN_SERVICE', currentRoom: selectedRoomNo } : t))
@@ -399,7 +403,15 @@ export function AdminAuthProvider({ children }) {
       price: selectedPrice
     } : item))
 
+    if (targetQueue?.queueId) {
+      api.patch(`/admin/queue/${targetQueue.queueId}/status`, { status: 'IN_SERVICE' }).catch(() => {})
+    }
+
     // Update corresponding Booking item
+    if (targetQueue?.bookingId) {
+      api.patch(`/bookings/${targetQueue.bookingId}/status?status=IN_SERVICE`).catch(() => {})
+    }
+
     setBookings(prev => prev.map(bkg => {
       if (bkg.id === targetQueue.bookingCode || bkg.queueNo === queueNo) {
         return {
