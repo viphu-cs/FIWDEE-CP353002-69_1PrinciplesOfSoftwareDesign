@@ -275,6 +275,7 @@ export default function App() {
               ...matchedMock,
               id: bt.id,
               nickname: bt.nickname,
+              skills: backendSkills,
               specialties: specialties.length > 0 ? specialties : matchedMock.specialties,
               rating: bt.averageRating > 0 ? Number(bt.averageRating) : matchedMock.rating,
               bio: bt.bio || matchedMock.bio,
