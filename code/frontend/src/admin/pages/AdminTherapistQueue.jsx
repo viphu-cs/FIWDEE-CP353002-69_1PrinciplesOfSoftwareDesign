@@ -28,7 +28,7 @@ export default function AdminTherapistQueue() {
         const mapped = res.data.map(q => ({
           queueId: q.queueId,
           queueNo: q.queueNumber || `Q-${q.queueId}`,
-          bookingCode: q.bookingId ? `BK-${q.bookingId}` : '-',
+          bookingCode: q.bookingReferenceCode || (q.bookingId ? `BK-${q.bookingId}` : '-'),
           bookingId: q.bookingId,
           customerName: q.customerName || 'ลูกค้าของฉัน',
           phone: '—',

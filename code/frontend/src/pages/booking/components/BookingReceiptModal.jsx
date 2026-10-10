@@ -17,30 +17,52 @@ export default function BookingReceiptModal({ isOpen, onClose, booking }) {
 
     const fetchReceipt = async () => {
       try {
-        // 1. Fetch payment by booking ID
-        const payRes = await api.get(`/bookings/${booking.id}/payment`)
-        if (!payRes.success || !payRes.data?.id) {
-          if (isMounted) {
-            setErrorMsg(lang === 'th' ? 'ยังไม่มีข้อมูลการชำระเงินสำหรับการจองนี้' : 'No payment record found for this booking')
-            setLoading(false)
-          }
-          return
-        }
-
-        const paymentId = payRes.data.id
-
-        // 2. Fetch receipt by payment ID
-        const recRes = await api.get(`/payments/${paymentId}/receipt`)
-        if (recRes.success && recRes.data) {
-          if (isMounted) {
-            setReceipt(recRes.data)
+        // 1. Try to fetch payment by booking ID
+        const payRes = await api.get(`/bookings/${booking.id}/payment`).catch(() => null)
+        
+        if (payRes && payRes.success && payRes.data?.id) {
+          const paymentId = payRes.data.id
+          // 2. Fetch receipt by payment ID
+          const recRes = await api.get(`/payments/${paymentId}/receipt`).catch(() => null)
+          if (recRes && recRes.success && recRes.data) {
+            if (isMounted) {
+              setReceipt({
+                ...recRes.data,
+                isPaid: true,
+              })
+            }
+          } else {
+            // Fallback receipt synthesis from payment + booking details
+            if (isMounted) {
+              setReceipt({
+                receiptNumber: payRes.data.receiptNumber || `REC-${payRes.data.paymentReferenceCode || booking.bookingReferenceCode}`,
+                paymentReferenceCode: payRes.data.paymentReferenceCode,
+                bookingReferenceCode: booking.bookingReferenceCode,
+                customerName: booking.customerName || 'ลูกค้าคนพิเศษ',
+                customerPhone: booking.customerPhone || '—',
+                serviceName: booking.serviceName,
+                durationMinutes: booking.durationMinutes,
+                therapistName: booking.therapistName,
+                roomNumber: booking.roomNumber,
+                serviceStartDateTime: booking.startDateTime,
+                grossAmount: payRes.data.grossAmount || booking.totalPrice,
+                discountAmount: payRes.data.discountAmount || booking.discountAmount || 0,
+                netAmount: payRes.data.netAmount || booking.netAmount || booking.totalPrice,
+                paymentMethod: payRes.data.paymentMethod || 'QR_PROMPTPAY',
+                paidAt: payRes.data.paidAt || booking.createdAt,
+                shopName: 'FIWDEE MASSAGE & SANCTUARY',
+                shopAddress: '123/45 ถนนมิตรภาพ ขอนแก่น 40000',
+                shopPhone: '043-241-890',
+                isPaid: true,
+              })
+            }
           }
         } else {
-          // Fallback receipt synthesis from payment + booking details
+          // Booking has no payment yet (e.g. Counter payment, Confirmed appointment slip)
           if (isMounted) {
             setReceipt({
-              receiptNumber: `REC-${payRes.data.paymentReferenceCode || booking.bookingReferenceCode}`,
-              paymentReferenceCode: payRes.data.paymentReferenceCode,
+              receiptNumber: `SLIP-${booking.bookingReferenceCode}`,
+              paymentReferenceCode: 'PAY-ON-SITE',
               bookingReferenceCode: booking.bookingReferenceCode,
               customerName: booking.customerName || 'ลูกค้าคนพิเศษ',
               customerPhone: booking.customerPhone || '—',
@@ -52,11 +74,12 @@ export default function BookingReceiptModal({ isOpen, onClose, booking }) {
               grossAmount: booking.totalPrice,
               discountAmount: booking.discountAmount || 0,
               netAmount: booking.netAmount || booking.totalPrice,
-              paymentMethod: payRes.data.paymentMethod,
-              paidAt: payRes.data.paidAt,
+              paymentMethod: 'COUNTER',
+              paidAt: booking.createdAt,
               shopName: 'FIWDEE MASSAGE & SANCTUARY',
-              shopAddress: '123/45 ถนนสุขุมวิท กรุงเทพฯ 10110',
-              shopPhone: '02-123-4567',
+              shopAddress: '123/45 ถนนมิตรภาพ ขอนแก่น 40000',
+              shopPhone: '043-241-890',
+              isPaid: false,
             })
           }
         }
@@ -152,8 +175,12 @@ export default function BookingReceiptModal({ isOpen, onClose, booking }) {
                 {t('receipt.tel')}: {receipt.shopPhone || '02-123-4567'}
               </p>
               <div className="pt-2">
-                <span className="inline-block px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[10px] font-bold tracking-widest uppercase border border-emerald-200">
-                  {t('receipt.paidStatus')}
+                <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase border ${
+                  receipt.isPaid
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : 'bg-amber-50 text-amber-800 border-amber-200'
+                }`}>
+                  {receipt.isPaid ? t('receipt.paidStatus') : t('receipt.unpaidStatus')}
                 </span>
               </div>
             </div>
@@ -188,8 +215,10 @@ export default function BookingReceiptModal({ isOpen, onClose, booking }) {
                 <span className="text-[10px] uppercase text-secondary tracking-wider block">
                   {t('receipt.paymentMethod')}
                 </span>
-                <span className="font-medium text-on-surface uppercase">
-                  {receipt.paymentMethod || 'PROMPTPAY'}
+                <span className="font-medium text-on-surface">
+                  {receipt.paymentMethod === 'COUNTER'
+                    ? t('receipt.payAtCounter')
+                    : (receipt.paymentMethod || 'QR_PROMPTPAY')}
                 </span>
               </div>
             </div>
@@ -232,7 +261,7 @@ export default function BookingReceiptModal({ isOpen, onClose, booking }) {
                 <span>{formatMoney(receipt.grossAmount)}</span>
               </div>
               <div className="flex justify-between font-bold text-sm sm:text-base text-primary pt-2 border-t border-outline-variant/50">
-                <span>{t('receipt.totalPaid')}</span>
+                <span>{receipt.isPaid ? t('receipt.totalPaid') : t('receipt.totalEstimated')}</span>
                 <span>{formatMoney(receipt.netAmount)}</span>
               </div>
             </div>

@@ -17,6 +17,7 @@ public class QueueMapper {
         return QueueItemResponseDTO.builder()
             .queueId(queueItem.getId())
             .bookingId(booking == null ? null : booking.getId())
+            .bookingReferenceCode(booking == null ? null : booking.getBookingReferenceCode())
             .queueNumber(queueItem.getQueueNumber())
             .queueDate(queueItem.getQueueDate())
             .checkInTime(queueItem.getCheckInTime())

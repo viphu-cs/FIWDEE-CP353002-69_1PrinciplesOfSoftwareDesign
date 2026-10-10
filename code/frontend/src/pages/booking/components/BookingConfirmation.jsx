@@ -5,6 +5,8 @@ import React from 'react'
  */
 export default function BookingConfirmation({
   bookingRef,
+  recipientName,
+  recipientPhone,
   selectedTherapist,
   selectedService,
   activeService,
@@ -39,6 +41,14 @@ export default function BookingConfirmation({
             <span className="font-mono text-primary font-bold text-base">{bookingRef}</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-sm font-body-sm text-body-sm">
+            {recipientName && (
+              <div>
+                <span className="text-secondary block">ผู้รับบริการ:</span>
+                <span className="font-medium text-on-surface">
+                  {recipientName} {recipientPhone ? `(${recipientPhone})` : ''}
+                </span>
+              </div>
+            )}
             <div>
               <span className="text-secondary block">ผู้บำบัด:</span>
               <span className="font-medium text-on-surface">{selectedTherapist.name}</span>

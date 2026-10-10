@@ -33,7 +33,7 @@ export const shop = {
 export const services = [
   {
     id: 1,
-    serviceCode: 'THAI',
+    serviceCode: 'SVC-THAI_MASSAGE',
     image: '/images/services/service-thai.jpg',
     durationOptions: [
       { durationMinutes: 60, price: 500 },
@@ -43,7 +43,7 @@ export const services = [
   },
   {
     id: 2,
-    serviceCode: 'AROMA',
+    serviceCode: 'SVC-AROMA',
     image: '/images/services/service-aroma.jpg',
     durationOptions: [
       { durationMinutes: 60, price: 700 },
@@ -53,22 +53,22 @@ export const services = [
   },
   {
     id: 3,
-    serviceCode: 'HOT_OIL',
-    image: '/images/services/service-warm-oil.jpg',
-    durationOptions: [
-      { durationMinutes: 60, price: 800 },
-      { durationMinutes: 90, price: 1100 },
-      { durationMinutes: 120, price: 1400 },
-    ],
-  },
-  {
-    id: 4,
-    serviceCode: 'FOOT',
+    serviceCode: 'SVC-FOOT',
     image: '/images/services/service-foot.jpg',
     durationOptions: [
       { durationMinutes: 60, price: 400 },
       { durationMinutes: 90, price: 550 },
       { durationMinutes: 120, price: 700 },
+    ],
+  },
+  {
+    id: 4,
+    serviceCode: 'SVC-WARM_OIL',
+    image: '/images/services/service-warm-oil.jpg',
+    durationOptions: [
+      { durationMinutes: 60, price: 800 },
+      { durationMinutes: 90, price: 1100 },
+      { durationMinutes: 120, price: 1400 },
     ],
   },
 ]

@@ -114,28 +114,28 @@ const initialTherapists = [
 ]
 
 const initialQueueItems = [
-  { queueNo: 'Q-001', bookingCode: 'BKG-20261002-001', customerName: 'คุณกิตติศักดิ์', phone: '081-234-5678', serviceName: 'นวดอโรมาสุคนธบำบัด', durationMinutes: 90, therapistName: 'มะลิ กัลยาณี', roomNo: 'RM-101', status: 'IN_SERVICE', type: 'ONLINE', time: '13:00', price: 850 },
-  { queueNo: 'Q-002', bookingCode: 'BKG-20261002-002', customerName: 'คุณวรรณิสา', phone: '089-876-5432', serviceName: 'นวดแผนไทยโบราณ', durationMinutes: 60, therapistName: 'แพรวพรรณ วงศ์สว่าง', roomNo: null, status: 'CHECKED_IN', type: 'WALK_IN', time: '13:45', price: 600 },
-  { queueNo: 'Q-003', bookingCode: 'BKG-20261002-003', customerName: 'คุณธนกฤต & คุณภาวิณี', phone: '086-555-1234', serviceName: 'FIWDEE Royal Herbal Spa', durationMinutes: 120, therapistName: 'บัว รวีวรรณ', roomNo: 'RM-104', status: 'IN_SERVICE', type: 'ONLINE', time: '13:30', price: 1500 },
-  { queueNo: 'Q-004', bookingCode: 'BKG-20261002-004', customerName: 'คุณอารียา', phone: '092-333-4444', serviceName: 'นวดเท้าคลายตึง', durationMinutes: 60, therapistName: 'แก้วตา กุลนันท์', roomNo: null, status: 'WAITING', type: 'WALK_IN', time: '14:00', price: 500 },
-  { queueNo: 'Q-005', bookingCode: 'BKG-20261002-005', customerName: 'คุณณัฐพล', phone: '084-111-2222', serviceName: 'นวดคอบ่าไหล่ & กดจุด', durationMinutes: 60, therapistName: 'แพรวพรรณ วงศ์สว่าง', roomNo: null, status: 'CONFIRMED', type: 'ONLINE', time: '14:30', price: 750 }
+  { queueNo: 'Q-001', bookingCode: 'BK-20261002-000001', customerName: 'คุณกิตติศักดิ์', phone: '081-234-5678', serviceName: 'นวดอโรมาสุคนธบำบัด', durationMinutes: 90, therapistName: 'มะลิ กัลยาณี', roomNo: '101', status: 'IN_SERVICE', type: 'ONLINE', time: '13:00', price: 850 },
+  { queueNo: 'Q-002', bookingCode: 'BK-20261002-000002', customerName: 'คุณวรรณิสา', phone: '089-876-5432', serviceName: 'นวดแผนไทยโบราณ', durationMinutes: 60, therapistName: 'แพรวพรรณ วงศ์สว่าง', roomNo: null, status: 'CHECKED_IN', type: 'WALK_IN', time: '13:45', price: 600 },
+  { queueNo: 'Q-003', bookingCode: 'BK-20261002-000003', customerName: 'คุณธนกฤต & คุณภาวิณี', phone: '086-555-1234', serviceName: 'นวดน้ำมันร้อนคลายกล้ามเนื้อ', durationMinutes: 120, therapistName: 'บัว รวีวรรณ', roomNo: '201', status: 'IN_SERVICE', type: 'ONLINE', time: '13:30', price: 1500 },
+  { queueNo: 'Q-004', bookingCode: 'BK-20261002-000004', customerName: 'คุณอารียา', phone: '092-333-4444', serviceName: 'นวดเท้าคลายตึง', durationMinutes: 60, therapistName: 'แก้วตา กุลนันท์', roomNo: null, status: 'WAITING', type: 'WALK_IN', time: '14:00', price: 500 },
+  { queueNo: 'Q-005', bookingCode: 'BK-20261002-000005', customerName: 'คุณณัฐพล', phone: '084-111-2222', serviceName: 'นวดคอบ่าไหล่ & กดจุด', durationMinutes: 60, therapistName: 'แพรวพรรณ วงศ์สว่าง', roomNo: null, status: 'CONFIRMED', type: 'ONLINE', time: '14:30', price: 750 }
 ]
 
 const initialBookings = [
-  { id: 'BKG-20261002-001', queueNo: 'Q-001', customerName: 'คุณกิตติศักดิ์', phone: '081-234-5678', serviceName: 'นวดอโรมาสุคนธบำบัด', durationMinutes: 90, therapistName: 'มะลิ กัลยาณี', roomNo: 'RM-101', date: '2026-10-02', time: '13:00', status: 'IN_SERVICE', price: 850, paymentStatus: 'PAID', channel: 'Mobile App' },
-  { id: 'BKG-20261002-002', queueNo: 'Q-002', customerName: 'คุณวรรณิสา', phone: '089-876-5432', serviceName: 'นวดแผนไทยโบราณ', durationMinutes: 60, therapistName: 'แพรวพรรณ วงศ์สว่าง', roomNo: 'RM-102', date: '2026-10-02', time: '13:45', status: 'CHECKED_IN', price: 600, paymentStatus: 'PAID', channel: 'Walk-in' },
-  { id: 'BKG-20261002-003', queueNo: 'Q-003', customerName: 'คุณธนกฤต & คุณภาวิณี', phone: '086-555-1234', serviceName: 'FIWDEE Royal Herbal Spa', durationMinutes: 120, therapistName: 'บัว รวีวรรณ', roomNo: 'RM-104', date: '2026-10-02', time: '13:30', status: 'IN_SERVICE', price: 1500, paymentStatus: 'PAID', channel: 'Website' },
-  { id: 'BKG-20261002-004', queueNo: 'Q-004', customerName: 'คุณอารียา', phone: '092-333-4444', serviceName: 'นวดเท้าคลายตึง', durationMinutes: 60, therapistName: 'แก้วตา กุลนันท์', roomNo: 'RM-105', date: '2026-10-02', time: '14:00', status: 'PENDING', price: 500, paymentStatus: 'UNPAID', channel: 'Walk-in' },
-  { id: 'BKG-20261002-005', queueNo: 'Q-005', customerName: 'คุณณัฐพล', phone: '084-111-2222', serviceName: 'นวดคอบ่าไหล่ & กดจุด', durationMinutes: 60, therapistName: 'แพรวพรรณ วงศ์สว่าง', roomNo: null, date: '2026-10-02', time: '14:30', status: 'CONFIRMED', price: 750, paymentStatus: 'PAID', channel: 'LINE OA' },
-  { id: 'BKG-20261003-001', queueNo: 'Q-010', customerName: 'คุณปรียาพร', phone: '088-777-6666', serviceName: 'นวดแผนไทยโบราณ', durationMinutes: 90, therapistName: 'แพรวพรรณ วงศ์สว่าง', roomNo: 'RM-102', date: '2026-10-03', time: '11:00', status: 'CONFIRMED', price: 850, paymentStatus: 'PAID', channel: 'Phone Booking' },
-  { id: 'BKG-20261004-001', queueNo: 'Q-012', customerName: 'คุณศุภโชค', phone: '082-111-9999', serviceName: 'นวดอโรมาสุคนธบำบัด', durationMinutes: 90, therapistName: 'บัว รวีวรรณ', roomNo: 'RM-104', date: '2026-10-04', time: '15:00', status: 'CONFIRMED', price: 1100, paymentStatus: 'PAID', channel: 'Website' }
+  { id: 'BK-20261002-000001', bookingReferenceCode: 'BK-20261002-000001', queueNo: 'Q-001', customerName: 'คุณกิตติศักดิ์', phone: '081-234-5678', serviceName: 'นวดอโรมาสุคนธบำบัด', durationMinutes: 90, therapistName: 'มะลิ กัลยาณี', roomNo: '101', date: '2026-10-02', time: '13:00', status: 'IN_SERVICE', price: 850, paymentStatus: 'PAID', channel: 'Mobile App' },
+  { id: 'BK-20261002-000002', bookingReferenceCode: 'BK-20261002-000002', queueNo: 'Q-002', customerName: 'คุณวรรณิสา', phone: '089-876-5432', serviceName: 'นวดแผนไทยโบราณ', durationMinutes: 60, therapistName: 'แพรวพรรณ วงศ์สว่าง', roomNo: '102', date: '2026-10-02', time: '13:45', status: 'CHECKED_IN', price: 600, paymentStatus: 'PAID', channel: 'Walk-in' },
+  { id: 'BK-20261002-000003', bookingReferenceCode: 'BK-20261002-000003', queueNo: 'Q-003', customerName: 'คุณธนกฤต & คุณภาวิณี', phone: '086-555-1234', serviceName: 'นวดน้ำมันร้อนคลายกล้ามเนื้อ', durationMinutes: 120, therapistName: 'บัว รวีวรรณ', roomNo: '201', date: '2026-10-02', time: '13:30', status: 'IN_SERVICE', price: 1500, paymentStatus: 'PAID', channel: 'Website' },
+  { id: 'BK-20261002-000004', bookingReferenceCode: 'BK-20261002-000004', queueNo: 'Q-004', customerName: 'คุณอารียา', phone: '092-333-4444', serviceName: 'นวดเท้าคลายตึง', durationMinutes: 60, therapistName: 'แก้วตา กุลนันท์', roomNo: '103', date: '2026-10-02', time: '14:00', status: 'PENDING', price: 500, paymentStatus: 'UNPAID', channel: 'Walk-in' },
+  { id: 'BK-20261002-000005', bookingReferenceCode: 'BK-20261002-000005', queueNo: 'Q-005', customerName: 'คุณณัฐพล', phone: '084-111-2222', serviceName: 'นวดคอบ่าไหล่ & กดจุด', durationMinutes: 60, therapistName: 'แพรวพรรณ วงศ์สว่าง', roomNo: null, date: '2026-10-02', time: '14:30', status: 'CONFIRMED', price: 750, paymentStatus: 'PAID', channel: 'LINE OA' },
+  { id: 'BK-20261003-000001', bookingReferenceCode: 'BK-20261003-000001', queueNo: 'Q-010', customerName: 'คุณปรียาพร', phone: '088-777-6666', serviceName: 'นวดแผนไทยโบราณ', durationMinutes: 90, therapistName: 'แพรวพรรณ วงศ์สว่าง', roomNo: '102', date: '2026-10-03', time: '11:00', status: 'CONFIRMED', price: 850, paymentStatus: 'PAID', channel: 'Phone Booking' },
+  { id: 'BK-20261004-000001', bookingReferenceCode: 'BK-20261004-000001', queueNo: 'Q-012', customerName: 'คุณศุภโชค', phone: '082-111-9999', serviceName: 'นวดอโรมาสุคนธบำบัด', durationMinutes: 90, therapistName: 'บัว รวีวรรณ', roomNo: '201', date: '2026-10-04', time: '15:00', status: 'CONFIRMED', price: 1100, paymentStatus: 'PAID', channel: 'Website' }
 ]
 
 const initialServices = [
-  { id: 1, code: 'SVC-THAI', name: 'นวดแผนไทยโบราณ (Traditional Thai Massage)', category: 'Thai Massage', description: 'นวดกดจุดยืดเหยียดกล้ามเนื้อ ปรับสมดุลธาตุตามศาสตร์ไทยโบราณ', durations: [{ minutes: 60, price: 600 }, { minutes: 90, price: 850 }, { minutes: 120, price: 1100 }], isActive: true },
-  { id: 2, code: 'SVC-AROMA', name: 'นวดอโรมาสุคนธบำบัด (Aroma Therapy Massage)', category: 'Aromatherapy', description: 'นวดน้ำมันหอมระเหยผ่อนคลายความเครียด บำรุงผิวพรรณอย่างล้ำลึก', durations: [{ minutes: 60, price: 800 }, { minutes: 90, price: 1100 }, { minutes: 120, price: 1400 }], isActive: true },
-  { id: 3, code: 'SVC-HERBAL', name: 'FIWDEE Royal Herbal Spa (นวดประคบสมุนไพร)', category: 'Signature Spa', description: 'นวดไทยร่วมกับลูกประคบสมุนไพรอุ่น กระตุ้นการไหลเวียนโลหิต', durations: [{ minutes: 60, price: 750 }, { minutes: 90, price: 1000 }, { minutes: 120, price: 1300 }], isActive: true },
-  { id: 4, code: 'SVC-FOOT', name: 'นวดเท้าคลายตึง (Foot Reflexology)', category: 'Reflexology', description: 'กดจุดสะท้อนเท้า ปรับสมดุลอวัยวะภายใน สบายเท้าและเบาตัว', durations: [{ minutes: 60, price: 500 }, { minutes: 90, price: 700 }], isActive: true }
+  { id: 1, code: 'SVC-THAI_MASSAGE', name: 'นวดไทยแผนโบราณ (Traditional Thai Massage)', category: 'Thai Massage', description: 'นวดกดจุดยืดเหยียดกล้ามเนื้อ ปรับสมดุลธาตุตามศาสตร์ไทยโบราณ', durations: [{ minutes: 60, price: 350 }, { minutes: 90, price: 500 }, { minutes: 120, price: 650 }], isActive: true },
+  { id: 2, code: 'SVC-AROMA', name: 'นวดอโรมาสุคนธบำบัด (Aroma Therapy Massage)', category: 'Aromatherapy', description: 'นวดน้ำมันหอมระเหยผ่อนคลายความเครียด บำรุงผิวพรรณอย่างล้ำลึก', durations: [{ minutes: 90, price: 800 }, { minutes: 120, price: 1100 }], isActive: true },
+  { id: 3, code: 'SVC-FOOT', name: 'นวดเท้าและกดจุดสะท้อน (Foot Reflexology)', category: 'Reflexology', description: 'กดจุดสะท้อนเท้า ปรับสมดุลอวัยวะภายใน สบายเท้าและเบาตัว', durations: [{ minutes: 60, price: 300 }, { minutes: 90, price: 450 }], isActive: true },
+  { id: 4, code: 'SVC-WARM_OIL', name: 'นวดน้ำมันร้อนคลายกล้ามเนื้อ (Warm Oil Massage)', category: 'Signature Spa', description: 'นวดบำบัดด้วยน้ำมันอุ่นสูตรพิเศษ บรรเทาอาการกล้ามเนื้อตึงลึกในห้องส่วนตัว VIP', durations: [{ minutes: 90, price: 950 }, { minutes: 120, price: 1300 }], isActive: true }
 ]
 
 export function AdminAuthProvider({ children }) {
@@ -267,7 +267,7 @@ export function AdminAuthProvider({ children }) {
             return {
               queueId: q.queueId,
               queueNo: q.queueNumber || `Q-${q.queueId}`,
-              bookingCode: q.bookingId ? `BK-${q.bookingId}` : '-',
+              bookingCode: q.bookingReferenceCode || (q.bookingId ? `BK-${q.bookingId}` : '-'),
               bookingId: q.bookingId,
               customerName: q.customerName || 'ลูกค้าหน้าร้าน',
               phone: '—',
@@ -460,7 +460,7 @@ export function AdminAuthProvider({ children }) {
 
     const nextNum = queueItems.length + 1
     const queueNo = `Q-${String(nextNum).padStart(3, '0')}`
-    const bookingCode = `BKG-${targetDate.replace(/-/g, '')}-${String(Math.floor(1000 + Math.random() * 9000))}`
+    const bookingCode = `BK-${targetDate.replace(/-/g, '')}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
     
     const newQueue = {
       queueNo,

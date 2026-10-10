@@ -32,7 +32,7 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
           return {
             queueId: q.queueId,
             queueNo: q.queueNumber || `Q-${q.queueId}`,
-            bookingCode: q.bookingId ? `BK-${q.bookingId}` : '-',
+            bookingCode: q.bookingReferenceCode || (q.bookingId ? `BK-${q.bookingId}` : '-'),
             bookingId: q.bookingId,
             customerName: q.customerName || 'ลูกค้าหน้าร้าน',
             phone: '—',

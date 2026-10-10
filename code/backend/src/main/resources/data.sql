@@ -101,25 +101,38 @@ INSERT INTO services (id, service_code, service_name, description, category, req
 VALUES
     (1, 'SVC-THAI_MASSAGE', 'นวดไทยแผนโบราณ', 'นวดกดจุดผ่อนคลายกล้ามเนื้อตามแนวเส้นประธานสิบ คลายความเมื่อยล้าและกระตุ้นการไหลเวียนเลือด', 'THAI_MASSAGE', 'SINGLE', TRUE),
     (2, 'SVC-AROMA', 'นวดอโรม่าบำบัด', 'นวดบำบัดด้วยน้ำมันหอมระเหยธรรมชาติ สัมผัสความนุ่มนวลและผ่อนคลายความเครียดลึกถึงจิตใจ', 'AROMA', 'SINGLE', TRUE),
-    (3, 'SVC-FOOT', 'นวดเท้าและกดจุดสะท้อน', 'นวดกระตุ้นจุดสะท้อนฝ่าเท้า บรรเทาอาการเมื่อยล้าจากการยืนหรือเดิน พร้อมฟื้นฟูระบบการทำงานของอวัยวะ', 'FOOT_MASSAGE', 'FOOT_MASSAGE', TRUE),
+    (3, 'SVC-FOOT', 'นวดเท้าและกดจุดสะท้อน', 'นวดกระตุ้นจุดสะท้อนฝ่าเท้า บรรเทาอาการเมื่อยล้าจากการยืนหรือเดิน พร้อมฟื้นฟูระบบการทำงานของอวัยวะ', 'FOOT_MASSAGE', 'SINGLE', TRUE),
     (4, 'SVC-WARM_OIL', 'นวดน้ำมันร้อนคลายกล้ามเนื้อ', 'นวดบำบัดด้วยน้ำมันอุ่นสูตรพิเศษ บรรเทาอาการกล้ามเนื้อตึงลึกในห้องส่วนตัว VIP', 'WARM_OIL', 'VIP', TRUE)
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    service_code = EXCLUDED.service_code,
+    service_name = EXCLUDED.service_name,
+    description = EXCLUDED.description,
+    category = EXCLUDED.category,
+    required_room_type = EXCLUDED.required_room_type,
+    is_active = EXCLUDED.is_active;
 
 -- -------------------------------------------------------------------
 -- 10. service_duration_options: Duration Tiers and Pricing
 -- -------------------------------------------------------------------
 INSERT INTO service_duration_options (id, service_id, duration_minutes, price, is_active)
 VALUES
-    (1, 1, 60, 350.00, TRUE),
-    (2, 1, 90, 500.00, TRUE),
-    (3, 1, 120, 650.00, TRUE),
-    (4, 2, 90, 800.00, TRUE),
-    (5, 2, 120, 1100.00, TRUE),
-    (6, 3, 60, 300.00, TRUE),
-    (7, 3, 90, 450.00, TRUE),
-    (8, 4, 90, 950.00, TRUE),
-    (9, 4, 120, 1300.00, TRUE)
-ON CONFLICT (id) DO NOTHING;
+    (1, 1, 60, 500.00, TRUE),
+    (2, 1, 90, 700.00, TRUE),
+    (3, 1, 120, 900.00, TRUE),
+    (4, 2, 60, 700.00, TRUE),
+    (5, 2, 90, 950.00, TRUE),
+    (6, 2, 120, 1200.00, TRUE),
+    (7, 3, 60, 400.00, TRUE),
+    (8, 3, 90, 550.00, TRUE),
+    (9, 3, 120, 700.00, TRUE),
+    (10, 4, 60, 800.00, TRUE),
+    (11, 4, 90, 1100.00, TRUE),
+    (12, 4, 120, 1400.00, TRUE)
+ON CONFLICT (id) DO UPDATE SET
+    service_id = EXCLUDED.service_id,
+    duration_minutes = EXCLUDED.duration_minutes,
+    price = EXCLUDED.price,
+    is_active = EXCLUDED.is_active;
 
 -- -------------------------------------------------------------------
 -- 11. therapist_skills: Many-to-Many Skill Matrix & Qualifications
@@ -177,46 +190,71 @@ INSERT INTO bookings (
 )
 VALUES
     (
-        1, 'FIW-SEED-0001', 3, 4, 1, 1,
+        1, 'BK-20261003-000001', 3, 4, 1, 1,
         1, 2, CURRENT_TIMESTAMP - INTERVAL '7 days' + INTERVAL '14 hours', CURRENT_TIMESTAMP - INTERVAL '7 days' + INTERVAL '15 hours',
-        350.00, 'COMPLETED', 'ONLINE', 'ข้อมูลตัวอย่างการจองที่เสร็จสิ้นสมบูรณ์',
+        500.00, 'COMPLETED', 'ONLINE', 'ข้อมูลตัวอย่างการจองที่เสร็จสิ้นสมบูรณ์',
         CURRENT_TIMESTAMP - INTERVAL '7 days' + INTERVAL '14 hours', CURRENT_TIMESTAMP - INTERVAL '7 days' + INTERVAL '15 hours', 0,
         CURRENT_TIMESTAMP - INTERVAL '8 days', CURRENT_TIMESTAMP - INTERVAL '7 days'
     ),
     (
-        2, 'FIW-SEED-0002', 3, 5, 1, 1,
+        2, 'BK-20261007-000002', 3, 5, 1, 1,
         1, NULL, CURRENT_TIMESTAMP - INTERVAL '3 days' + INTERVAL '10 hours', CURRENT_TIMESTAMP - INTERVAL '3 days' + INTERVAL '11 hours',
-        350.00, 'CANCELLED', 'ONLINE', 'ลูกค้ายกเลิกเนื่องจากติดธุระด่วน',
+        500.00, 'CANCELLED', 'ONLINE', 'ลูกค้ายกเลิกเนื่องจากติดธุระด่วน',
         NULL, NULL, 0,
         CURRENT_TIMESTAMP - INTERVAL '4 days', CURRENT_TIMESTAMP - INTERVAL '3 days'
     ),
     (
-        3, 'FIW-SEED-0003', 3, 4, 1, 1,
+        3, 'BK-20261011-000003', 3, 4, 1, 1,
         2, 2, CURRENT_TIMESTAMP + INTERVAL '1 day' + INTERVAL '16 hours', CURRENT_TIMESTAMP + INTERVAL '1 day' + INTERVAL '17 hours 30 minutes',
-        500.00, 'CONFIRMED', 'ONLINE', 'ยืนยันการจองเรียบร้อย รอลูกค้าเดินทางมาถึง',
+        700.00, 'CONFIRMED', 'ONLINE', 'ยืนยันการจองเรียบร้อย รอลูกค้าเดินทางมาถึง',
         NULL, NULL, 0,
         CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     ),
     (
-        4, 'FIW-SEED-0004', 3, 6, 2, 2,
-        4, NULL, CURRENT_TIMESTAMP + INTERVAL '3 days' + INTERVAL '11 hours', CURRENT_TIMESTAMP + INTERVAL '3 days' + INTERVAL '12 hours 30 minutes',
-        800.00, 'PENDING', 'ONLINE', 'รอการยืนยันคิวจากแผนกต้อนรับ',
+        4, 'BK-20261013-000004', 3, 6, 2, 2,
+        5, NULL, CURRENT_TIMESTAMP + INTERVAL '3 days' + INTERVAL '11 hours', CURRENT_TIMESTAMP + INTERVAL '3 days' + INTERVAL '12 hours 30 minutes',
+        950.00, 'PENDING', 'ONLINE', 'รอการยืนยันคิวจากแผนกต้อนรับ',
         NULL, NULL, 0,
         CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     )
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    booking_reference_code = EXCLUDED.booking_reference_code,
+    customer_id = EXCLUDED.customer_id,
+    therapist_id = EXCLUDED.therapist_id,
+    room_id = EXCLUDED.room_id,
+    service_id = EXCLUDED.service_id,
+    duration_option_id = EXCLUDED.duration_option_id,
+    receptionist_id = EXCLUDED.receptionist_id,
+    start_date_time = EXCLUDED.start_date_time,
+    end_date_time = EXCLUDED.end_date_time,
+    total_price = EXCLUDED.total_price,
+    status = EXCLUDED.status,
+    booking_channel = EXCLUDED.booking_channel,
+    special_notes = EXCLUDED.special_notes,
+    actual_start_time = EXCLUDED.actual_start_time,
+    actual_end_time = EXCLUDED.actual_end_time,
+    version = EXCLUDED.version,
+    created_at = EXCLUDED.created_at,
+    updated_at = EXCLUDED.updated_at;
 
 -- -------------------------------------------------------------------
 -- 15. queue_items: Sample Queue Ticket for Check-in
 -- -------------------------------------------------------------------
 INSERT INTO queue_items (id, booking_id, queue_number, queue_date, check_in_time, called_time, queue_status, priority_level)
 VALUES (
-    1, 1, 'Q-001', CURRENT_DATE - 7,
+    1, 1, 'Q001', CURRENT_DATE - 7,
     CURRENT_TIMESTAMP - INTERVAL '7 days' + INTERVAL '13 hours 50 minutes',
     CURRENT_TIMESTAMP - INTERVAL '7 days' + INTERVAL '13 hours 58 minutes',
     'COMPLETED', 0
 )
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    booking_id = EXCLUDED.booking_id,
+    queue_number = EXCLUDED.queue_number,
+    queue_date = EXCLUDED.queue_date,
+    check_in_time = EXCLUDED.check_in_time,
+    called_time = EXCLUDED.called_time,
+    queue_status = EXCLUDED.queue_status,
+    priority_level = EXCLUDED.priority_level;
 
 -- -------------------------------------------------------------------
 -- 16. payments: Immutable Audit Financial Record for Completed Booking
@@ -227,12 +265,23 @@ INSERT INTO payments (
     paid_at, transaction_note
 )
 VALUES (
-    1, 1, 2, 'PAY-FIW-SEED-0001', 'RCP-FIW-SEED-0001',
-    350.00, 0.00, 350.00, 'QR_PROMPTPAY', 'COMPLETED',
+    1, 1, 2, 'PAY-20261003-000001', 'REC-20261003-000001',
+    500.00, 0.00, 500.00, 'QR_PROMPTPAY', 'COMPLETED',
     CURRENT_TIMESTAMP - INTERVAL '7 days' + INTERVAL '15 hours',
     'ชำระผ่าน PromptPay QR เรียบร้อย ตรวจสอบยอดเงินแล้ว'
 )
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    booking_id = EXCLUDED.booking_id,
+    receptionist_id = EXCLUDED.receptionist_id,
+    payment_reference_code = EXCLUDED.payment_reference_code,
+    receipt_number = EXCLUDED.receipt_number,
+    gross_amount = EXCLUDED.gross_amount,
+    discount_amount = EXCLUDED.discount_amount,
+    net_amount = EXCLUDED.net_amount,
+    payment_method = EXCLUDED.payment_method,
+    payment_status = EXCLUDED.payment_status,
+    paid_at = EXCLUDED.paid_at,
+    transaction_note = EXCLUDED.transaction_note;
 
 -- -------------------------------------------------------------------
 -- 17. reviews: Sample Customer Review for Completed Booking
