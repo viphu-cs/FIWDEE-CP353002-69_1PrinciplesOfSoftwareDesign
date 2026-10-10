@@ -31,7 +31,7 @@
 - [x] 2.9 Payment (Strategy pattern `pattern/strategy/`): `POST /api/bookings/{id}/payment` — PromptPay (mock QR) / cash / card, Payment = immutable, receipt (`GET /api/payments/{id}/receipt`), plus extensible promotional discount strategy engine (`pattern/strategy/discount/` supporting `FIWDEE20` - 20% discount) (2026-10-09 — Dev 5)
 - [ ] 2.10 Observer pattern (`pattern/observer/`) — booking created/cancelled/queue-called events → notifications
 - [ ] 2.11 Review: `POST /api/bookings/{id}/review` (only for COMPLETED bookings)
-- [ ] 2.12 Admin CRUD (OWNER/RECEPTIONIST): rooms, services (+durations), therapists (+skills, schedules)
+- [~] 2.12 Admin CRUD (OWNER/RECEPTIONIST): rooms, services (+durations), therapists (+skills, schedules) — `POST /api/admin/therapists` creates User (role THERAPIST, BCrypt password) + Therapist record + TherapistSkills; frontend `#admin/therapists` modal connected with credentials and schedule (2026-10-10)
 - [x] 2.13 Refund (if specified in use-case) — immutable like Payment: `POST /api/payments/{id}/refund`, `GET /api/payments/{id}/refund`, `GET /api/bookings/{id}/refunds` (2026-10-09 — Dev 5)
 - [x] 2.14 Users summary endpoints: `GET /api/admin/users` (all registered users, counts by role), `GET /api/admin/users/online` (currently logged-in sessions) — mock page already exists (see 4.8); backend response must include: total count, online count, active-today count, new-this-month count, per-user fields (name, email, phone, role, session status, registeredAt, lastLoginAt, totalBookings) (2026-10-06 — Dev 1: UserService + UserSessionService (in-memory online window 15 นาที) + AdminUserController (OWNER only) + เพิ่ม POST /api/admin/users/{id}/force-logout; User entity เพิ่มคอลัมน์ `last_login_at`)
 

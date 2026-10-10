@@ -408,6 +408,25 @@ export function AdminAuthProvider({ children }) {
     setTherapists(prev => prev.map(t => t.id === therapistId ? { ...t, status: newStatus } : t))
   }
 
+  const addTherapist = (therapistData) => {
+    if (user?.role !== 'OWNER') {
+      throw new Error('สิทธิ์เฉพาะผู้จัดการ (OWNER) เท่านั้นในการเพิ่มหมอนวดใหม่')
+    }
+    const newId = therapists.length > 0 ? Math.max(...therapists.map(t => Number(t.id) || 0)) + 1 : 1
+    const newTherapist = {
+      id: newId,
+      nickname: therapistData.nickname,
+      fullName: therapistData.fullName,
+      status: therapistData.status || 'ON_DUTY',
+      skills: therapistData.skills || ['Traditional Thai Massage'],
+      shiftsByDate: therapistData.shiftsByDate || {},
+      totalJobsToday: 0,
+      currentRoom: null,
+    }
+    setTherapists(prev => [...prev, newTherapist])
+    return newTherapist
+  }
+
   const addOrUpdateService = (serviceData) => {
     if (user.role !== 'OWNER') {
       throw new Error('สิทธิ์เฉพาะผู้จัดการ (OWNER) เท่านั้นในการแก้ไขหรือเพิ่มเมนูบริการ')
@@ -433,6 +452,7 @@ export function AdminAuthProvider({ children }) {
         updateRoomStatus,
         therapists,
         setTherapists,
+        addTherapist,
         updateTherapistStatus,
         updateTherapistShiftForDate,
         getTherapistShiftForDate,

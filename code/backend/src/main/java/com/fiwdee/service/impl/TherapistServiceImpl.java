@@ -31,15 +31,18 @@ public class TherapistServiceImpl implements TherapistService {
     private final TherapistScheduleRepository scheduleRepository;
     private final ServiceRepository serviceRepository;
     private final TherapistMapper therapistMapper;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     public TherapistServiceImpl(TherapistRepository therapistRepository,
                                 TherapistScheduleRepository scheduleRepository,
                                 ServiceRepository serviceRepository,
-                                TherapistMapper therapistMapper) {
+                                TherapistMapper therapistMapper,
+                                org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
         this.therapistRepository = therapistRepository;
         this.scheduleRepository = scheduleRepository;
         this.serviceRepository = serviceRepository;
         this.therapistMapper = therapistMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override public List<PublicTherapistResponseDTO> getActiveTherapists() {
@@ -56,11 +59,11 @@ public class TherapistServiceImpl implements TherapistService {
 
     @Override @Transactional public TherapistResponseDTO createTherapist(TherapistCreateRequestDTO request) {
         Therapist therapist = new Therapist();
-        // TODO: inject a shared PasswordEncoder when Dev 1 provides that bean; do not store an unencoded password.
-        therapist.setPasswordHash(null);
+        String rawPassword = (request.password() != null && !request.password().isBlank()) ? request.password().trim() : "therapist1234";
+        therapist.setPasswordHash(passwordEncoder.encode(rawPassword));
         therapist.setUsername(request.username().trim());
         therapist.setFullName(request.fullName().trim());
-        therapist.setEmail(request.email());
+        therapist.setEmail(request.email() != null && !request.email().isBlank() ? request.email().trim() : null);
         therapist.setPhoneNumber(request.phoneNumber().trim());
         therapist.setRole(UserRole.THERAPIST);
         therapist.setIsActive(true);
