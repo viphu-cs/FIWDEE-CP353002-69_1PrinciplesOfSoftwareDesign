@@ -1,5 +1,10 @@
 # FIWDEE — Massage Management & Booking System
 
+# Deploy Link
+## Frontend : https://l.messenger.com/l.php?u=https%3A%2F%2Ffiwdee.vercel.app%2F&h=AUCqEwDFPYdrGksRdhR_WNQahqgqrkAyygHDfDEjtkxyrpszccg_bffwTBp87kh17S61t7eEIYiCnMwoIkjyQLsGFV9yfFkWTkvpb0xFIWyfyIhBp6-PXAhWicv8PnM
+
+## Backend : https://l.messenger.com/l.php?u=https%3A%2F%2Ffiwdee-cp353002-69.onrender.com%2Fapi&h=AUCnO80j1dJB5O3VkMb1B1inBLgxHVFMdYUS-iqwZ8yzG-2uZwLuLl-mx1nQPmrCGxLWz60ltLF8Cizk5lct5IpUr0D7d63UP6BoyvZvzHY6QskM06OF3_qIpm_Lvb0
+
 ระบบบริหารจัดการร้านนวดแผนไทยและสปาแบบครบวงจร (Web-based Application) ที่เชื่อมโยงการจองคิวออนไลน์ของลูกค้าเข้ากับการจัดการคิวสดหน้าร้านแบบ Real-time รองรับการจัดสรรห้องนวดและหมอนวดตามความเชี่ยวชาญ พร้อมระบบทำความสะอาดห้อง 15 นาทีอัตโนมัติ ออกแบบตามสถาปัตยกรรม Layered Architecture บน Spring Boot 3 และ React 19 โดยประยุกต์ใช้ GoF Design Patterns (State, Strategy, Observer) เพื่อประสิทธิภาพ ความถูกต้องของข้อมูล และความปลอดภัยระดับองค์กร
 
 ---
@@ -8,11 +13,11 @@
 
 | ลำดับ | ชื่อ-นามสกุล | รหัสนักศึกษา | Section | Branch | หน้าที่รับผิดชอบ |
 |:---:|---|:---:|:---:|---|---|
-| 1 | นายชาคริต พุกมี | 673380265-8 | 2 | `chakrit_673380265-8_sec2` | Authentication, Spring Security (JWT RBAC), User Management (`/admin/users`), Customer Profile & Booking History, Design and Develop Frontend Landing Page For Customer |
-| 2 | นายวิภู หิรัญรัศมี | 673380291-7 | 2 | `viphu_673380291-7_sec2` | Core Booking Engine, Availability Engine (Slot & Cleaning Buffer), GoF State Pattern, GoF Strategy Pattern (Payment & Discount), Financial Reports (`/admin/reports/*`), Cloud PaaS Deployment |
-| 3 | นายฐิติศักดิ์ บุญมี | 673380035-5 | 2 | `Titisak_673380035-5_sec2` | **Dev 4:** Front-Desk Queue Management, GoF Observer Pattern (Queue & Notifications), Service Execution, Customer Review System (`/reviews`), ปรับแต่งธีม Admin UI (Serene Thai Sanctuary) |
-| 4 | นายศุภเชษฐ์ ฤทธิ์คำรพ | 673380063-0 | 2 | `supached_673380063-0_sec2` | **Dev 2:** Shop Catalog (`/services`), Resource Management (Rooms, Therapists, Skills), Work Schedules & Shifts, Data Seeder & Database Migration Script (`schema.sql`, `data.sql`) |
-| 5 | นายปิยชยานันท์ ทองดอนพุ่ม | 673380049-4 | 2 | `piyachayanin_673380049-4_sec2` | Automated Testing (36 Unit Tests + 12 Integration Tests), Test Design Documentation (`.xlsx`), Defect Tracking & Verification (DEF-001 ถึง DEF-019), Performance & Bug Fixing |
+| 1 | นายชาคริต ภักมี | 673380265-8 | 2 | `chakrit_673380265-8_sec2` | Authentication, Spring Security (JWT RBAC), User Management (`/admin/users`), Customer Profile & Booking History, Design and Develop Frontend Landing Page For Customer |
+| 2 | นายวิภู หากันได้ | 673380291-7 | 2 | `viphu_673380291-7_sec2` | Core Booking Engine, Availability Engine (Slot & Cleaning Buffer), GoF State Pattern, GoF Strategy Pattern (Payment & Discount), Financial Reports (`/admin/reports/*`), Cloud PaaS Deployment |
+| 3 | นายฐิติศักดิ์ ภูขยัน | 673380035-5 | 2 | `Titisak_673380035-5_sec2` | Front-Desk Queue Management, GoF Observer Pattern (Queue & Notifications), Service Execution, Customer Review System (`/reviews`), ปรับแต่งธีม Admin UI (Serene Thai Sanctuary) |
+| 4 | นายศุภเชฎฐ์ วอหล้า | 673380063-0 | 2 | `supached_673380063-0_sec2` | **Dev 2:** Shop Catalog (`/services`), Resource Management (Rooms, Therapists, Skills), Work Schedules & Shifts, Data Seeder & Database Migration Script (`schema.sql`, `data.sql`) |
+| 5 | นายปิยชญานินท์ โทนะพันธ์ | 673380049-4 | 2 | `piyachayanin_673380049-4_sec2` | Automated Testing (36 Unit Tests + 12 Integration Tests), Test Design Documentation (`.xlsx`), Defect Tracking & Verification (DEF-001 ถึง DEF-019), Performance & Bug Fixing |
 
 ---
 
