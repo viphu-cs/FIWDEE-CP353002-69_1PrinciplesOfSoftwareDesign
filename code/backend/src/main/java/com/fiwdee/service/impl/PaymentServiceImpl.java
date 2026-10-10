@@ -20,6 +20,8 @@ import com.fiwdee.repository.BookingRepository;
 import com.fiwdee.repository.PaymentRepository;
 import com.fiwdee.repository.ShopRepository;
 import com.fiwdee.service.PaymentService;
+import com.fiwdee.pattern.observer.BookingStatusChangedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -45,6 +47,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentStrategyFactory paymentStrategyFactory;
     private final DiscountStrategyFactory discountStrategyFactory;
     private final PaymentMapper paymentMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -60,6 +63,11 @@ public class PaymentServiceImpl implements PaymentService {
         Booking booking = bookingRepository.findDetailedById(bookingId)
                 .orElseThrow(() -> new NotFoundException("Booking not found with ID: " + bookingId));
 
+        if (booking.getStatus() == BookingStatus.CANCELLED || booking.getStatus() == BookingStatus.NO_SHOW) {
+            throw new ValidationException(
+                    "Cannot accept payment for a " + booking.getStatus() + " booking");
+        }
+        
         // 2. Idempotency & Conflict Check: Each Booking has at most 1 Payment (1:1 settledBy)
         Optional<Payment> existingPayment = paymentRepository.findByBookingId(bookingId);
         if (existingPayment.isPresent()) {
@@ -137,6 +145,11 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         bookingRepository.save(booking);
+
+        if (booking.getStatus() != oldStatus) {
+            eventPublisher.publishEvent(new BookingStatusChangedEvent(
+                    this, booking.getId(), oldStatus, booking.getStatus()));
+        }
 
         log.info("Payment successfully settled: ID={}, Ref={}, NetAmount={}", 
                 savedPayment.getId(), savedPayment.getPaymentReferenceCode(), savedPayment.getNetAmount());

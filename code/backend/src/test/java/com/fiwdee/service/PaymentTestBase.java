@@ -33,6 +33,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.context.ApplicationEventPublisher;
 
 /** ฐานร่วมของ UT13–UT14: Booking#10 ราคา 600.00 • strategy (mock) ชำระสำเร็จเป็นค่าเริ่มต้น */
 @ExtendWith(MockitoExtension.class)
@@ -45,6 +46,8 @@ abstract class PaymentTestBase {
     @Mock PaymentStrategyFactory paymentStrategyFactory;
     @Mock PaymentStrategy paymentStrategy;
     @Mock PaymentMapper paymentMapper;
+    /** เตรียมไว้ให้ constructor ใหม่หลังแก้ DEF-002 (publish event เมื่อสถานะเปลี่ยน) */
+    @Mock ApplicationEventPublisher eventPublisher;
     @Spy DiscountStrategyFactory discountStrategyFactory = new DiscountStrategyFactory(
             List.of(new PercentageDiscountStrategy(), new FixedAmountDiscountStrategy()));
 
