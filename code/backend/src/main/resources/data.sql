@@ -68,18 +68,21 @@ VALUES (1, 'FIWDEE Massage', '123 ถนนมิตรภาพ ตำบลใ
 ON CONFLICT (id) DO NOTHING;
 
 -- -------------------------------------------------------------------
--- 7. business_hours: 7 Days Opening Schedule (10:00 - 22:00)
+-- 7. business_hours: 7 Days Opening Schedule (06:00 - 23:00)
 -- -------------------------------------------------------------------
 INSERT INTO business_hours (id, shop_id, day_of_week, open_time, close_time, is_closed)
 VALUES
-    (1, 1, 'MONDAY', '10:00:00', '22:00:00', FALSE),
-    (2, 1, 'TUESDAY', '10:00:00', '22:00:00', FALSE),
-    (3, 1, 'WEDNESDAY', '10:00:00', '22:00:00', FALSE),
-    (4, 1, 'THURSDAY', '10:00:00', '22:00:00', FALSE),
-    (5, 1, 'FRIDAY', '10:00:00', '22:00:00', FALSE),
-    (6, 1, 'SATURDAY', '10:00:00', '22:00:00', FALSE),
-    (7, 1, 'SUNDAY', '10:00:00', '22:00:00', FALSE)
-ON CONFLICT (id) DO NOTHING;
+    (1, 1, 'MONDAY', '06:00:00', '23:00:00', FALSE),
+    (2, 1, 'TUESDAY', '06:00:00', '23:00:00', FALSE),
+    (3, 1, 'WEDNESDAY', '06:00:00', '23:00:00', FALSE),
+    (4, 1, 'THURSDAY', '06:00:00', '23:00:00', FALSE),
+    (5, 1, 'FRIDAY', '06:00:00', '23:00:00', FALSE),
+    (6, 1, 'SATURDAY', '06:00:00', '23:00:00', FALSE),
+    (7, 1, 'SUNDAY', '06:00:00', '23:00:00', FALSE)
+ON CONFLICT (id) DO UPDATE SET
+    open_time = EXCLUDED.open_time,
+    close_time = EXCLUDED.close_time,
+    is_closed = EXCLUDED.is_closed;
 
 -- -------------------------------------------------------------------
 -- 8. rooms: 6 Massage Rooms (Dynamic Resource Requirement)
@@ -171,13 +174,18 @@ ON CONFLICT (id) DO NOTHING;
 -- -------------------------------------------------------------------
 INSERT INTO work_shifts (id, schedule_id, shift_name, start_time, end_time, shift_status)
 VALUES
-    (1, 1, 'Morning Shift', '10:00:00', '19:00:00', 'ACTIVE'),
-    (2, 2, 'Morning Shift', '10:00:00', '19:00:00', 'ACTIVE'),
-    (3, 3, 'Afternoon Shift', '13:00:00', '22:00:00', 'ACTIVE'),
-    (4, 4, 'Morning Shift', '10:00:00', '19:00:00', 'ACTIVE'),
-    (5, 5, 'Afternoon Shift', '13:00:00', '22:00:00', 'ACTIVE'),
-    (6, 6, 'Afternoon Shift', '13:00:00', '22:00:00', 'ACTIVE')
-ON CONFLICT (id) DO NOTHING;
+    (1, 1, 'Morning Shift', '06:00:00', '15:00:00', 'ACTIVE'),
+    (2, 2, 'Morning Shift', '06:00:00', '15:00:00', 'ACTIVE'),
+    (3, 3, 'Afternoon Shift', '14:00:00', '23:00:00', 'ACTIVE'),
+    (4, 4, 'Morning Shift', '06:00:00', '15:00:00', 'ACTIVE'),
+    (5, 5, 'Afternoon Shift', '14:00:00', '23:00:00', 'ACTIVE'),
+    (6, 6, 'Afternoon Shift', '14:00:00', '23:00:00', 'ACTIVE')
+ON CONFLICT (id) DO UPDATE SET
+    schedule_id = EXCLUDED.schedule_id,
+    shift_name = EXCLUDED.shift_name,
+    start_time = EXCLUDED.start_time,
+    end_time = EXCLUDED.end_time,
+    shift_status = EXCLUDED.shift_status;
 
 -- -------------------------------------------------------------------
 -- 14. bookings: Sample Bookings Across Key Lifecycle States

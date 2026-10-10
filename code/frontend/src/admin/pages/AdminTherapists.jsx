@@ -196,11 +196,11 @@ export default function AdminTherapists() {
       const isDayOff = shiftType === 'OFF'
       let shifts = []
       if (shiftType === 'MORNING') {
-        shifts = [{ shiftName: 'กะเช้า (Morning)', startTime: '10:00:00', endTime: '19:00:00', shiftStatus: 'ACTIVE' }]
+        shifts = [{ shiftName: 'กะเช้า (Morning)', startTime: '06:00:00', endTime: '15:00:00', shiftStatus: 'ACTIVE' }]
       } else if (shiftType === 'EVENING') {
-        shifts = [{ shiftName: 'กะบ่าย (Evening)', startTime: '13:00:00', endTime: '22:00:00', shiftStatus: 'ACTIVE' }]
+        shifts = [{ shiftName: 'กะบ่าย (Evening)', startTime: '14:00:00', endTime: '23:00:00', shiftStatus: 'ACTIVE' }]
       } else if (shiftType === 'FULL_DAY') {
-        shifts = [{ shiftName: 'เต็มวัน (Full Day)', startTime: '10:00:00', endTime: '22:00:00', shiftStatus: 'ACTIVE' }]
+        shifts = [{ shiftName: 'เต็มวัน (Full Day)', startTime: '06:00:00', endTime: '23:00:00', shiftStatus: 'ACTIVE' }]
       }
 
       await api.put(`/admin/therapists/${therapistId}/schedules`, {
@@ -410,9 +410,9 @@ export default function AdminTherapists() {
   }
 
   const shiftLabels = {
-    MORNING: lang === 'th' ? 'กะเช้า (10:00 - 19:00)' : 'Morning (10:00 - 19:00)',
-    EVENING: lang === 'th' ? 'กะบ่าย (13:00 - 22:00)' : 'Evening (13:00 - 22:00)',
-    FULL_DAY: lang === 'th' ? 'เต็มวัน (10:00 - 22:00)' : 'Full Day (10:00 - 22:00)',
+    MORNING: lang === 'th' ? 'กะเช้า (06:00 - 15:00)' : 'Morning (06:00 - 15:00)',
+    EVENING: lang === 'th' ? 'กะบ่าย (14:00 - 23:00)' : 'Evening (14:00 - 23:00)',
+    FULL_DAY: lang === 'th' ? 'เต็มวัน (06:00 - 23:00)' : 'Full Day (06:00 - 23:00)',
     OFF: lang === 'th' ? 'วันหยุด / ลางาน (OFF)' : 'Off Duty / Day Off'
   }
 

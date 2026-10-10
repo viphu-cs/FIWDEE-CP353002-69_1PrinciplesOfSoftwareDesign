@@ -189,7 +189,7 @@ export default function BookingStepSlot({
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-xs font-semibold text-secondary uppercase tracking-wider">
                       <span className="material-symbols-outlined text-sm">light_mode</span>
-                      <span>ช่วงเช้า (10:00 - 12:30 น.)</span>
+                      <span>ช่วงเช้า (06:00 - 12:30 น.)</span>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       {timeSlots.filter(s => parseInt(s.time.split(':')[0], 10) < 13).map((slot) => {
@@ -286,7 +286,7 @@ export default function BookingStepSlot({
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-xs font-semibold text-secondary uppercase tracking-wider">
                       <span className="material-symbols-outlined text-sm">nights_stay</span>
-                      <span>ช่วงเย็น - ค่ำ (17:00 - 20:00 น.)</span>
+                      <span>ช่วงเย็น - ค่ำ (17:00 - 22:00 น.)</span>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       {timeSlots.filter(s => parseInt(s.time.split(':')[0], 10) >= 17).map((slot) => {

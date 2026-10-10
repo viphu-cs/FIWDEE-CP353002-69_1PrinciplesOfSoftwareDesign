@@ -57,7 +57,7 @@ export default function TherapistsPage({ onNavigate }) {
                 imageUrl: img,
                 experienceYears: bt.experienceYears || 5,
                 roleKey: 'seniorTherapist',
-                availableTime: '10:00'
+                availableTime: '06:00'
               }
             })
             setTherapistsList(mapped)

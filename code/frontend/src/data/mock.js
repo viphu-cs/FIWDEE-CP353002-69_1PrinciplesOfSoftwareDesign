@@ -26,8 +26,8 @@ export const shop = {
   phone: '02-000-0000',
   email: 'contact@fiwdee-massage.co.th',
   lineId: '@fiwdee',
-  openTime: '10:00',
-  closeTime: '22:00',
+  openTime: '06:00',
+  closeTime: '23:00',
 }
 
 export const services = [
