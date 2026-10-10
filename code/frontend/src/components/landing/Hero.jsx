@@ -12,7 +12,7 @@ const item = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.75, ease: [0.22, 1, 0.36, 1] } },
 }
 
-export default function Hero({ ready = true }) {
+export default function Hero({ ready = true, onNavigate }) {
   const { t } = useLanguage()
   const { scrollY } = useScroll()
   // 🎬 Parallax: เลื่อนลง 600px ข้อความค่อย ๆ ลอยขึ้นและจางหาย (transform+opacity เท่านั้น)
@@ -75,6 +75,32 @@ export default function Hero({ ready = true }) {
                   <br />
                   <span className="font-normal text-charcoal-soft">{t('hero.title2')}</span>
                 </motion.h1>
+                <motion.div
+                  variants={item}
+                  className="mt-space-lg flex justify-center md:justify-start"
+                >
+                  <button
+                    type="button"
+                    onClick={() => onNavigate?.('booking')}
+                    className="btn-lift inline-flex items-center gap-3 px-8 py-3.5 rounded bg-primary text-warm-ivory font-label-lg text-label-lg uppercase tracking-wider hover:bg-teak-deep transition-all duration-200 shadow-md cursor-pointer group"
+                  >
+                    <span>{t('hero.bookOnline')}</span>
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                      className="transition-transform duration-200 group-hover:translate-x-1"
+                    >
+                      <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </motion.div>
               </motion.div>
             </motion.div>
           </div>

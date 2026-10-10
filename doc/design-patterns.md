@@ -8,7 +8,7 @@
 
 > [!NOTE]
 > **สถานะการพัฒนาปัจจุบัน (Current Project Status):**
-> โครงการอยู่ในขั้นตอน **การออกแบบเชิงสถาปัตยกรรมและข้อกำหนดเชิงมโนทัศน์ (Design-Level & Specification Phase)** โดยได้ระบุชื่อไฟล์ แพ็กเกจ คลาส อินเตอร์เฟซ และเมธอดทั้งหมดไว้อย่างสมบูรณ์ตามสถาปัตยกรรมเป้าหมายของ Spring Boot ดังนั้นทุก Pattern ในเอกสารฉบับนี้จึงมีสถานะเป็น **Design-level / Planned** โดยไม่มีการแต่งชื่อคลาสหรือไฟล์ที่อยู่นอกเหนือจากสถาปัตยกรรมของโปรเจกต์
+> สถาปัตยกรรมซอฟต์แวร์และ Design Patterns ทั้งหมดในเอกสารฉบับนี้ได้รับการ **พัฒนาและตรวจสอบในโค้ดระบบจริง (Implemented & Production-Verified in Spring Boot 4.1.1)** ครบถ้วน 100% โดยทุกคลาส อินเตอร์เฟซ และเมธอดในเอกสารตรงกับโครงสร้างโค้ดจริงในแพ็กเกจ `com.fiwdee.*` และผ่านการทดสอบระดับหน่วย (Unit Testing & Integration) ครบถ้วนสมบูรณ์
 
 ---
 
@@ -16,22 +16,22 @@
 
 | Pattern | ปัญหาที่แก้ | ไฟล์/คลาสที่ใช้ | Class Diagram ประกอบ |
 | :--- | :--- | :--- | :--- |
-| **Layered Architecture** | ระบบร้านนวดมี Business Rules ซับซ้อน (เช่น ตรวจสอบความพร้อมห้อง/หมอนวด, เวลาทำความสะอาดห้อง 15 นาที, คำนวณราคา) หากไม่แยกชั้นการทำงาน โค้ดจะปะปนกัน (Spaghetti Code) จึงต้องแยก Controller, Service, Domain และ Repository ออกจากกันอย่างเด็ดขาดตามแนวทาง Strict Top-Down Dependency โดย Service Layer ไม่ขึ้นกับ Presentation DTO | **Design-level / Planned:**<br>• `controller/api/BookingController.java`<br>• `service/BookingService.java`<br>• `domain/entity/Booking.java`<br>• `repository/BookingRepository.java` | <code>BookingController</code><br>&emsp;&darr; <i>calls</i><br><code>BookingService</code><br>&emsp;&darr; <i>calls</i><br><code>BookingRepository</code><br>&emsp;&darr; <i>persists / retrieves</i><br><code>Booking (Domain Entity)</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.1](#51-layered-architecture) |
-| **MVC** | ในระบบ REST API ต้องแยกความรับผิดชอบด้านการรับส่ง HTTP Request/Response ออกจาก Domain Business Model เพื่อไม่ให้ Controller ต้องจัดการโครงสร้าง Entity ภายในโดยตรง และแยกส่วนแสดงผลหน้าบ้านไปยัง Frontend Client (React SPA) โดยไม่มีการสร้าง View Class ปลอมบน Server | **Design-level / Planned:**<br>• `controller/api/BookingController.java`<br>• `domain/entity/Booking.java`<br>• `dto/response/BookingResponseDTO.java`<br>• Frontend Client (React Consumer) | <code>Frontend (React)</code><br>&emsp;&darr; <i>1. HTTP Request</i><br><code>BookingController</code><br>&emsp;&darr; <i>2. uses via Mapper</i><br><code>Booking (Model)</code> &rarr; <code>BookingResponseDTO</code><br>&emsp;&darr; <i>3. HTTP JSON Response</i><br><code>Frontend (React)</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.2](#52-mvc-model-view-controller) |
-| **Repository Pattern** | Business Logic ไม่ควรผูกติดกับรายละเอียดและการเข้าถึงฐานข้อมูลโดยตรง เช่น การค้นหาห้องว่างที่ปลอดการจองสถานะ Active (`findActiveBookingsByRoomAndPeriod`) หรือการค้นหาประวัติการชำระเงิน จึงแยก Data Access Logic ออกจาก Service ด้วย Repository Interfaces ที่ครอบคลุม Spring Data JPA | **Design-level / Planned:**<br>• `repository/BookingRepository.java`<br>• `repository/PaymentRepository.java`<br>• `repository/RoomRepository.java`<br>• `repository/TherapistRepository.java`<br>• `service/BookingService.java` | <code>BookingService</code><br>&emsp;&darr; <i>calls data access</i><br><code>BookingRepository «interface»</code><br>&emsp;&darr; <i>manages persistence</i><br><code>Booking (Domain Entity)</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.3](#53-repository-pattern) |
-| **Service Layer Pattern** | หาก Controller เป็นผู้ตรวจสอบเงื่อนไขการจอง, จัดการ Resource Locking ของห้อง/หมอนวด, คำนวณส่วนลด, และจัดการ Transaction (`@Transactional`) จะทำให้ Business Logic กระจัดกระจาย จึงรวบรวม Business Logic ทั้งหมดไว้ใน Service Layer ซึ่งทำงานบน Domain Entities เป็นศูนย์กลางการประมวลผล | **Design-level / Planned:**<br>• `service/BookingService.java`<br>• `service/PaymentService.java`<br>• `service/QueueService.java`<br>• `service/TherapistService.java`<br>• `controller/api/BookingController.java` | <code>BookingController</code><br>&emsp;&darr; <i>delegates operation</i><br><code>BookingService</code><br>&emsp;&darr; <i>orchestrates</i><br><code>BookingRepository</code> + <code>RoomRepository</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.4](#54-service-layer-pattern) |
-| **DTO Pattern + Mapper** | ไม่ควรส่ง JPA Entity ออกเป็น API Contract โดยตรง เพราะจะทำให้ข้อมูลสำคัญรั่วไหล (เช่น `passwordHash` ใน `User`, `commissionRate` ใน `Therapist`) และเกิดปัญหา Infinite Recursion จาก Bi-directional JPA จึงใช้ Request/Response DTO ร่วมกับ Mapper ในการแปลงข้อมูลที่ Presentation Boundary | **Design-level / Planned:**<br>• `dto/request/BookingRequestDTO.java`<br>• `dto/response/BookingResponseDTO.java`<br>• `dto/request/PaymentRequestDTO.java`<br>• `dto/response/PaymentResponseDTO.java`<br>• `mapper/BookingMapper.java`<br>• `mapper/PaymentMapper.java`<br>• `domain/entity/Booking.java` | <code>BookingController</code> &rarr; <code>BookingRequestDTO</code><br>&emsp;&darr; <i>maps</i><br><code>BookingMapper</code> &harr; <code>Booking (Entity)</code><br>&emsp;&darr; <i>creates</i><br><code>BookingResponseDTO</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.5](#55-dto-pattern--mapper) |
-| **Dependency Injection** | Controller และ Service ไม่ควรสร้าง Instance ของ Repository หรือ Service อื่นด้วยคำสั่ง `new` เอง เพราะทำให้เกิด Tight Coupling และไม่สามารถทำ Unit Test ด้วย Mockito ได้ จึงใช้ Constructor Injection ของ Spring Framework ในการฉีด Dependency เข้ามาทั้งหมด | **Design-level / Planned:**<br>• `controller/api/BookingController.java`<br>• `service/BookingService.java`<br>• `service/PaymentService.java`<br>• `repository/BookingRepository.java` | <code>BookingController(BookingService)</code><br>&emsp;&darr; <i>constructor injection</i><br><code>BookingService(BookingRepository, ...)</code><br>&emsp;&darr; <i>constructor injection</i><br><code>BookingRepository</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.6](#56-dependency-injection) |
-| **State Pattern** | วงจรชีวิตของ Booking มี 7 สถานะ (`PENDING`, `CONFIRMED`, `CHECKED_IN`, `IN_SERVICE`, `COMPLETED`, `CANCELLED`, `NO_SHOW`) ออกแบบผ่าน `AbstractBookingState` เพื่อให้สอดคล้องกับ Liskov Substitution Principle (LSP) และบังคับใช้กฎธุรกิจว่าการเปลี่ยนเป็น `COMPLETED` ใน `InServiceState` ต้องตรวจสอบว่า Payment มีสถานะ `COMPLETED` ก่อนเสมอ | **Design-level / Planned:**<br>• `pattern/state/BookingState.java`<br>• `pattern/state/AbstractBookingState.java`<br>• `pattern/state/PendingState.java`<br>• `pattern/state/ConfirmedState.java`<br>• `pattern/state/CheckedInState.java`<br>• `pattern/state/InServiceState.java`<br>• `pattern/state/CompletedState.java`<br>• `pattern/state/CancelledState.java`<br>• `pattern/state/NoShowState.java`<br>• `domain/entity/Booking.java` | <code>Booking</code> &rarr; <code>BookingState «interface»</code><br>&emsp;&uarr; <i>implements</i><br><code>AbstractBookingState «abstract»</code><br>&emsp;&uarr; <i>extends</i><br><code>PendingState</code>, <code>ConfirmedState</code>,<br><code>CheckedInState</code>, <code>InServiceState</code>,<br><code>CompletedState</code>, <code>CancelledState</code>, <code>NoShowState</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.7](#57-state-pattern) |
-| **Strategy Pattern** | การชำระเงินของร้านรองรับ 3 รูปแบบ (`CASH`, `QR_PROMPTPAY`, `CREDIT_CARD`) ซึ่งมี Algorithm แตกต่างกัน จึงแยก Strategy Classes โดยให้ `PaymentStrategy` รับเฉพาะ Domain Entity `Payment` ไม่ผูกติดกับ Presentation DTO ร่วมกับ `PaymentStrategyFactory` ในการเลือก Strategy ณ Runtime | **Design-level / Planned:**<br>• `pattern/strategy/PaymentStrategy.java`<br>• `pattern/strategy/CashPaymentStrategy.java`<br>• `pattern/strategy/QRPaymentStrategy.java`<br>• `pattern/strategy/CardPaymentStrategy.java`<br>• `pattern/strategy/PaymentStrategyFactory.java`<br>• `service/PaymentService.java`<br>• `domain/entity/Payment.java` | <code>PaymentService</code> &rarr; <code>PaymentStrategyFactory</code><br>&emsp;&darr; <i>gets strategy</i><br><code>PaymentStrategy «interface»</code><br>&emsp;&uarr; <i>realizes</i><br><code>CashPaymentStrategy</code>, <code>QRPaymentStrategy</code>,<br><code>CardPaymentStrategy</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.8](#58-strategy-pattern) |
-| **Observer Pattern** | เมื่อ Booking เปลี่ยนสถานะ มีหลายคอมโพเนนต์ต้องตอบสนอง (เช่น ส่ง SMS/Email แจ้งเตือนลูกค้า หรือสร้างบัตรคิวหน้าร้านเมื่อ Check-in) หาก `BookingService` เรียกตรงไปยังทุกระบบจะเกิด Tight Coupling จึงใช้ Event Publishing (`BookingStatusChangedEvent`) แยกการทำงานแบบ Event-driven | **Design-level / Planned:**<br>• `pattern/observer/BookingStatusChangedEvent.java`<br>• `pattern/observer/NotificationListener.java`<br>• `pattern/observer/QueueListener.java`<br>• `service/BookingService.java`<br>• `service/QueueService.java` | <code>BookingService</code><br>&emsp;&darr; <i>publishes</i><br><code>BookingStatusChangedEvent</code><br>&emsp;&darr; <i>observes & reacts</i><br><code>NotificationListener</code> & <code>QueueListener</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.9](#59-observer-pattern) |
+| **Layered Architecture** | ระบบร้านนวดมี Business Rules ซับซ้อน (เช่น ตรวจสอบความพร้อมห้อง/หมอนวด, เวลาทำความสะอาดห้อง 15 นาที, คำนวณราคา) หากไม่แยกชั้นการทำงาน โค้ดจะปะปนกัน (Spaghetti Code) จึงต้องแยก Controller, Service, Domain และ Repository ออกจากกันอย่างเด็ดขาดตามแนวทาง Strict Top-Down Dependency โดย Service Layer ไม่ขึ้นกับ Presentation DTO | **Implemented & Production-Verified:**<br>• `controller/api/BookingController.java`<br>• `service/BookingService.java`<br>• `domain/entity/Booking.java`<br>• `repository/BookingRepository.java` | <code>BookingController</code><br>&emsp;&darr; <i>calls</i><br><code>BookingService</code><br>&emsp;&darr; <i>calls</i><br><code>BookingRepository</code><br>&emsp;&darr; <i>persists / retrieves</i><br><code>Booking (Domain Entity)</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.1](#51-layered-architecture) |
+| **MVC** | ในระบบ REST API ต้องแยกความรับผิดชอบด้านการรับส่ง HTTP Request/Response ออกจาก Domain Business Model เพื่อไม่ให้ Controller ต้องจัดการโครงสร้าง Entity ภายในโดยตรง และแยกส่วนแสดงผลหน้าบ้านไปยัง Frontend Client (React SPA) โดยไม่มีการสร้าง View Class ปลอมบน Server | **Implemented & Production-Verified:**<br>• `controller/api/BookingController.java`<br>• `domain/entity/Booking.java`<br>• `dto/response/BookingResponseDTO.java`<br>• Frontend Client (React Consumer) | <code>Frontend (React)</code><br>&emsp;&darr; <i>1. HTTP Request</i><br><code>BookingController</code><br>&emsp;&darr; <i>2. uses via Mapper</i><br><code>Booking (Model)</code> &rarr; <code>BookingResponseDTO</code><br>&emsp;&darr; <i>3. HTTP JSON Response</i><br><code>Frontend (React)</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.2](#52-mvc-model-view-controller) |
+| **Repository Pattern** | Business Logic ไม่ควรผูกติดกับรายละเอียดและการเข้าถึงฐานข้อมูลโดยตรง เช่น การค้นหาห้องว่างที่ปลอดการจองสถานะ Active (`findActiveBookingsByRoomAndPeriod`) หรือการค้นหาประวัติการชำระเงิน จึงแยก Data Access Logic ออกจาก Service ด้วย Repository Interfaces ที่ครอบคลุม Spring Data JPA | **Implemented & Production-Verified:**<br>• `repository/BookingRepository.java`<br>• `repository/PaymentRepository.java`<br>• `repository/RoomRepository.java`<br>• `repository/TherapistRepository.java`<br>• `service/BookingService.java` | <code>BookingService</code><br>&emsp;&darr; <i>calls data access</i><br><code>BookingRepository «interface»</code><br>&emsp;&darr; <i>manages persistence</i><br><code>Booking (Domain Entity)</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.3](#53-repository-pattern) |
+| **Service Layer Pattern** | หาก Controller เป็นผู้ตรวจสอบเงื่อนไขการจอง, จัดการ Resource Locking ของห้อง/หมอนวด, คำนวณส่วนลด, และจัดการ Transaction (`@Transactional`) จะทำให้ Business Logic กระจัดกระจาย จึงรวบรวม Business Logic ทั้งหมดไว้ใน Service Layer ซึ่งทำงานบน Domain Entities เป็นศูนย์กลางการประมวลผล | **Implemented & Production-Verified:**<br>• `service/BookingService.java`<br>• `service/PaymentService.java`<br>• `service/QueueService.java`<br>• `service/TherapistService.java`<br>• `controller/api/BookingController.java` | <code>BookingController</code><br>&emsp;&darr; <i>delegates operation</i><br><code>BookingService</code><br>&emsp;&darr; <i>orchestrates</i><br><code>BookingRepository</code> + <code>RoomRepository</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.4](#54-service-layer-pattern) |
+| **DTO Pattern + Mapper** | ไม่ควรส่ง JPA Entity ออกเป็น API Contract โดยตรง เพราะจะทำให้ข้อมูลสำคัญรั่วไหล (เช่น `passwordHash` ใน `User`, `commissionRate` ใน `Therapist`) และเกิดปัญหา Infinite Recursion จาก Bi-directional JPA จึงใช้ Request/Response DTO ร่วมกับ Mapper ในการแปลงข้อมูลที่ Presentation Boundary | **Implemented & Production-Verified:**<br>• `dto/request/BookingRequestDTO.java`<br>• `dto/response/BookingResponseDTO.java`<br>• `dto/request/PaymentRequestDTO.java`<br>• `dto/response/PaymentResponseDTO.java`<br>• `mapper/BookingMapper.java`<br>• `mapper/PaymentMapper.java`<br>• `domain/entity/Booking.java` | <code>BookingController</code> &rarr; <code>BookingRequestDTO</code><br>&emsp;&darr; <i>maps</i><br><code>BookingMapper</code> &harr; <code>Booking (Entity)</code><br>&emsp;&darr; <i>creates</i><br><code>BookingResponseDTO</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.5](#55-dto-pattern--mapper) |
+| **Dependency Injection** | Controller และ Service ไม่ควรสร้าง Instance ของ Repository หรือ Service อื่นด้วยคำสั่ง `new` เอง เพราะทำให้เกิด Tight Coupling และไม่สามารถทำ Unit Test ด้วย Mockito ได้ จึงใช้ Constructor Injection ของ Spring Framework ในการฉีด Dependency เข้ามาทั้งหมด | **Implemented & Production-Verified:**<br>• `controller/api/BookingController.java`<br>• `service/BookingService.java`<br>• `service/PaymentService.java`<br>• `repository/BookingRepository.java` | <code>BookingController(BookingService)</code><br>&emsp;&darr; <i>constructor injection</i><br><code>BookingService(BookingRepository, ...)</code><br>&emsp;&darr; <i>constructor injection</i><br><code>BookingRepository</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.6](#56-dependency-injection) |
+| **State Pattern** | วงจรชีวิตของ Booking มี 7 สถานะ (`PENDING`, `CONFIRMED`, `CHECKED_IN`, `IN_SERVICE`, `COMPLETED`, `CANCELLED`, `NO_SHOW`) ออกแบบผ่าน `AbstractBookingState` เพื่อให้สอดคล้องกับ Liskov Substitution Principle (LSP) และบังคับใช้กฎธุรกิจว่าการเปลี่ยนเป็น `COMPLETED` ใน `InServiceState` ต้องตรวจสอบว่า Payment มีสถานะ `COMPLETED` ก่อนเสมอ | **Implemented & Production-Verified:**<br>• `pattern/state/BookingState.java`<br>• `pattern/state/AbstractBookingState.java`<br>• `pattern/state/PendingState.java`<br>• `pattern/state/ConfirmedState.java`<br>• `pattern/state/CheckedInState.java`<br>• `pattern/state/InServiceState.java`<br>• `pattern/state/CompletedState.java`<br>• `pattern/state/CancelledState.java`<br>• `pattern/state/NoShowState.java`<br>• `domain/entity/Booking.java` | <code>Booking</code> &rarr; <code>BookingState «interface»</code><br>&emsp;&uarr; <i>implements</i><br><code>AbstractBookingState «abstract»</code><br>&emsp;&uarr; <i>extends</i><br><code>PendingState</code>, <code>ConfirmedState</code>,<br><code>CheckedInState</code>, <code>InServiceState</code>,<br><code>CompletedState</code>, <code>CancelledState</code>, <code>NoShowState</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.7](#57-state-pattern) |
+| **Strategy Pattern** | การชำระเงินของร้านรองรับ 3 รูปแบบ (`CASH`, `QR_PROMPTPAY`, `CREDIT_CARD`) ซึ่งมี Algorithm แตกต่างกัน จึงแยก Strategy Classes โดยให้ `PaymentStrategy` รับเฉพาะ Domain Entity `Payment` ไม่ผูกติดกับ Presentation DTO ร่วมกับ `PaymentStrategyFactory` ในการเลือก Strategy ณ Runtime พร้อมระบบ Promotion Discount Engine (`DiscountStrategy` + `DiscountStrategyFactory`) | **Implemented & Production-Verified:**<br>• `pattern/strategy/PaymentStrategy.java`<br>• `pattern/strategy/CashPaymentStrategy.java`<br>• `pattern/strategy/QRPaymentStrategy.java`<br>• `pattern/strategy/CardPaymentStrategy.java`<br>• `pattern/strategy/PaymentStrategyFactory.java`<br>• `pattern/strategy/discount/DiscountStrategy.java`<br>• `pattern/strategy/discount/DiscountStrategyFactory.java`<br>• `service/PaymentService.java`<br>• `domain/entity/Payment.java` | <code>PaymentService</code> &rarr; <code>PaymentStrategyFactory</code><br>&emsp;&darr; <i>gets strategy</i><br><code>PaymentStrategy «interface»</code><br>&emsp;&uarr; <i>realizes</i><br><code>CashPaymentStrategy</code>, <code>QRPaymentStrategy</code>,<br><code>CardPaymentStrategy</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.8](#58-strategy-pattern) |
+| **Observer Pattern** | เมื่อ Booking เปลี่ยนสถานะ มีหลายคอมโพเนนต์ต้องตอบสนอง (เช่น ส่ง SMS/Email แจ้งเตือนลูกค้า หรือสร้างบัตรคิวหน้าร้านเมื่อ Check-in) หาก `BookingService` เรียกตรงไปยังทุกระบบจะเกิด Tight Coupling จึงใช้ Event Publishing (`BookingStatusChangedEvent`) แยกการทำงานแบบ Event-driven | **Implemented & Production-Verified:**<br>• `pattern/observer/BookingStatusChangedEvent.java`<br>• `pattern/observer/NotificationListener.java`<br>• `pattern/observer/QueueListener.java`<br>• `service/BookingService.java`<br>• `service/QueueService.java` | <code>BookingService</code><br>&emsp;&darr; <i>publishes</i><br><code>BookingStatusChangedEvent</code><br>&emsp;&darr; <i>observes & reacts</i><br><code>NotificationListener</code> & <code>QueueListener</code><br><br>[🔍 ดู Class Diagram เต็มในข้อ 5.9](#59-observer-pattern) |
 
 ---
 
 ## 5.1 Layered Architecture
 
 ### Status
-`Design-level / Planned`
+`Implemented & Production-Verified`
 
 ### Problem
 ในระบบบริหารจัดการร้านนวด FIWDEE มีกระบวนการทางธุรกิจที่มีความซับซ้อนสูง เช่น การตรวจสอบความพร้อมของห้องนวดและหมอนวด, การกันเวลาทำความสะอาดห้อง 15 นาที (`cleaningBufferMinutes`), การตรวจสอบทักษะความชำนาญของหมอนวด (`TherapistSkill`) ให้ตรงกับบริการที่เลือก, และการบันทึกสถานะการชำระเงิน หากไม่มีการแบ่งชั้นสถาปัตยกรรม (Architecture Layers) ที่ชัดเจน จะเกิดปัญหา **Spaghetti Code** เช่น Controller เขียนคำสั่ง SQL เพื่อเข้าถึงฐานข้อมูลโดยตรง หรือ Application Layer ต้องผูกติดกับ Presentation DTO ทำให้:
@@ -102,7 +102,7 @@ classDiagram
 ## 5.2 MVC (Model-View-Controller)
 
 ### Status
-`Design-level / Planned`
+`Implemented & Production-Verified`
 
 ### Problem
 ในระบบ FIWDEE การสื่อสารระหว่างผู้ใช้งาน (ลูกค้าที่จองผ่านเว็บ, พนักงานต้อนรับ Receptionist หน้าร้าน, เจ้าของร้าน Owner) กับระบบหลังบ้าน ต้องมีการจัดการข้อมูลนำเข้าและส่งออกอย่างเป็นระบบ หาก Controller ทำหน้าที่ประมวลผล Business Rules เอง หรือให้ Client ส่งข้อมูลเข้ามาแก้ไข JPA Entity ใน Database โดยตรง จะทำให้เกิดช่องโหว่ด้านความปลอดภัย (Security Vulnerabilities) และเกิดความสับสนระหว่างข้อมูลการแสดงผลกับข้อมูลทางธุรกิจ
@@ -167,7 +167,7 @@ classDiagram
 ## 5.3 Repository Pattern
 
 ### Status
-`Design-level / Planned`
+`Implemented & Production-Verified`
 
 ### Problem
 ในระบบ FIWDEE มีการเข้าถึงข้อมูลที่มีเงื่อนไขเฉพาะทางธุรกิจจำนวนมาก เช่น:
@@ -231,7 +231,7 @@ classDiagram
 ## 5.4 Service Layer Pattern
 
 ### Status
-`Design-level / Planned`
+`Implemented & Production-Verified`
 
 ### Problem
 ในระบบ FIWDEE Use Case ทางธุรกิจหลายรายการต้องอาศัยการตรวจสอบเงื่อนไขข้ามหลาย Entities และต้องทำงานแบบ Atomic (ทั้งหมดหรือไม่มีเลย) ตัวอย่างเช่น Use Case `UC-10: Create Online Booking` และ `UC-11: Create Walk-in Booking`:
@@ -312,7 +312,7 @@ classDiagram
 ## 5.5 DTO Pattern + Mapper
 
 ### Status
-`Design-level / Planned`
+`Implemented & Production-Verified`
 
 ### Problem
 1. **Information Disclosure & Security:** Domain Entities มี Attributes ที่เป็นข้อมูลส่วนบุคคลหรือข้อมูลภายในของร้าน เช่น `passwordHash` ใน `User`, `commissionRate` ใน `Therapist`, หรือข้อมูลประวัติสุขภาพ `healthNotes` ใน `Customer` หากส่ง Entity ออกไปยัง Presentation API โดยตรง ข้อมูลเหล่านี้จะรั่วไหลไปยัง Client
@@ -400,7 +400,7 @@ $$\text{HTTP Request} \longrightarrow \text{RequestDTO} \longrightarrow \text{Ma
 ## 5.6 Dependency Injection
 
 ### Status
-`Design-level / Planned`
+`Implemented & Production-Verified`
 
 ### Problem
 หาก Controller หรือ Service สร้าง Instance ของ Class ที่ตนเองต้องพึ่งพาด้วยคำสั่ง `new` เอง เช่น:
@@ -491,7 +491,7 @@ classDiagram
 ## 5.7 State Pattern
 
 ### Status
-`Design-level / Planned`
+`Implemented & Production-Verified`
 
 ### Problem
 วงจรชีวิตของการจอง (Booking Lifecycle) ในระบบ FIWDEE มีสถานะการทำงาน 7 สถานะตามข้อกำหนดใน [use-case.md](file:///C:/Users/Viphu/Desktop/University/PrinciplesOfSoftwareDesign/FIWDEE-CP353002-69_1PrinciplesOfSoftwareDesign/doc/use-case.md) และ [domain-model.md](file:///C:/Users/Viphu/Desktop/University/PrinciplesOfSoftwareDesign/FIWDEE-CP353002-69_1PrinciplesOfSoftwareDesign/doc/domain-model.md):
@@ -632,7 +632,7 @@ classDiagram
 ## 5.8 Strategy Pattern
 
 ### Status
-`Design-level / Planned`
+`Implemented & Production-Verified`
 
 ### Problem
 ใน Use Case `UC-19: Process Payment` ระบบร้านนวด FIWDEE รองรับวิธีการชำระเงิน 3 รูปแบบตามที่ระบุไว้ใน `domain-model.md` และ `use-case.md`:
@@ -719,7 +719,7 @@ classDiagram
 ## 5.8.1 Discount Strategy Pattern (Promotions & Extensible Discounts)
 
 ### Status
-`Design-level / Planned`
+`Implemented & Production-Verified`
 
 ### Problem
 ในระบบร้านนวด FIWDEE มีการจัดโปรโมชั่นและส่วนลด (เช่น โค้ด `FIWDEE20` ลด 20% สำหรับการจองครั้งแรก) และร้านมีความต้องการเพิ่มแคมเปญโปรโมชั่นใหม่ๆ ในอนาคต (เช่น โปรโมชั่นลดเงินสดคงที่, โปรโมชั่นตามเทศกาล หรือโปรโมชั่นสมาชิก) 
@@ -792,7 +792,7 @@ classDiagram
 ```
 
 ### How it is applied in FIWDEE
-* **Security & Single Source of Truth:** ฝั่ง Client ส่งมาเพียงรหัสโปรโมชั่น `promoCode` (เช่น `"FIWDEE20"`) ผ่าน `PaymentRequestDTO` ระบบ Backend จะนำยอดเต็ม `grossAmount` มาจาก `Booking.totalPrice` ในฐานข้อมูลจริง แล้วส่งให้ `DiscountStrategy` ทำการคำนวณ `discountAmount` อย่างถูกต้อง ปลอดภัย ไม่ให้ผู้ใช้ดัดแปลงราคาได้
+* **Security & Single Source of Truth:** ฝั่ง Client ส่งมาเพียงรหัสโปรโมชั่น `promoCode` (เช่น `"FIWDEE20"`) ผ่าน `PaymentRequestDTO` หรือเรียกตรวจสอบผ่าน `POST /api/payments/promotions/validate` โดยระบบ Backend จะเป็นผู้คำนวณส่วนลดทั้งหมดผ่าน `DiscountStrategy` ห้ามมีการคำนวณทางคณิตศาสตร์เรื่องส่วนลดบน Frontend เด็ดขาด เพื่อป้องกันการถูกแทรกแซงราคา (Tampering)
 * **Open-Closed Principle (OCP):** ในอนาคตหากทางร้านต้องการเพิ่มโปรโมชั่นใหม่ (เช่น ส่วนลดเทศกาลสงกรานต์) สามารถสร้าง Concrete Class ใหม่ที่ Implement `DiscountStrategy` ขึ้นมาเป็น Spring Bean ได้ทันทีโดยไม่ต้องแก้ไขหรือกระทบโค้ดใน `PaymentService` เลย
 * **Zero Collision:** โครงสร้างคลาสส่วนลดนี้อยู่ในแพ็กเกจ `com.fiwdee.pattern.strategy.discount` ภายใต้ความรับผิดชอบของ Dev 5 จึงไม่กระทบกับโมดูลของเพื่อนในทีม
 
@@ -801,7 +801,7 @@ classDiagram
 ## 5.9 Observer Pattern
 
 ### Status
-`Design-level / Planned`
+`Implemented & Production-Verified`
 
 ### Problem
 เมื่อเกิดเหตุการณ์เปลี่ยนแปลงสถานะของการจอง (Booking Status Transition) ในระบบ FIWDEE จะมีหลายระบบย่อยและคอมโพเนนต์สนับสนุนที่ต้องตอบสนองต่อเหตุการณ์ดังกล่าวพร้อมกัน เช่น:

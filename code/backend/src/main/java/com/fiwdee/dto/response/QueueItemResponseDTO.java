@@ -13,6 +13,7 @@ public class QueueItemResponseDTO {
 
     private final Long queueId;
     private final Long bookingId;
+    private final String bookingReferenceCode;
     private final String queueNumber;
     private final LocalDate queueDate;
     private final LocalDateTime checkInTime;

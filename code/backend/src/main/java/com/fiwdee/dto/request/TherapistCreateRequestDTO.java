@@ -8,6 +8,7 @@ import java.util.List;
 
 public record TherapistCreateRequestDTO(
         @NotBlank String username,
+        String password,
         @NotBlank String fullName,
         String email,
         @NotBlank String phoneNumber,

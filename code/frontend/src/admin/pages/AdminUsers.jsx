@@ -7,21 +7,15 @@ import StatusBadge from '../components/StatusBadge.jsx'
 // ข้อมูลรวม: totalUsers / onlineUsers / activeToday / newThisMonth + รายชื่อผู้ใช้ทั้งหมด
 // Force Logout เรียก POST /api/admin/users/{id}/force-logout (จบ session ฝั่ง backend)
 
-function StatCard({ label, value, sub, accent = 'stone' }) {
-  const accentStyles = {
-    stone: 'bg-stone-900 text-stone-100 border-stone-900',
-    emerald: 'bg-emerald-50 text-emerald-900 border-emerald-200',
-    amber: 'bg-amber-50 text-amber-900 border-amber-200',
-    sky: 'bg-sky-50 text-sky-900 border-sky-200',
-  }
+function StatCard({ label, value, sub }) {
   return (
-    <div className={`rounded-2xl border p-5 shadow-2xs ${accentStyles[accent]}`}>
-      <div className="text-3xl font-headline font-bold leading-none">{value}</div>
-      <div className={`text-xs font-semibold uppercase tracking-wider mt-2 ${accent === 'stone' ? 'text-stone-300' : 'text-stone-500'}`}>
+    <div className="bg-surface rounded-2xl border border-outline-variant p-5 shadow-[var(--admin-shadow-sm)]">
+      <div className="text-3xl font-headline font-semibold text-teak-dark leading-none">{value}</div>
+      <div className="text-xs font-semibold text-charcoal-muted uppercase tracking-wider mt-2.5">
         {label}
       </div>
       {sub && (
-        <div className={`text-[11px] mt-1 ${accent === 'stone' ? 'text-stone-400' : 'text-stone-600'}`}>{sub}</div>
+        <div className="text-[11px] text-charcoal-muted mt-1">{sub}</div>
       )}
     </div>
   )
@@ -124,37 +118,36 @@ export default function AdminUsers() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="สมัครใช้งานทั้งหมด" value={summary.totalUsers} sub="บัญชีที่ลงทะเบียนในระบบ" accent="stone" />
+        <StatCard label="สมัครใช้งานทั้งหมด" value={summary.totalUsers} sub="บัญชีที่ลงทะเบียนในระบบ" />
         <StatCard
           label="กำลัง Login อยู่"
           value={summary.onlineUsers}
           sub="Owner/Receptionist/Therapist/Customer"
-          accent="emerald"
         />
-        <StatCard label="ใช้งานวันนี้" value={summary.activeToday} sub="login ภายในวันนี้" accent="amber" />
-        <StatCard label="สมาชิกใหม่เดือนนี้" value={summary.newThisMonth} sub="สมัครในเดือนปัจจุบัน" accent="sky" />
+        <StatCard label="ใช้งานวันนี้" value={summary.activeToday} sub="login ภายในวันนี้" />
+        <StatCard label="สมาชิกใหม่เดือนนี้" value={summary.newThisMonth} sub="สมัครในเดือนปัจจุบัน" />
       </div>
 
       {/* Currently Logged-in Panel */}
-      <div className="bg-emerald-50/40 rounded-2xl border border-emerald-200/80 p-5 shadow-2xs">
+      <div className="bg-surface rounded-2xl border border-outline-variant p-5 shadow-[var(--admin-shadow-sm)]">
         <div className="flex items-center gap-2 mb-3">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping-subtle" />
-          <h3 className="text-sm font-bold text-emerald-950 uppercase tracking-wider">
+          <span className="w-2 h-2 rounded-full bg-emerald-600" />
+          <h3 className="text-xs font-semibold text-teak-dark uppercase tracking-wider">
             กำลังใช้งานอยู่ตอนนี้ ({onlineUsers.length} คน)
           </h3>
         </div>
         {onlineUsers.length === 0 ? (
-          <p className="text-xs text-stone-500">ไม่มีผู้ใช้ login ในขณะนี้</p>
+          <p className="text-xs text-charcoal-muted">ไม่มีผู้ใช้ login ในขณะนี้</p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {onlineUsers.map((u) => (
-              <div key={u.id} className="flex items-center gap-2 bg-white rounded-xl border border-emerald-200 px-3 py-2">
-                <div className="w-7 h-7 rounded-full bg-emerald-800 text-white text-[10px] font-bold flex items-center justify-center">
+              <div key={u.id} className="flex items-center gap-2.5 bg-surface-container-low rounded-xl border border-outline-variant px-3 py-2">
+                <div className="w-7 h-7 rounded-full bg-teak-dark text-warm-ivory text-[10px] font-bold flex items-center justify-center shrink-0">
                   {u.name.slice(0, 2)}
                 </div>
                 <div className="leading-tight">
-                  <div className="text-xs font-bold text-stone-800">{u.name}</div>
-                  <div className="text-[10px] text-stone-500">Online ตั้งแต่ {u.onlineSince} น.</div>
+                  <div className="text-xs font-semibold text-on-surface">{u.name}</div>
+                  <div className="text-[10px] text-charcoal-muted">Online ตั้งแต่ {u.onlineSince} น.</div>
                 </div>
                 <StatusBadge status={u.role} size="sm" />
               </div>

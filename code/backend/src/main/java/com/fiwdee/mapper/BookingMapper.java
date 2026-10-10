@@ -28,6 +28,11 @@ public class BookingMapper {
                 .startDateTime(booking.getStartDateTime())
                 .endDateTime(booking.getEndDateTime())
                 .totalPrice(booking.getTotalPrice())
+                .discountAmount(booking.getPayment() != null ? booking.getPayment().getDiscountAmount() : java.math.BigDecimal.ZERO)
+                .netAmount(booking.getPayment() != null ? booking.getPayment().getNetAmount() : booking.getTotalPrice())
+                .paymentStatus(booking.getPayment() != null && booking.getPayment().getPaymentStatus() != null
+                        ? booking.getPayment().getPaymentStatus().name()
+                        : null)
                 .status(booking.getStatus() != null ? booking.getStatus().name() : null)
                 .createdAt(booking.getCreatedAt())
                 .build();

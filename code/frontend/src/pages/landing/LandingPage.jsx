@@ -12,7 +12,7 @@ export default function LandingPage({ ready = true, onNavigate }) {
       {/* ป๊อปอัพโปรโมชั่นตอนเปิดเว็บ (โชว์ครั้งเดียวต่อ session) */}
       <PromoPopup ready={ready} onNavigate={onNavigate} />
       <div className="flex flex-col w-full">
-        <Hero ready={ready} />
+        <Hero ready={ready} onNavigate={onNavigate} />
         <TherapistsSection onNavigate={onNavigate} />
         <ServicesSection onNavigate={onNavigate} />
         <AtmosphereSection />

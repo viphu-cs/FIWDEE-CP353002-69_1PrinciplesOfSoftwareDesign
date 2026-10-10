@@ -153,10 +153,13 @@ export function PromptPayStrategy({
                 />
                 <button
                   type="button"
+                  disabled={promoState.isValidating}
                   onClick={handleApplyPromo}
-                  className="px-4 py-2 rounded-lg bg-primary text-on-primary font-label-caps text-label-caps uppercase tracking-wider hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer shrink-0"
+                  className={`px-4 py-2 rounded-lg bg-primary text-on-primary font-label-caps text-label-caps uppercase tracking-wider hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer shrink-0 ${
+                    promoState.isValidating ? 'opacity-60 cursor-not-allowed' : ''
+                  }`}
                 >
-                  ใช้โค้ด
+                  {promoState.isValidating ? 'กำลังตรวจสอบ...' : 'ใช้โค้ด'}
                 </button>
               </div>
               {promoError && (
@@ -213,12 +216,17 @@ export function CreditCardStrategy() {
   )
 }
 
-export function DepositStrategy({ finalPrice }) {
-  const remainingPrice = Math.max(0, finalPrice - 300)
+export function PayAtCounterStrategy({ finalPrice }) {
   return (
-    <p className="font-body-sm text-body-sm text-on-surface-variant mt-2 pl-7">
-      ชำระมัดจำออนไลน์ ฿300 เพื่อล็อกห้องนวดและตารางเวลา ยอดคงเหลือ ฿{remainingPrice.toLocaleString('en-US')} ชำระที่เคาน์เตอร์
-    </p>
+    <div className="bg-surface-container-low p-4 rounded-lg space-y-1.5 mt-3 ml-7 border border-outline-variant/30 text-left">
+      <div className="flex items-center gap-2 text-primary font-medium">
+        <span className="material-symbols-outlined text-[18px]">storefront</span>
+        <span className="font-body-md text-body-md font-medium">ชำระเต็มจำนวนในวันรับบริการ</span>
+      </div>
+      <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+        ท่านสามารถชำระเงินสดหรือสแกน QR Code ชำระเงินได้โดยตรงที่เคาน์เตอร์ต้อนรับก่อนเริ่มรับบริการ ยอดรวมทั้งสิ้น ฿{finalPrice.toLocaleString('en-US')}
+      </p>
+    </div>
   )
 }
 
@@ -229,8 +237,8 @@ export function PaymentStrategyContent({ method, ...props }) {
   if (method === 'creditcard') {
     return <CreditCardStrategy {...props} />
   }
-  if (method === 'deposit') {
-    return <DepositStrategy {...props} />
+  if (method === 'counter' || method === 'deposit') {
+    return <PayAtCounterStrategy {...props} />
   }
   return null
 }

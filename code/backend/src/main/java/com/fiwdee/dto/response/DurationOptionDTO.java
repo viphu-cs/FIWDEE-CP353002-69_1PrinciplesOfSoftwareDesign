@@ -11,6 +11,13 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DurationOptionDTO {
+    private Long id;
     private Integer durationMinutes;
     private BigDecimal price;
+
+    public DurationOptionDTO(Integer durationMinutes, BigDecimal price) {
+        this.id = null;
+        this.durationMinutes = durationMinutes;
+        this.price = price;
+    }
 }

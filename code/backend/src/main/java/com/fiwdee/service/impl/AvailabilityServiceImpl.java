@@ -59,9 +59,16 @@ public class AvailabilityServiceImpl implements AvailabilityService {
 
     @Override
     public AvailabilityResponseDTO checkAvailability(LocalDate date, Long serviceId, Integer durationMinutes) {
+        return checkAvailability(date, serviceId, durationMinutes, 60);
+    }
+
+    @Override
+    public AvailabilityResponseDTO checkAvailability(LocalDate date, Long serviceId, Integer durationMinutes, Integer stepMinutes) {
         if (date == null) {
             date = LocalDate.now();
         }
+
+        int step = (stepMinutes != null && stepMinutes > 0) ? stepMinutes : 60;
 
         Service service = serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new NotFoundException("Service not found with id: " + serviceId));

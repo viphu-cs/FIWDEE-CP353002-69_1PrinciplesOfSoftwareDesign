@@ -1,11 +1,91 @@
+import api from '../lib/api.js'
+
 /**
  * Booking Service Abstraction (DIP: Data Access & Business Logic abstraction)
  * High-level components depend on this service instead of raw hardcoded datasets.
  */
 
+// Fallback & mapping asset helpers
+const SERVICE_IMAGES = {
+  THAI: '/images/services/service-thai.jpg',
+  'SVC-THAI': '/images/services/service-thai.jpg',
+  'SVC-THAI_MASSAGE': '/images/services/service-thai.jpg',
+  AROMA: '/images/services/service-aroma.jpg',
+  'SVC-AROMA': '/images/services/service-aroma.jpg',
+  HOT_OIL: '/images/services/service-warm-oil.jpg',
+  WARM_OIL: '/images/services/service-warm-oil.jpg',
+  'SVC-WARM_OIL': '/images/services/service-warm-oil.jpg',
+  'SVC-HOT_OIL': '/images/services/service-warm-oil.jpg',
+  FOOT: '/images/services/service-foot.jpg',
+  'SVC-FOOT': '/images/services/service-foot.jpg',
+  'SVC-FOOT_MASSAGE': '/images/services/service-foot.jpg',
+  HERBAL: '/images/services/service-warm-oil.jpg',
+  'SVC-HERBAL': '/images/services/service-warm-oil.jpg',
+}
+
+const THERAPIST_ASSETS = {
+  4: {
+    avatar: '/images/booking/therapist-mali-avatar.jpg',
+    image: '/images/booking/therapist-mali.jpg',
+    exp: 'Master Specialist • 8 ปี',
+    badges: ['ไทยแผนโบราณ', 'อโรม่าบำบัด'],
+    handWeight: 'ปานกลาง - หนัก',
+  },
+  5: {
+    avatar: '/images/booking/therapist-mali-avatar.jpg',
+    image: '/images/booking/therapist-mali.jpg',
+    exp: 'Master Specialist • 10 ปี',
+    badges: ['ไทยแผนโบราณ', 'นวดเท้าและกดจุด'],
+    handWeight: 'ปานกลาง - นุ่มลึก',
+  },
+  6: {
+    avatar: '/images/booking/therapist-bua.jpg',
+    image: '/images/booking/therapist-bua.jpg',
+    exp: 'Aroma Specialist • 6 ปี',
+    badges: ['อโรม่าบำบัด', 'น้ำมันร้อนคลายกล้ามเนื้อ'],
+    handWeight: 'นุ่มนวล - ละมุนจิต',
+  },
+  7: {
+    avatar: '/images/booking/therapist-praew.jpg',
+    image: '/images/booking/therapist-praew.jpg',
+    exp: 'Deep Tissue Master • 5 ปี',
+    badges: ['ไทยแผนโบราณ', 'นวดเท้าและกดจุด'],
+    handWeight: 'แน่นลึก - ตรงจุด',
+  },
+  8: {
+    avatar: '/images/booking/therapist-karn.jpg',
+    image: '/images/booking/therapist-karn.jpg',
+    exp: 'Holistic Practitioner • 7 ปี',
+    badges: ['ไทยแผนโบราณ', 'น้ำมันร้อนคลายกล้ามเนื้อ'],
+    handWeight: 'แน่นลึก - ปลดล็อกตึงสะสม',
+  },
+  9: {
+    avatar: '/images/booking/therapist-bua.jpg',
+    image: '/images/booking/therapist-bua.jpg',
+    exp: 'Aroma Specialist • 9 ปี',
+    badges: ['น้ำมันอุ่น', 'อโรม่าบำบัด'],
+    handWeight: 'นุ่มนวล - สบายคลายเกร็ง',
+  },
+  10: {
+    avatar: '/images/booking/therapist-bua.jpg',
+    image: '/images/booking/therapist-bua.jpg',
+    exp: 'Senior Specialist • 9 ปี',
+    badges: ['ครบเครื่องศาสตร์หัตถการ', 'อโรมา', 'ไทยประคบ'],
+    handWeight: 'ปรับตามสรีระบุคคล',
+  },
+  15: {
+    avatar: '/images/booking/therapist-praew.jpg',
+    image: '/images/booking/therapist-praew.jpg',
+    exp: 'Master Aroma Specialist • 7 ปี',
+    badges: ['สุคนธบำบัด', 'นวดอโรมาลึก'],
+    handWeight: 'นุ่มลึก - ละเมียดละไม',
+  },
+}
+
 export const therapistsData = [
   {
-    id: 'mali',
+    id: 5,
+    backendId: 5,
     name: 'คุณมะลิ (Mali)',
     shortName: 'คุณมะลิ',
     role: 'เชี่ยวชาญนวดไทยราชสำนักและอโรมา',
@@ -18,9 +98,10 @@ export const therapistsData = [
     avatar: '/images/booking/therapist-mali-avatar.jpg',
   },
   {
-    id: 'bua',
-    name: 'คุณบัว (Bua)',
-    shortName: 'คุณบัว',
+    id: 6,
+    backendId: 6,
+    name: 'คุณดาว (Dao)',
+    shortName: 'คุณดาว',
     role: 'ผู้เชี่ยวชาญศาสตร์อโรมาและกลิ่นบำบัด',
     exp: 'Aroma Specialist • 8 ปี',
     avatarExp: 'ผู้เชี่ยวชาญกลิ่นบำบัด 8 ปี',
@@ -31,9 +112,10 @@ export const therapistsData = [
     avatar: '/images/booking/therapist-bua.jpg',
   },
   {
-    id: 'praew',
-    name: 'คุณแพรว (Praew)',
-    shortName: 'คุณแพรว',
+    id: 7,
+    backendId: 7,
+    name: 'คุณพิม (Pim)',
+    shortName: 'คุณพิม',
     role: 'ผู้ชำนาญการแก้อาการและสะท้อนเท้า',
     exp: 'Deep Tissue Master • 10 ปี',
     avatarExp: 'แก้อาการและพังผืดลึก 10 ปี',
@@ -44,9 +126,10 @@ export const therapistsData = [
     avatar: '/images/booking/therapist-praew.jpg',
   },
   {
-    id: 'karn',
-    name: 'คุณกานต์ (Karn)',
-    shortName: 'คุณกานต์',
+    id: 8,
+    backendId: 8,
+    name: 'คุณนก (Nok)',
+    shortName: 'คุณนก',
     role: 'หัตถเวชโบราณและปรับโครงสร้างกาย',
     exp: 'Holistic Practitioner • 7 ปี',
     avatarExp: 'หัตถเวชโบราณ 7 ปี',
@@ -58,6 +141,7 @@ export const therapistsData = [
   },
   {
     id: 'any',
+    backendId: null,
     name: 'ให้ร้านจัดสรรให้ (Any Specialist)',
     shortName: 'ให้ร้านจัดสรรให้',
     role: 'คัดสรรโดย FIWDEE Boutique Retreatment',
@@ -72,71 +156,252 @@ export const therapistsData = [
 
 export const servicesData = [
   {
-    id: 'thai',
-    name: 'นวดไทยราชสำนัก',
-    desc: 'กดจุดเส้นประธานสิบ คลายกล้ามเนื้อและสมดุลลมปราณ',
+    id: 1,
+    serviceCode: 'SVC-THAI_MASSAGE',
+    name: 'นวดไทยราชสำนัก (Royal Thai Massage)',
+    desc: 'ศาสตร์การกดจุดตามแนวเส้นประธานสิบ ผสานการยืดเหยียดอย่างนุ่มนวล คลายความตึงเกร็ง',
     isPopular: true,
     image: '/images/services/service-thai.jpg',
     durationOptions: [
-      { minutes: 60, price: 600 },
-      { minutes: 90, price: 850 },
-      { minutes: 120, price: 1100 },
+      { id: 1, minutes: 60, price: 500 },
+      { id: 2, minutes: 90, price: 700 },
+      { id: 3, minutes: 120, price: 900 },
     ],
   },
   {
-    id: 'aroma',
-    name: 'นวดอโรมาเธอราปี',
-    desc: 'น้ำมันสกัดออร์แกนิกและศาสตร์กลิ่นบำบัดผ่อนคลายลึก',
+    id: 2,
+    serviceCode: 'SVC-AROMA',
+    name: 'นวดอโรมาเธอราปี (Organic Aromatherapy)',
+    desc: 'น้ำมันสกัดออร์แกนิกและศาสตร์กลิ่นบำบัดผ่อนคลายลึก จังหวะนุ่มนวลฟื้นฟูการนอนหลับ',
     image: '/images/services/service-aroma.jpg',
     durationOptions: [
-      { minutes: 60, price: 800 },
-      { minutes: 90, price: 1100 },
-      { minutes: 120, price: 1400 },
+      { id: 4, minutes: 60, price: 700 },
+      { id: 5, minutes: 90, price: 950 },
+      { id: 6, minutes: 120, price: 1200 },
     ],
   },
   {
-    id: 'warm_oil',
-    name: 'นวดน้ำมันอุ่นสมุนไพร',
-    desc: 'น้ำมันงาดำและไพลสดอุ่น กระตุ้นการไหลเวียนโลหิต',
-    image: '/images/services/service-warm-oil.jpg',
-    durationOptions: [
-      { minutes: 60, price: 750 },
-      { minutes: 90, price: 1000 },
-    ],
-  },
-  {
-    id: 'foot',
-    name: 'นวดกดจุดสะท้อนเท้า',
-    desc: 'กระตุ้นศูนย์รวมประสาทฝ่าเท้า คืนความเบาสบายคล่องตัว',
+    id: 3,
+    serviceCode: 'SVC-FOOT',
+    name: 'นวดกดจุดสะท้อนเท้า (Foot Reflexology)',
+    desc: 'กระตุ้นศูนย์รวมประสาทฝ่าเท้า คืนความเบาสบายคล่องตัวและการทำงานสมดุลของร่างกาย',
     image: '/images/services/service-foot.jpg',
     durationOptions: [
-      { minutes: 60, price: 500 },
-      { minutes: 90, price: 700 },
+      { id: 7, minutes: 60, price: 400 },
+      { id: 8, minutes: 90, price: 550 },
+      { id: 9, minutes: 120, price: 700 },
+    ],
+  },
+  {
+    id: 4,
+    serviceCode: 'SVC-WARM_OIL',
+    name: 'นวดน้ำมันอุ่นสมุนไพร (Warm Herbal Oil)',
+    desc: 'น้ำมันงาดำและไพลสดอุ่น กระตุ้นการไหลเวียนโลหิต บรรเทาอาการเมื่อยล้าสะสม',
+    image: '/images/services/service-warm-oil.jpg',
+    durationOptions: [
+      { id: 10, minutes: 60, price: 800 },
+      { id: 11, minutes: 90, price: 1100 },
+      { id: 12, minutes: 120, price: 1400 },
     ],
   },
 ]
 
-export const dateOptions = [
-  { id: '15', label: 'วันนี้', dayNum: '15', dayName: 'อังคาร', fullText: 'วันนี้ · 15 ต.ค. 2567' },
-  { id: '16', label: 'พรุ่งนี้', dayNum: '16', dayName: 'พุธ', fullText: '16 ต.ค. 2567' },
-  { id: '17', label: 'วันถัดไป', dayNum: '17', dayName: 'พฤหัสบดี', fullText: '17 ต.ค. 2567' },
-  { id: '18', label: 'ว่าง 3 รอบ', dayNum: '18', dayName: 'ศุกร์', fullText: '18 ต.ค. 2567' },
-  { id: '19', label: 'ว่าง 4 รอบ', dayNum: '19', dayName: 'เสาร์', fullText: '19 ต.ค. 2567' },
-]
+export function formatLocalDateISO(d = new Date()) {
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const date = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${date}`
+}
+
+export function generateDateOptions() {
+  const daysOfWeekTh = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์']
+  const monthsTh = [
+    'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+    'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
+  ]
+  const fullMonthsTh = [
+    'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+    'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
+  ]
+  const list = []
+  const now = new Date()
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i)
+    const isoDate = formatLocalDateISO(d)
+    const dayNum = String(d.getDate())
+    const dayName = daysOfWeekTh[d.getDay()]
+    const monthName = monthsTh[d.getMonth()]
+    const fullMonthName = fullMonthsTh[d.getMonth()]
+    const thaiYear = d.getFullYear() + 543
+
+    let label = `${dayNum} ${monthName}`
+    if (i === 0) label = 'วันนี้'
+    else if (i === 1) label = 'พรุ่งนี้'
+    else if (i === 2) label = 'วันถัดไป'
+
+    list.push({
+      id: isoDate,
+      isoDate,
+      label,
+      dayNum,
+      dayName,
+      monthName: fullMonthName,
+      thaiYear,
+      monthYearHeader: `${fullMonthName} ${thaiYear}`,
+      fullText: `${label} · ${dayNum} ${monthName} ${thaiYear}`,
+    })
+  }
+  return list
+}
+
+export const dateOptions = generateDateOptions()
 
 export const timeSlots = [
-  { time: '10:00', duration: '90 นาที', available: false, label: 'เต็มแล้ว' },
-  { time: '13:00', timeRange: '13:00 - 14:30 น.', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
-  { time: '15:00', timeRange: '15:00 - 16:30 น.', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
-  { time: '17:30', timeRange: '17:30 - 19:00 น.', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
-  { time: '19:30', timeRange: '19:30 - 21:00 น.', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
-  { time: '20:30', duration: '90 นาที', available: false, label: 'เต็มแล้ว' },
+  { time: '10:00', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '10:30', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '11:00', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '11:30', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '12:00', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '12:30', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '13:00', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '13:30', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '14:00', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '14:30', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '15:00', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '15:30', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '16:00', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '16:30', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '17:00', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '17:30', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '18:00', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '18:30', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '19:00', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '19:30', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '20:00', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
 ]
 
 export const bookingService = {
-  getTherapists: () => therapistsData,
-  getServices: () => servicesData,
-  getDateOptions: () => dateOptions,
+  getTherapists: async () => {
+    try {
+      const res = await api.get('/therapists')
+      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+        const mapped = res.data.map((t) => {
+          const extra = THERAPIST_ASSETS[t.id] || {}
+          return {
+            id: t.id,
+            backendId: t.id,
+            name: `คุณ${t.nickname}`,
+            shortName: `คุณ${t.nickname}`,
+            role: (t.skills && t.skills.length > 0)
+              ? `เชี่ยวชาญ ${t.skills.join(', ')}`
+              : 'ผู้เชี่ยวชาญการนวดและสรีระบำบัด',
+            exp: extra.exp || 'Specialist • 5+ ปี',
+            avatarExp: extra.exp || 'รับรองมาตรฐานวิชาชีพ',
+            skills: t.skills || [],
+            badges: t.skills || ['สรีระบำบัด', 'ผ่อนคลายลึก'],
+            bio: t.bio || 'มุ่งเน้นการดูแลสุขภาพและฟื้นฟูสมดุลของร่างกายด้วยความประณีต',
+            handWeight: extra.handWeight || 'ปานกลาง - ละเมียดละไม',
+            image: extra.image || '/images/booking/therapist-mali.jpg',
+            avatar: extra.avatar || '/images/booking/therapist-mali-avatar.jpg',
+          }
+        })
+        mapped.push(therapistsData.find((t) => t.id === 'any'))
+        return mapped
+      }
+    } catch {
+      // Graceful fallback to static therapistsData
+    }
+    return therapistsData
+  },
+
+  getServices: async () => {
+    try {
+      const res = await api.get('/services')
+      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+        return res.data.map((s) => {
+          const img = SERVICE_IMAGES[s.serviceCode] || '/images/services/service-thai.jpg'
+          const durationOptions = (s.durationOptions || []).map((d) => ({
+            id: d.id,
+            minutes: d.durationMinutes,
+            price: Number(d.price),
+          }))
+          return {
+            id: s.id,
+            serviceCode: s.serviceCode,
+            name: s.serviceName,
+            desc: s.description,
+            image: img,
+            isPopular: s.serviceCode === 'THAI',
+            durationOptions,
+          }
+        })
+      }
+    } catch {
+      // Graceful fallback
+    }
+    return servicesData
+  },
+
+  getDateOptions: () => generateDateOptions(),
+
+  getAvailability: async (dateStr, serviceId, durationMinutes, stepMinutes = 30) => {
+    try {
+      const duration = durationMinutes || 60
+      const url = `/bookings/availability?date=${dateStr}&serviceId=${serviceId}&durationMinutes=${duration}&stepMinutes=${stepMinutes}`
+      const res = await api.get(url)
+      if (res && res.success && res.data && Array.isArray(res.data.availableSlots)) {
+        return res.data.availableSlots.map((slot) => {
+          const startTimeStr = slot.time || (slot.startTime ? String(slot.startTime).slice(0, 5) : '10:00')
+          let endTimeStr = slot.endTime ? String(slot.endTime).slice(0, 5) : null
+          if (!endTimeStr) {
+            const [h, m] = startTimeStr.split(':').map(Number)
+            const totalMin = h * 60 + m + duration
+            const endH = String(Math.floor(totalMin / 60)).padStart(2, '0')
+            const endM = String(totalMin % 60).padStart(2, '0')
+            endTimeStr = `${endH}:${endM}`
+          }
+          const timeRange = `${startTimeStr} - ${endTimeStr} น.`
+
+          return {
+            time: startTimeStr,
+            startTime: slot.startTime || startTimeStr,
+            endTime: slot.endTime || endTimeStr,
+            timeRange,
+            available: Boolean(slot.available),
+            label: slot.available ? 'ว่างสำหรับนัดหมาย' : 'เต็มแล้ว',
+            availableTherapists: slot.availableTherapists || [],
+            availableRooms: slot.availableRooms || [],
+          }
+        })
+      }
+    } catch (err) {
+      console.warn('Could not fetch live availability:', err)
+    }
+    return null
+  },
+
   getTimeSlots: () => timeSlots,
-  createBookingReference: () => `FWD-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-883`,
+
+  createBooking: async (payload) => {
+    return await api.post('/bookings', payload)
+  },
+
+  validatePromotion: async (promoCode, grossAmount, serviceId = null) => {
+    return await api.post('/payments/promotions/validate', {
+      promoCode,
+      grossAmount,
+      serviceId,
+    })
+  },
+
+  processPayment: async (bookingId, paymentPayload) => {
+    return await api.post(`/bookings/${bookingId}/payment`, paymentPayload)
+  },
+
+  createBookingReference: () => {
+    const datePart = formatLocalDateISO(new Date()).replace(/-/g, '')
+    const rand = Math.random().toString(36).substring(2, 8).toUpperCase()
+    return `BK-${datePart}-${rand}`
+  },
 }

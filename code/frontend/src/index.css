@@ -320,7 +320,7 @@ select:focus-visible {
 
 .font-label-caps,
 .text-label-caps {
-  font-family: 'Manrope', 'Inter', 'Noto Sans Thai', sans-serif;
+  font-family: 'Manrope', 'Noto Sans Thai', sans-serif;
   font-size: 0.6875rem;
   line-height: 1rem;
   letter-spacing: 0.14em;
@@ -500,7 +500,7 @@ select:focus-visible {
 
 .admin-theme .admin-eyebrow {
   color: var(--admin-accent);
-  font-family: 'Manrope', 'Inter', 'Noto Sans Thai', sans-serif;
+  font-family: 'Manrope', 'Noto Sans Thai', sans-serif;
   font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.14em;

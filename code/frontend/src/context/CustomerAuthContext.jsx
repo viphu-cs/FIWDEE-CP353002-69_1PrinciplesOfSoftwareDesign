@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 
 const CustomerAuthContext = createContext()
 
@@ -21,6 +21,24 @@ export function CustomerAuthProvider({ children }) {
     () => !!localStorage.getItem(TOKEN_KEY) && !!readStoredProfile()
   )
 
+  // ซิงก์สถานะกับ storage เสมอเมื่อมีการเปลี่ยนแปลง (เช่น logout จากฝั่ง Admin หรือแท็บอื่น)
+  // และซิงก์เมื่อ hash เปลี่ยนกลับมาที่หน้าเว็บหลัก
+  useEffect(() => {
+    const syncState = () => {
+      const stored = readStoredProfile()
+      const hasToken = !!localStorage.getItem(TOKEN_KEY)
+      setUser(stored)
+      setIsAuthenticated(hasToken && !!stored)
+    }
+
+    window.addEventListener('storage', syncState)
+    window.addEventListener('hashchange', syncState)
+    return () => {
+      window.removeEventListener('storage', syncState)
+      window.removeEventListener('hashchange', syncState)
+    }
+  }, [])
+
   // เขียนโปรไฟล์ลง storage เดิมที่ใช้ก่อนหน้า (localStorage มี priority เพราะ "คงสถานะ")
   const persistProfile = (profile) => {
     const store = localStorage.getItem(CUSTOMER_AUTH_KEY) ? localStorage : sessionStorage
@@ -40,6 +58,19 @@ export function CustomerAuthProvider({ children }) {
     localStorage.setItem(TOKEN_KEY, data.token)
     const store = rememberMe ? localStorage : sessionStorage
     store.setItem(CUSTOMER_AUTH_KEY, JSON.stringify(profile))
+
+    // ซิงก์ข้อมูลผู้ใช้ไปยัง admin user storage สำหรับบทบาทที่มีสิทธิ์หลังบ้าน
+    if (['OWNER', 'RECEPTIONIST', 'THERAPIST'].includes(data.role)) {
+      localStorage.setItem('fiwdee_admin_user', JSON.stringify({
+        id: data.userId,
+        name: data.fullName,
+        email: data.email,
+        role: data.role,
+      }))
+    } else {
+      localStorage.removeItem('fiwdee_admin_user')
+    }
+
     setUser(profile)
     setIsAuthenticated(true)
     return profile
@@ -51,6 +82,14 @@ export function CustomerAuthProvider({ children }) {
       if (!prev) return prev
       const next = { ...prev, ...updates }
       persistProfile(next)
+      if (['OWNER', 'RECEPTIONIST', 'THERAPIST'].includes(next.role)) {
+        localStorage.setItem('fiwdee_admin_user', JSON.stringify({
+          id: next.id,
+          name: next.name,
+          email: next.email,
+          role: next.role,
+        }))
+      }
       return next
     })
   }
@@ -58,6 +97,7 @@ export function CustomerAuthProvider({ children }) {
   const logout = () => {
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(CUSTOMER_AUTH_KEY)
+    localStorage.removeItem('fiwdee_admin_user')
     sessionStorage.removeItem(CUSTOMER_AUTH_KEY)
     setUser(null)
     setIsAuthenticated(false)

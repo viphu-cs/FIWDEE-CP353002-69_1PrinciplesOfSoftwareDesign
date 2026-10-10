@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, useScroll, useTransform } from 'motion/react'
 import FadeIn from '../motion/FadeIn.jsx'
 import { useLanguage } from '../../i18n/useLanguage.js'
-import { services } from '../../data/mock.js'
+import { services as mockServices } from '../../data/mock.js'
+import api from '../../lib/api.js'
 
 // key ของรายละเอียดทรีตเมนต์ (tag/title/desc) ใน i18n เรียงตามลำดับ services ใน mock.js
 const DETAIL_KEYS = ['t1', 't2', 't3', 't4']
@@ -19,6 +20,34 @@ export default function ServicesSection({ onNavigate }) {
   const wrapperRef = useRef(null)
   const trackRef = useRef(null)
   const [shift, setShift] = useState(0)
+  const [displayServices, setDisplayServices] = useState(mockServices)
+
+  useEffect(() => {
+    let isMounted = true
+    api.get('/services')
+      .then((res) => {
+        if (isMounted && res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+          const merged = mockServices.map((ms) => {
+            const live = res.data.find((ls) => ls.serviceCode === ms.serviceCode || ls.id === ms.id)
+            if (live && live.durationOptions) {
+              return {
+                ...ms,
+                durationOptions: live.durationOptions.map((d) => ({
+                  durationMinutes: d.durationMinutes,
+                  price: Number(d.price),
+                })),
+              }
+            }
+            return ms
+          })
+          setDisplayServices(merged)
+        }
+      })
+      .catch(() => {})
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   // progress 0 = ขอบบนส่วนนี้แตะขอบบนจอ (เริ่ม pin), 1 = เลื่อนครบระยะแล้ว (ปล่อย pin)
   const { scrollYProgress } = useScroll({
@@ -67,7 +96,7 @@ export default function ServicesSection({ onNavigate }) {
           style={{ x }}
           className="flex gap-8 md:gap-10 w-max px-6 md:px-12 mt-4 md:mt-6 items-stretch"
         >
-          {services.map((service, index) => {
+          {displayServices.map((service, index) => {
             const key = DETAIL_KEYS[index] || `t${index + 1}`
             return (
               <article

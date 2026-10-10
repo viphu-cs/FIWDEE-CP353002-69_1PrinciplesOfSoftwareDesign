@@ -367,12 +367,12 @@ public class BookingServiceImpl implements BookingService {
     @Transactional(readOnly = true)
     public org.springframework.data.domain.Page<BookingResponseDTO> getAdminBookings(
             LocalDate date, BookingStatus status, String search, org.springframework.data.domain.Pageable pageable) {
-        LocalDateTime startOfDay = (date != null) ? date.atStartOfDay() : null;
-        LocalDateTime endOfDay = (date != null) ? date.atTime(LocalTime.MAX) : null;
-        String trimmedSearch = (search != null && !search.isBlank()) ? search.trim() : null;
+        LocalDateTime startOfDay = (date != null) ? date.atStartOfDay() : LocalDateTime.of(1970, 1, 1, 0, 0);
+        LocalDateTime endOfDay = (date != null) ? date.atTime(LocalTime.MAX) : LocalDateTime.of(2099, 12, 31, 23, 59, 59);
+        String safeSearch = (search != null && !search.isBlank()) ? search.trim() : "";
 
         org.springframework.data.domain.Page<Booking> page =
-                bookingRepository.findAdminBookings(startOfDay, endOfDay, status, trimmedSearch, pageable);
+                bookingRepository.findAdminBookings(startOfDay, endOfDay, status, safeSearch, pageable);
         return page.map(bookingMapper::toBookingResponse);
     }
 

@@ -483,7 +483,7 @@ erDiagram
 | Column Name | Data Type | Key | Nullable | Constraints / Defaults | Description |
 | :--- | :--- | :---: | :---: | :--- | :--- |
 | `id` | `BIGINT` | **PK** | NO | `AUTO_INCREMENT / IDENTITY` | รหัสการจอง (Primary Key) |
-| `booking_reference_code` | `VARCHAR(50)` | | NO | `UNIQUE` | รหัสอ้างอิงการจอง (เช่น `BKG-20260927-XXXX`) |
+| `booking_reference_code` | `VARCHAR(50)` | | NO | `UNIQUE` | รหัสอ้างอิงการจอง (เช่น `BK-20260927-XXXXXX`) |
 | `customer_id` | `BIGINT` | **FK** | NO | `REFERENCES customers(id)` | รหัสลูกค้าผู้จอง |
 | `therapist_id` | `BIGINT` | **FK** | YES | `REFERENCES therapists(id)` | รหัสหมอนวดที่ได้รับมอบหมาย (`0..1`) |
 | `room_id` | `BIGINT` | **FK** | NO | `REFERENCES rooms(id)` | รหัสห้องนวดที่จัดสรรให้ |

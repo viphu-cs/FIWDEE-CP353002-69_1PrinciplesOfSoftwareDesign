@@ -37,6 +37,12 @@ public class MyBookingResponseDTO {
 
     private BigDecimal totalPrice;
 
+    private BigDecimal discountAmount;
+
+    private BigDecimal netAmount;
+
+    private String paymentStatus;
+
     private String status;
 
     private LocalDateTime createdAt;

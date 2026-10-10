@@ -75,7 +75,7 @@ export default function BookingStepSlot({
                     1. วันที่รับบริการ
                   </h2>
                   <span className="font-label-caps text-label-caps uppercase text-secondary">
-                    ตุลาคม 2567
+                    {selectedDate?.monthYearHeader || 'ปฏิทินการจอง'}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-space-xs pt-space-xs">
@@ -119,76 +119,220 @@ export default function BookingStepSlot({
                 </div>
               </div>
 
-              {/* Section 2: Time Slots Grid */}
+              {/* Section 2: Flexible Timeline Bar & Time Slots */}
               <div className="space-y-space-sm">
                 <div className="flex items-baseline justify-between">
                   <h2 className="font-headline-sm text-headline-sm text-on-surface font-normal">
-                    2. รอบเวลาที่เปิดรับจอง
+                    2. กำหนดเวลาบนไทม์ไลน์ (ก้าวละ 30 นาที)
                   </h2>
                   <span className="font-body-sm text-body-sm text-secondary">
-                    ระยะเวลาทรีตเมนต์ {activeService.duration}
+                    ระยะเวลาบำบัด {activeService.duration}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-space-sm pt-space-xs">
-                  {timeSlots.map((slot, idx) => {
-                    if (!slot.available) {
-                      return (
-                        <div
-                          key={idx}
-                          className="p-space-md bg-surface-container-high rounded-lg opacity-50 cursor-not-allowed select-none"
-                        >
-                          <div className="font-headline-sm text-headline-sm text-secondary">
-                            {slot.time}
-                          </div>
-                          <div className="font-label-caps text-label-caps uppercase text-secondary mt-1">
-                            เต็มแล้ว
-                          </div>
-                        </div>
-                      )
-                    }
-                    const isSlotActive = selectedTimeSlot.time === slot.time
-                    return (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => setSelectedTimeSlot(slot)}
-                        className={`p-space-md text-left rounded-lg transition-all cursor-pointer ${
-                          isSlotActive
-                            ? 'bg-on-surface text-surface shadow-sm'
-                            : 'bg-surface-container-low hover:bg-surface-container group'
-                        }`}
-                      >
-                        <div
-                          className={`font-headline-sm text-headline-sm ${
-                            isSlotActive
-                              ? 'text-surface'
-                              : 'text-on-surface group-hover:text-primary transition-colors'
-                          }`}
-                        >
-                          {slot.time}
-                        </div>
-                        <div
-                          className={`font-label-caps text-label-caps uppercase mt-1 ${
-                            isSlotActive ? 'text-primary-fixed' : 'text-tertiary'
-                          }`}
-                        >
-                          {isSlotActive ? 'เลือกแล้ว' : 'ว่างสำหรับ 1 ท่าน'}
-                        </div>
-                      </button>
-                    )
-                  })}
+
+                {/* Timeline Active Duration Strip Indicator */}
+                <div className="p-3.5 bg-surface-container-low/80 border border-outline-variant/40 rounded-xl space-y-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-2 text-on-surface">
+                      <span className="material-symbols-outlined text-base text-primary">timelapse</span>
+                      <span className="font-semibold">ช่วงเวลาที่เลือก:</span>
+                      <span className="font-mono text-primary font-bold text-sm">
+                        {selectedTimeSlot?.time} - {selectedTimeSlot?.endTime ? String(selectedTimeSlot.endTime).slice(0, 5) : '—'} น.
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-[11px] text-secondary">
+                      <span className="flex items-center gap-1">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 inline-block"></span> ว่าง
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-2.5 h-2.5 rounded-full bg-surface-container-high border border-outline-variant inline-block"></span> ไม่ว่าง/ติดจอง
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-xs text-primary">cleaning_services</span> พักทำความสะอาด 15 น.
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Visual Bar representing the service flow */}
+                  <div className="w-full bg-surface-container rounded-lg p-2.5 flex items-center justify-between text-xs text-secondary border border-outline-variant/30">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-primary text-sm">{selectedTimeSlot?.time} น.</span>
+                      <span className="text-[11px] text-secondary">เริ่มบริการ</span>
+                    </div>
+                    <div className="flex-1 mx-4 flex items-center">
+                      <div className="h-2 w-full bg-primary/25 rounded-full relative overflow-hidden">
+                        <div className="h-full bg-primary w-full rounded-full"></div>
+                      </div>
+                      <span className="ml-2 text-[11px] font-medium text-primary whitespace-nowrap">
+                        {activeService.duration}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-secondary">เสร็จสิ้น</span>
+                      <span className="font-mono font-bold text-on-surface text-sm">
+                        {selectedTimeSlot?.endTime ? String(selectedTimeSlot.endTime).slice(0, 5) : '—'} น.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Day Part Timeline Segments */}
+                <div className="space-y-4 pt-2">
+                  {/* เช้า */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-secondary uppercase tracking-wider">
+                      <span className="material-symbols-outlined text-sm">light_mode</span>
+                      <span>ช่วงเช้า (10:00 - 12:30 น.)</span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {timeSlots.filter(s => parseInt(s.time.split(':')[0], 10) < 13).map((slot) => {
+                        const isSelected = selectedTimeSlot?.time === slot.time
+                        if (!slot.available) {
+                          return (
+                            <div key={slot.time} className="px-3 py-2.5 rounded-lg border border-outline-variant/30 bg-surface-container-high/40 opacity-45 cursor-not-allowed select-none text-left">
+                              <div className="flex items-baseline justify-between">
+                                <span className="font-headline-sm text-sm text-secondary line-through">{slot.time}</span>
+                                <span className="text-[10px] text-error font-medium">ไม่ว่าง</span>
+                              </div>
+                              <span className="text-[10px] text-secondary truncate block mt-0.5">{slot.label || 'คิวเต็ม'}</span>
+                            </div>
+                          )
+                        }
+                        return (
+                          <button
+                            key={slot.time}
+                            type="button"
+                            onClick={() => setSelectedTimeSlot(slot)}
+                            className={`px-3 py-2.5 rounded-lg text-left transition-all cursor-pointer border ${
+                              isSelected
+                                ? 'bg-primary text-on-primary border-primary shadow-md ring-2 ring-primary ring-offset-2 ring-offset-surface'
+                                : 'bg-surface-container-low hover:bg-surface-container border-outline-variant/40 hover:border-primary/50 text-on-surface'
+                            }`}
+                          >
+                            <div className="flex items-baseline justify-between">
+                              <span className="font-headline-sm text-base font-medium">{slot.time}</span>
+                              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${isSelected ? 'bg-on-primary/20 text-on-primary' : 'bg-emerald-500/10 text-emerald-800'}`}>
+                                {isSelected ? 'เลือกแล้ว' : 'ว่าง'}
+                              </span>
+                            </div>
+                            <div className={`text-[11px] mt-1 font-mono flex items-center gap-1 ${isSelected ? 'text-surface/85' : 'text-secondary'}`}>
+                              <span className="material-symbols-outlined text-xs">schedule</span>
+                              <span>ถึง {slot.endTime ? String(slot.endTime).slice(0, 5) : '—'} น.</span>
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* บ่าย */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-secondary uppercase tracking-wider">
+                      <span className="material-symbols-outlined text-sm">sunny</span>
+                      <span>ช่วงบ่าย (13:00 - 16:30 น.)</span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {timeSlots.filter(s => {
+                        const h = parseInt(s.time.split(':')[0], 10)
+                        return h >= 13 && h < 17
+                      }).map((slot) => {
+                        const isSelected = selectedTimeSlot?.time === slot.time
+                        if (!slot.available) {
+                          return (
+                            <div key={slot.time} className="px-3 py-2.5 rounded-lg border border-outline-variant/30 bg-surface-container-high/40 opacity-45 cursor-not-allowed select-none text-left">
+                              <div className="flex items-baseline justify-between">
+                                <span className="font-headline-sm text-sm text-secondary line-through">{slot.time}</span>
+                                <span className="text-[10px] text-error font-medium">ไม่ว่าง</span>
+                              </div>
+                              <span className="text-[10px] text-secondary truncate block mt-0.5">{slot.label || 'คิวเต็ม'}</span>
+                            </div>
+                          )
+                        }
+                        return (
+                          <button
+                            key={slot.time}
+                            type="button"
+                            onClick={() => setSelectedTimeSlot(slot)}
+                            className={`px-3 py-2.5 rounded-lg text-left transition-all cursor-pointer border ${
+                              isSelected
+                                ? 'bg-primary text-on-primary border-primary shadow-md ring-2 ring-primary ring-offset-2 ring-offset-surface'
+                                : 'bg-surface-container-low hover:bg-surface-container border-outline-variant/40 hover:border-primary/50 text-on-surface'
+                            }`}
+                          >
+                            <div className="flex items-baseline justify-between">
+                              <span className="font-headline-sm text-base font-medium">{slot.time}</span>
+                              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${isSelected ? 'bg-on-primary/20 text-on-primary' : 'bg-emerald-500/10 text-emerald-800'}`}>
+                                {isSelected ? 'เลือกแล้ว' : 'ว่าง'}
+                              </span>
+                            </div>
+                            <div className={`text-[11px] mt-1 font-mono flex items-center gap-1 ${isSelected ? 'text-surface/85' : 'text-secondary'}`}>
+                              <span className="material-symbols-outlined text-xs">schedule</span>
+                              <span>ถึง {slot.endTime ? String(slot.endTime).slice(0, 5) : '—'} น.</span>
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* เย็น */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-secondary uppercase tracking-wider">
+                      <span className="material-symbols-outlined text-sm">nights_stay</span>
+                      <span>ช่วงเย็น - ค่ำ (17:00 - 20:00 น.)</span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {timeSlots.filter(s => parseInt(s.time.split(':')[0], 10) >= 17).map((slot) => {
+                        const isSelected = selectedTimeSlot?.time === slot.time
+                        if (!slot.available) {
+                          return (
+                            <div key={slot.time} className="px-3 py-2.5 rounded-lg border border-outline-variant/30 bg-surface-container-high/40 opacity-45 cursor-not-allowed select-none text-left">
+                              <div className="flex items-baseline justify-between">
+                                <span className="font-headline-sm text-sm text-secondary line-through">{slot.time}</span>
+                                <span className="text-[10px] text-error font-medium">ไม่ว่าง</span>
+                              </div>
+                              <span className="text-[10px] text-secondary truncate block mt-0.5">{slot.label || 'คิวเต็ม'}</span>
+                            </div>
+                          )
+                        }
+                        return (
+                          <button
+                            key={slot.time}
+                            type="button"
+                            onClick={() => setSelectedTimeSlot(slot)}
+                            className={`px-3 py-2.5 rounded-lg text-left transition-all cursor-pointer border ${
+                              isSelected
+                                ? 'bg-primary text-on-primary border-primary shadow-md ring-2 ring-primary ring-offset-2 ring-offset-surface'
+                                : 'bg-surface-container-low hover:bg-surface-container border-outline-variant/40 hover:border-primary/50 text-on-surface'
+                            }`}
+                          >
+                            <div className="flex items-baseline justify-between">
+                              <span className="font-headline-sm text-base font-medium">{slot.time}</span>
+                              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${isSelected ? 'bg-on-primary/20 text-on-primary' : 'bg-emerald-500/10 text-emerald-800'}`}>
+                                {isSelected ? 'เลือกแล้ว' : 'ว่าง'}
+                              </span>
+                            </div>
+                            <div className={`text-[11px] mt-1 font-mono flex items-center gap-1 ${isSelected ? 'text-surface/85' : 'text-secondary'}`}>
+                              <span className="material-symbols-outlined text-xs">schedule</span>
+                              <span>ถึง {slot.endTime ? String(slot.endTime).slice(0, 5) : '—'} น.</span>
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Section 3: Customization */}
+              {/* Section 3: Customization (Personal Touch) - Direct from Login account */}
               <div className="space-y-space-md pt-space-sm border-t border-surface-container">
                 <div className="flex items-baseline justify-between">
                   <div>
                     <h2 className="font-headline-sm text-headline-sm text-on-surface font-normal">
-                      3. ความต้องการเฉพาะบุคคล
+                      3. ความต้องการเฉพาะบุคคล (Personal Touch)
                     </h2>
                     <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
-                      ปรับแต่งสัมผัสและแจ้งบริเวณที่ต้องการดูแลพิเศษ เพื่อการบำบัดที่ตรงจุดและผ่อนคลายลึกซึ้ง
+                      ปรับแต่งระดับน้ำหนักและบริเวณที่ต้องการเน้นพิเศษ เพื่อการบำบัดที่ตรงจุดและผ่อนคลายลึกซึ้ง
                     </p>
                   </div>
                   <span className="font-label-caps text-label-caps uppercase text-secondary tracking-wider hidden sm:inline-block">
@@ -197,7 +341,8 @@ export default function BookingStepSlot({
                 </div>
 
                 <div className="space-y-space-md bg-surface-container-low/40 p-space-md rounded-lg">
-                  <div className="space-y-space-xs">
+
+                  <div className="space-y-space-xs pt-1 border-t border-surface-container/60">
                     <label className="font-label-caps text-label-caps uppercase text-secondary block">
                       ระดับน้ำหนักการนวดที่ต้องการ
                     </label>

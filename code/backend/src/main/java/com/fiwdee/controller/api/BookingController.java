@@ -52,8 +52,9 @@ public class BookingController {
     public ResponseEntity<ApiResponse<AvailabilityResponseDTO>> checkAvailability(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam Long serviceId,
-            @RequestParam(required = false) Integer durationMinutes) {
-        AvailabilityResponseDTO response = availabilityService.checkAvailability(date, serviceId, durationMinutes);
+            @RequestParam(required = false) Integer durationMinutes,
+            @RequestParam(required = false) Integer stepMinutes) {
+        AvailabilityResponseDTO response = availabilityService.checkAvailability(date, serviceId, durationMinutes, stepMinutes);
         return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลช่วงเวลาว่างสำเร็จ", response));
     }
 

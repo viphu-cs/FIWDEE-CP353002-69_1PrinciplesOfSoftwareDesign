@@ -61,4 +61,22 @@ public class PaymentController {
         PaymentResponseDTO response = paymentService.getPaymentByBookingId(bookingId);
         return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลการชำระเงินสำเร็จ", response));
     }
+
+    /**
+     * Validates and quotes promo code discount server-side via GoF DiscountStrategy.
+     */
+    @io.swagger.v3.oas.annotations.Operation(
+            summary = "คำนวณและตรวจสอบรหัสโปรโมชั่น (Server-Side Discount Quotation)",
+            description = "คำนวณส่วนลดและยอดสุทธิผ่าน GoF DiscountStrategy โดย Backend เป็น Single Source of Truth ป้องกันการคำนวณราคาบน Frontend"
+    )
+    @PostMapping("/payments/promotions/validate")
+    public ResponseEntity<ApiResponse<com.fiwdee.dto.response.PromoValidationResponseDTO>> validatePromotion(
+            @Valid @RequestBody com.fiwdee.dto.request.ValidatePromoRequestDTO request) {
+
+        com.fiwdee.dto.response.PromoValidationResponseDTO response = paymentService.calculatePromotion(request);
+        if (!response.isValid()) {
+            return ResponseEntity.ok(ApiResponse.error(response.getMessage(), response));
+        }
+        return ResponseEntity.ok(ApiResponse.success(response.getMessage(), response));
+    }
 }

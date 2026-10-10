@@ -1,0 +1,74 @@
+@startuml state-diagram
+!theme plain
+skinparam shadowing false
+skinparam state {
+    BackgroundColor #F8F9FA
+    BorderColor #495057
+    FontName SansSerif
+    ArrowColor #212529
+}
+
+title FIWDEE Massage Management & Booking System - UML State Machine Diagram\n(Booking Lifecycle State Pattern)
+
+[*] --> PENDING : createBooking()\n[UC-07]
+
+state PENDING {
+    description: คำขอจองสร้างขึ้นแล้ว\nรอการยืนยันทรัพยากร
+}
+
+state CONFIRMED {
+    description: ยืนยันการจองเรียบร้อย\nจัดสรรห้องนวดและหมอนวดแล้ว
+}
+
+state CHECKED_IN {
+    description: ลูกค้ามาถึงร้านและเช็คอินแล้ว\nสร้างบัตรคิวเข้าสู่ระบบประจำวัน
+}
+
+state IN_SERVICE {
+    description: หมอนวดเริ่มให้บริการนวดในห้อง\nบันทึก actualStartTime
+}
+
+state COMPLETED {
+    description: จบการนวดและชำระเงินเรียบร้อย\nบันทึก actualEndTime\n[Terminal State]
+}
+
+state CANCELLED {
+    description: ยกเลิกการจอง\nปลดล็อคห้องและหมอนวด\n[Terminal State]
+}
+
+state NO_SHOW {
+    description: ลูกค้าไม่มาแสดงตัวตามเวลานัด\n[Terminal State]
+}
+
+PENDING --> CONFIRMED : confirm() [auto-allocated]
+PENDING --> CANCELLED : cancel() [ก่อนยืนยัน]
+
+CONFIRMED --> CHECKED_IN : checkIn() [UC-12]\n/ publish BookingStatusChangedEvent
+CONFIRMED --> CANCELLED : cancel() [ลูกค้า >= 2 ชม. / พนักงาน ทุกเวลา]
+CONFIRMED --> NO_SHOW : markNoShow() [เลยเวลานัดเกิน 15 นาที]
+
+CHECKED_IN --> IN_SERVICE : startService() [UC-16]\n/ actualStartTime = now()
+CHECKED_IN --> CANCELLED : cancel() [กรณียกเลิกฉุกเฉินหน้าร้าน]
+
+IN_SERVICE --> COMPLETED : complete() [UC-17]\n[Guard: Payment.status == COMPLETED]\n/ actualEndTime = now()
+
+COMPLETED --> [*]
+CANCELLED --> [*]
+NO_SHOW --> [*]
+
+note right of IN_SERVICE
+  **Domain Invariant Guard:**
+  การเปลี่ยนสถานะเป็น COMPLETED
+  ต้องตรวจสอบสถานะการชำระเงินว่า
+  Payment.paymentStatus == COMPLETED
+  ก่อนเสมอตามกฎธุรกิจ
+end note
+
+note left of CHECKED_IN
+  **Observer Event:**
+  เมื่อเปลี่ยนสถานะเป็น CHECKED_IN
+  QueueListener จะดักฟัง Event
+  และสร้าง QueueItem ประจำวันอัตโนมัติ
+end note
+
+@enduml

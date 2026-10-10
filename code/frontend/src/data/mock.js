@@ -33,32 +33,43 @@ export const shop = {
 export const services = [
   {
     id: 1,
+    serviceCode: 'SVC-THAI_MASSAGE',
     image: '/images/services/service-thai.jpg',
     durationOptions: [
-      { durationMinutes: 60, price: 600 },
-      { durationMinutes: 90, price: 850 },
+      { durationMinutes: 60, price: 500 },
+      { durationMinutes: 90, price: 700 },
+      { durationMinutes: 120, price: 900 },
     ],
   },
   {
     id: 2,
+    serviceCode: 'SVC-AROMA',
     image: '/images/services/service-aroma.jpg',
     durationOptions: [
-      { durationMinutes: 60, price: 800 },
-      { durationMinutes: 90, price: 1100 },
+      { durationMinutes: 60, price: 700 },
+      { durationMinutes: 90, price: 950 },
+      { durationMinutes: 120, price: 1200 },
     ],
   },
   {
     id: 3,
-    image: '/images/services/service-warm-oil.jpg',
+    serviceCode: 'SVC-FOOT',
+    image: '/images/services/service-foot.jpg',
     durationOptions: [
-      { durationMinutes: 60, price: 750 },
-      { durationMinutes: 90, price: 1000 },
+      { durationMinutes: 60, price: 400 },
+      { durationMinutes: 90, price: 550 },
+      { durationMinutes: 120, price: 700 },
     ],
   },
   {
     id: 4,
-    image: '/images/services/service-foot.jpg',
-    durationOptions: [{ durationMinutes: 60, price: 500 }],
+    serviceCode: 'SVC-WARM_OIL',
+    image: '/images/services/service-warm-oil.jpg',
+    durationOptions: [
+      { durationMinutes: 60, price: 800 },
+      { durationMinutes: 90, price: 1100 },
+      { durationMinutes: 120, price: 1400 },
+    ],
   },
 ]
 
@@ -84,14 +95,6 @@ export const therapists = [
     roomImage: '/images/profile/room-celadon.jpg',
     bio: 'เชี่ยวชาญการนวดคลายเส้นผสมผสานศาสตร์การกดจุดแบบโบราณและอโรมาเธอราปี ให้คุณผ่อนคลายลึกถึงกล้ามเนื้อด้วยจังหวะที่นุ่มนวลและสงบนิ่ง',
     bioSub: 'ผ่านการรับรองมาตรฐานวิชาชีพการนวดไทยราชสำนักและศาสตร์สุคนธบำบัด มุ่งเน้นการปรับสมดุลลมหายใจและสลายความตึงเครียดสะสมบริเวณคอบ่าไหล่',
-    slots: [
-      { time: '10:00', available: false },
-      { time: '13:00', available: true },
-      { time: '15:00', available: true },
-      { time: '18:00', available: true },
-      { time: '20:00', available: false },
-    ],
-    defaultSlot: '15:00',
   },
   {
     id: 2,
@@ -114,14 +117,6 @@ export const therapists = [
     roomImage: '/images/profile/room-celadon.jpg',
     bio: 'ผู้เชี่ยวชาญศาสตร์อโรมาและนวดน้ำมันอุ่น ด้วยน้ำหนักมือที่อ่อนโยนและจังหวะประณีต ช่วยปลอบประโลมระบบประสาทและฟื้นฟูความสดชื่นอย่างล้ำลึก',
     bioSub: 'ผ่านการอบรมศาสตร์สปาระดับพรีเมียมและความรู้ด้านน้ำมันหอมระเหยอินทรีย์ชั้นสูง เหมาะสำหรับผู้ที่มีความเครียดสะสมหรือนอนไม่หลับ',
-    slots: [
-      { time: '11:00', available: true },
-      { time: '13:30', available: false },
-      { time: '15:30', available: true },
-      { time: '17:30', available: true },
-      { time: '19:30', available: false },
-    ],
-    defaultSlot: '15:30',
   },
   {
     id: 3,
@@ -143,14 +138,6 @@ export const therapists = [
     roomDesc: 'บรรยากาศโทนไม้สักธรรมชาติและกลิ่นอายสมุนไพรไพลสด ผ่อนคลายระดับลึก',
     roomImage: '/images/profile/room-celadon.jpg',
     bio: 'ชำนาญการนวดกดจุดสะท้อนฝ่าเท้าและนวดไทยคลายเส้นสายสะบักหลัง สามารถแก้อาการปวดเมื่อยจากการทำงานหนักได้อย่างตรงจุด',
-    bioSub: 'ผ่านการรับรองหลักสูตรหัตถเวชกรรมแผนไทย ชำนาญการตรวจจุดตึงและให้คำแนะนำในการปรับสรีระร่างกายหลังการนวด',
-    slots: [
-      { time: '10:30', available: true },
-      { time: '13:00', available: true },
-      { time: '15:00', available: false },
-      { time: '17:00', available: true },
-      { time: '19:00', available: true },
-    ],
-    defaultSlot: '13:00',
+    bioSub: 'ผ่านการรับรองหลักสูตรหัตเวชกรรมแผนไทย ชำนาญการตรวจจุดตึงและให้คำแนะนำในการปรับสรีระร่างกายหลังการนวด',
   },
 ]

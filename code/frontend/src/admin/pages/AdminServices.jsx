@@ -1,12 +1,58 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useAdminAuth } from '../context/AdminAuthContext.jsx'
+import { useLanguage } from '../../i18n/useLanguage.js'
+import { api } from '../../lib/api.js'
 
 export default function AdminServices() {
-  const { user, services, setServices, addOrUpdateService } = useAdminAuth()
+  const { user, services: fallbackServices, addOrUpdateService } = useAdminAuth()
+  const { lang, t } = useLanguage()
   const [editingService, setEditingService] = useState(null)
   const [showModal, setShowModal] = useState(false)
+  const [liveServices, setLiveServices] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [toastMsg, setToastMsg] = useState(null)
 
-  const isOwner = user.role === 'OWNER'
+  const isOwner = user?.role === 'OWNER'
+
+  const showToast = (msg) => {
+    setToastMsg(msg)
+    setTimeout(() => setToastMsg(null), 3500)
+  }
+
+  const fetchServices = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await api.get('/admin/services')
+      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+        const mapped = res.data.map(s => ({
+          id: s.id,
+          code: s.serviceCode,
+          name: s.serviceName,
+          category: s.category,
+          description: s.description,
+          durations: (s.durationOptions || []).map(d => ({
+            minutes: d.durationMinutes,
+            price: Number(d.price)
+          })),
+          isActive: true
+        }))
+        setLiveServices(mapped)
+      } else {
+        setLiveServices(fallbackServices)
+      }
+    } catch {
+      setLiveServices(fallbackServices)
+    } finally {
+      setLoading(false)
+    }
+  }, [fallbackServices])
+
+  useEffect(() => {
+    fetchServices()
+  }, [fetchServices])
+
+  const displayServices = liveServices.length > 0 ? liveServices : fallbackServices
 
   // Form states
   const [code, setCode] = useState('')
@@ -19,7 +65,7 @@ export default function AdminServices() {
 
   const handleOpenEdit = (service = null) => {
     if (!isOwner) {
-      alert('สิทธิ์เฉพาะผู้จัดการ (OWNER) เท่านั้นในการเพิ่มหรือแก้ไขเมนูบริการและราคา')
+      alert(lang === 'th' ? 'สิทธิ์เฉพาะผู้จัดการ (OWNER) เท่านั้นในการเพิ่มหรือแก้ไขเมนูบริการและราคา' : 'Only OWNER can manage services and pricing')
       return
     }
     if (service) {
@@ -47,16 +93,53 @@ export default function AdminServices() {
     setShowModal(true)
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!isOwner) return
+    setIsSubmitting(true)
 
-    const durations = [
-      { minutes: 60, price: Number(p60) },
-      { minutes: 90, price: Number(p90) },
-      { minutes: 120, price: Number(p120) }
+    const durationOptions = [
+      { durationMinutes: 60, price: Number(p60) },
+      { durationMinutes: 90, price: Number(p90) },
+      { durationMinutes: 120, price: Number(p120) }
     ]
 
+    const payload = {
+      serviceCode: code,
+      serviceName: name,
+      category: category || 'Thai Massage',
+      description: description || name,
+      requiredRoomType: 'SINGLE',
+      durationOptions
+    }
+
+    try {
+      if (editingService && editingService.id) {
+        // PUT update
+        const res = await api.put(`/admin/services/${editingService.id}`, payload)
+        if (res && res.success) {
+          showToast(lang === 'th' ? 'แก้ไขบริการสำเร็จ' : 'Service updated successfully')
+          fetchServices()
+          setShowModal(false)
+          return
+        }
+      } else {
+        // POST create
+        const res = await api.post('/admin/services', payload)
+        if (res && res.success) {
+          showToast(lang === 'th' ? 'เพิ่มบริการใหม่สำเร็จ' : 'Service created successfully')
+          fetchServices()
+          setShowModal(false)
+          return
+        }
+      }
+    } catch (err) {
+      console.warn('API service save error, falling back to local context:', err)
+    } finally {
+      setIsSubmitting(false)
+    }
+
+    // Local fallback
     try {
       addOrUpdateService({
         id: editingService ? editingService.id : null,
@@ -64,108 +147,151 @@ export default function AdminServices() {
         name,
         category,
         description,
-        durations
+        durations: durationOptions.map(d => ({ minutes: d.durationMinutes, price: d.price }))
       })
       setShowModal(false)
+      showToast(lang === 'th' ? 'บันทึกข้อมูลบริการสำเร็จ' : 'Service saved')
     } catch (err) {
       alert(err.message)
     }
   }
 
-  const toggleServiceActive = (id) => {
+  const toggleServiceActive = async (service) => {
     if (!isOwner) {
-      alert('สิทธิ์เฉพาะผู้จัดการ (OWNER) เท่านั้น')
+      alert(lang === 'th' ? 'สิทธิ์เฉพาะผู้จัดการ (OWNER) เท่านั้น' : 'Only OWNER can change service availability')
       return
     }
-    setServices(prev => prev.map(s => s.id === id ? { ...s, isActive: !s.isActive } : s))
+
+    if (service.id) {
+      try {
+        const res = await api.delete(`/admin/services/${service.id}`)
+        if (res && res.success) {
+          showToast(lang === 'th' ? 'ปิดการใช้งานบริการเรียบร้อย' : 'Service deactivated')
+          fetchServices()
+          return
+        }
+      } catch (err) {
+        console.warn('API delete service error, falling back:', err)
+      }
+    }
+
+    // Fallback
+    setLiveServices(prev => prev.map(s => s.id === service.id ? { ...s, isActive: !s.isActive } : s))
   }
 
   return (
-    <div className="space-y-6 text-stone-800">
+    <div className="space-y-6 text-on-surface font-body-md">
+      {/* Toast Notice */}
+      {toastMsg && (
+        <div className="p-3.5 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-xl text-xs font-semibold flex items-center justify-between shadow-sm animate-fade-in">
+          <span>{toastMsg}</span>
+          <button onClick={() => setToastMsg(null)} className="text-emerald-700 hover:text-emerald-900 cursor-pointer">✕</button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-headline font-bold text-stone-900">
-            เมนูบริการ ระยะเวลา & กำหนดราคา (Services)
+          <h2 className="text-2xl font-headline font-bold text-teak-deep">
+            {t('admin.services')} (Service Catalog & Pricing)
           </h2>
-          <p className="text-xs sm:text-sm text-stone-500 mt-0.5">
-            ตั้งค่ารายการนวด ระยะเวลา (60 / 90 / 120 นาที) และราคาค่าบริการในแต่ละสาขา
+          <p className="text-xs sm:text-sm text-charcoal-muted mt-0.5">
+            {lang === 'th'
+              ? 'ตั้งค่ารายการนวด ระยะเวลา (60 / 90 / 120 นาที) และราคาค่าบริการของร้าน'
+              : 'Configure massage services, duration options (60 / 90 / 120 mins), and shop pricing'}
           </p>
         </div>
 
-        {isOwner ? (
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => handleOpenEdit(null)}
-            className="px-5 py-2.5 rounded-2xl bg-amber-900 text-stone-100 hover:bg-amber-950 font-semibold text-xs sm:text-sm shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+            onClick={fetchServices}
+            disabled={loading}
+            className="px-3.5 py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-semibold text-xs border border-outline-variant shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            title="รีเฟรชข้อมูลบริการ"
           >
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            <span>เพิ่มเมนูบริการใหม่</span>
+            <span className={`material-symbols-outlined text-base ${loading ? 'animate-spin' : ''}`}>sync</span>
+            <span>{loading ? '...' : (lang === 'th' ? 'รีเฟรช' : 'Refresh')}</span>
           </button>
-        ) : (
-          <div className="px-3.5 py-2 rounded-xl bg-amber-50 text-amber-900 border border-amber-200 text-xs font-semibold">
-            🔒 มุมมองสำหรับพนักงานต้อนรับ (Read-only)
-          </div>
-        )}
+
+          {isOwner ? (
+            <button
+              onClick={() => handleOpenEdit(null)}
+              className="px-4 py-2.5 rounded-xl bg-teak-dark text-warm-ivory hover:bg-teak-deep font-semibold text-xs shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              <span>{lang === 'th' ? 'เพิ่มรายการบริการใหม่' : 'Add New Service'}</span>
+            </button>
+          ) : (
+            <div className="px-3 py-1.5 rounded-lg bg-surface-container text-xs text-charcoal-muted">
+              {lang === 'th' ? 'สิทธิ์ดูอย่างเดียว (Receptionist)' : 'View-only access'}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Services List Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {services.map((svc) => (
+      {/* Service Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {displayServices.map((service) => (
           <div
-            key={svc.id}
-            className={`bg-white rounded-2xl border p-6 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4 ${
-              svc.isActive ? 'border-stone-200/80' : 'border-stone-200 opacity-60 bg-stone-50'
+            key={service.id || service.code}
+            className={`bg-surface rounded-2xl border p-5 shadow-[var(--admin-shadow-sm)] flex flex-col justify-between space-y-4 transition-all ${
+              service.isActive !== false ? 'border-outline-variant hover:border-outline' : 'border-outline-variant/50 opacity-60'
             }`}
           >
             <div>
               <div className="flex items-center justify-between">
-                <span className="font-mono text-xs font-bold text-amber-900 px-2.5 py-1 bg-amber-50 rounded-lg border border-amber-200">
-                  {svc.code}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold px-2 py-0.5 bg-surface-container text-teak-deep rounded border border-outline-variant">
+                    {service.code}
+                  </span>
+                  <span className="text-xs text-charcoal-muted">
+                    {service.category}
+                  </span>
+                </div>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${service.isActive !== false ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-surface-container text-charcoal-muted'}`}>
+                  {service.isActive !== false ? (lang === 'th' ? 'เปิดให้บริการ' : 'Active') : (lang === 'th' ? 'ปิดบริการ' : 'Inactive')}
                 </span>
-                <button
-                  onClick={() => toggleServiceActive(svc.id)}
-                  disabled={!isOwner}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold cursor-pointer border ${
-                    svc.isActive
-                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                      : 'bg-stone-200 text-stone-700 border-stone-300'
-                  } ${!isOwner ? 'opacity-80 cursor-not-allowed' : ''}`}
-                >
-                  {svc.isActive ? 'เปิดให้บริการ' : 'ปิดบริการชั่วคราว'}
-                </button>
               </div>
 
-              <h3 className="font-bold font-headline text-stone-900 text-lg mt-3">{svc.name}</h3>
-              <p className="text-xs text-stone-500 mt-1">{svc.description}</p>
-              <div className="mt-2 text-[11px] font-semibold uppercase text-stone-400">
-                หมวดหมู่: {svc.category}
-              </div>
+              <h3 className="font-headline font-bold text-base text-teak-dark mt-2.5">
+                {service.name}
+              </h3>
+              <p className="text-xs text-charcoal-muted mt-1 leading-relaxed">
+                {service.description}
+              </p>
 
-              {/* Durations & Pricing Table */}
-              <div className="mt-4 p-4 bg-stone-50 rounded-xl border border-stone-200/60 space-y-2">
-                <div className="text-xs font-semibold text-stone-700 uppercase tracking-wider">
-                  ราคาตามระยะเวลา (Duration & Pricing):
+              {/* Durations Table */}
+              <div className="mt-4 p-3 bg-surface-container-low rounded-xl border border-outline-variant/60">
+                <div className="text-[11px] font-semibold text-charcoal-muted uppercase mb-2">
+                  {lang === 'th' ? 'อัตราค่าบริการตามระยะเวลา' : 'Duration & Pricing'}
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center">
-                  {svc.durations.map((d) => (
-                    <div key={d.minutes} className="p-2 bg-white rounded-lg border border-stone-200 shadow-2xs">
-                      <div className="text-[11px] text-stone-500 font-medium">{d.minutes} นาที</div>
-                      <div className="font-bold text-amber-900 text-sm">฿{d.price}</div>
+                  {(service.durations || []).map((dur) => (
+                    <div key={dur.minutes} className="p-2 rounded-lg bg-surface border border-outline-variant/80">
+                      <div className="text-xs font-semibold text-on-surface">{dur.minutes} {t('admin.minuteShort')}</div>
+                      <div className="text-sm font-bold text-teak-deep mt-0.5">฿{dur.price.toLocaleString()}</div>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
 
+            {/* Actions for OWNER */}
             {isOwner && (
-              <div className="pt-3 border-t border-stone-100 flex items-center justify-end gap-2">
+              <div className="pt-3 border-t border-outline-variant flex items-center justify-end gap-2">
                 <button
-                  onClick={() => handleOpenEdit(svc)}
-                  className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold transition-colors cursor-pointer"
+                  onClick={() => toggleServiceActive(service)}
+                  className="px-3 py-1.5 rounded-xl text-xs font-medium text-charcoal-muted hover:bg-surface-container-low transition-colors cursor-pointer"
                 >
-                  แก้ไขราคา & ข้อมูล
+                  {service.isActive !== false ? (lang === 'th' ? 'ปิดบริการ' : 'Deactivate') : (lang === 'th' ? 'เปิดบริการ' : 'Activate')}
+                </button>
+                <button
+                  onClick={() => handleOpenEdit(service)}
+                  className="px-4 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  {t('admin.edit')}
                 </button>
               </div>
             )}
@@ -173,110 +299,112 @@ export default function AdminServices() {
         ))}
       </div>
 
-      {/* Edit/Add Service Modal */}
-      {showModal && isOwner && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full border border-stone-200 overflow-hidden">
-            <div className="bg-stone-900 text-stone-100 px-6 py-4 flex items-center justify-between">
-              <h3 className="font-bold text-base font-headline">
-                {editingService ? `แก้ไขบริการ: ${editingService.name}` : 'เพิ่มเมนูบริการใหม่'}
+      {/* Edit/Add Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in">
+          <div className="bg-surface rounded-2xl border border-outline-variant max-w-lg w-full p-6 shadow-2xl text-on-surface space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-outline-variant">
+              <h3 className="font-headline font-bold text-lg text-teak-deep">
+                {editingService ? (lang === 'th' ? 'แก้ไขรายการบริการ' : 'Edit Service') : (lang === 'th' ? 'เพิ่มรายการบริการใหม่' : 'Add New Service')}
               </h3>
-              <button onClick={() => setShowModal(false)} className="text-stone-400 hover:text-white cursor-pointer">✕</button>
+              <button onClick={() => setShowModal(false)} className="text-charcoal-muted hover:text-on-surface cursor-pointer">✕</button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4 text-stone-800">
+            <form onSubmit={handleSubmit} className="space-y-4 text-xs">
               <div>
-                <label className="block text-xs font-semibold text-stone-700 uppercase mb-1">ชื่อรายการบริการ *</label>
+                <label className="block font-semibold text-charcoal-muted mb-1">{lang === 'th' ? 'รหัสบริการ (Service Code)' : 'Service Code'}</label>
+                <input
+                  type="text"
+                  required
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-outline-variant bg-surface-container-low focus:bg-surface"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-charcoal-muted mb-1">{lang === 'th' ? 'ชื่อบริการ (ภาษาไทยและอังกฤษ)' : 'Service Name'}</label>
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="เช่น นวดประคบสมุนไพรสด"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800/40"
+                  placeholder="เช่น นวดแผนไทยราชสำนัก (Royal Thai Massage)"
+                  className="w-full p-2.5 rounded-xl border border-outline-variant bg-surface-container-low focus:bg-surface"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-stone-700 uppercase mb-1">รหัสบริการ Code</label>
-                  <input
-                    type="text"
-                    required
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-amber-800/40"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-stone-700 uppercase mb-1">หมวดหมู่</label>
-                  <input
-                    type="text"
-                    required
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800/40"
-                  />
-                </div>
+              <div>
+                <label className="block font-semibold text-charcoal-muted mb-1">{lang === 'th' ? 'หมวดหมู่' : 'Category'}</label>
+                <input
+                  type="text"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  placeholder="เช่น Thai Massage, Aromatherapy"
+                  className="w-full p-2.5 rounded-xl border border-outline-variant bg-surface-container-low focus:bg-surface"
+                />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-stone-700 uppercase mb-1">รายละเอียดบริการ</label>
+                <label className="block font-semibold text-charcoal-muted mb-1">{lang === 'th' ? 'คำอธิบายทรีตเมนต์' : 'Description'}</label>
                 <textarea
                   rows="2"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-800/40"
+                  className="w-full p-2.5 rounded-xl border border-outline-variant bg-surface-container-low focus:bg-surface"
                 />
               </div>
 
-              {/* Prices for 60/90/120 mins */}
-              <div>
-                <label className="block text-xs font-semibold text-stone-700 uppercase mb-2">กำหนดราคา (บาท)</label>
+              <div className="p-3 bg-surface-container-low rounded-xl border border-outline-variant space-y-3">
+                <div className="font-semibold text-teak-deep">{lang === 'th' ? 'กำหนดราคาตามรอบเวลา (บาท)' : 'Pricing by Duration (THB)'}</div>
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <span className="text-[11px] text-stone-500">60 นาที</span>
+                    <label className="block text-[11px] text-charcoal-muted mb-1">60 นาที</label>
                     <input
                       type="number"
+                      required
                       value={p60}
                       onChange={(e) => setP60(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-stone-300 text-sm font-bold text-amber-900"
+                      className="w-full p-2 rounded-lg border border-outline-variant bg-surface text-center font-bold"
                     />
                   </div>
                   <div>
-                    <span className="text-[11px] text-stone-500">90 นาที</span>
+                    <label className="block text-[11px] text-charcoal-muted mb-1">90 นาที</label>
                     <input
                       type="number"
+                      required
                       value={p90}
                       onChange={(e) => setP90(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-stone-300 text-sm font-bold text-amber-900"
+                      className="w-full p-2 rounded-lg border border-outline-variant bg-surface text-center font-bold"
                     />
                   </div>
                   <div>
-                    <span className="text-[11px] text-stone-500">120 นาที</span>
+                    <label className="block text-[11px] text-charcoal-muted mb-1">120 นาที</label>
                     <input
                       type="number"
+                      required
                       value={p120}
                       onChange={(e) => setP120(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-stone-300 text-sm font-bold text-amber-900"
+                      className="w-full p-2 rounded-lg border border-outline-variant bg-surface text-center font-bold"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="pt-4 flex items-center justify-end gap-2 border-t border-stone-200">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-outline-variant">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 rounded-xl text-stone-600 hover:bg-stone-100 text-xs font-medium cursor-pointer"
+                  className="px-4 py-2 rounded-xl border border-outline-variant text-charcoal-muted hover:bg-surface-container-low cursor-pointer"
                 >
-                  ยกเลิก
+                  {t('admin.cancel')}
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-amber-900 text-stone-100 hover:bg-amber-950 text-xs font-semibold shadow-xs cursor-pointer"
+                  disabled={isSubmitting}
+                  className="px-5 py-2 rounded-xl bg-teak-dark text-warm-ivory font-semibold hover:bg-teak-deep cursor-pointer transition-colors disabled:opacity-50"
                 >
-                  บันทึกข้อมูลบริการ
+                  {isSubmitting ? '...' : (lang === 'th' ? 'บันทึกบริการ' : 'Save Service')}
                 </button>
               </div>
             </form>

@@ -68,7 +68,21 @@ export default function Navbar({ ready = true, currentPage = 'home', onNavigate 
     }
   }
 
+  const isStaff = ['OWNER', 'RECEPTIONIST', 'THERAPIST'].includes(user?.role)
+
   const profileMenuItems = [
+    ...(isStaff ? [{
+      key: 'admin',
+      icon: 'admin_panel_settings',
+      label: t('nav.adminPortal'),
+      onClick: () => {
+        if (user?.role === 'THERAPIST') {
+          handleLinkClick('admin-therapist')
+        } else {
+          handleLinkClick('admin')
+        }
+      }
+    }] : []),
     { key: 'profile', icon: 'person', label: t('nav.profile'), onClick: () => handleLinkClick('profile') },
     { key: 'my-bookings', icon: 'receipt_long', label: t('nav.myBookings'), onClick: () => handleLinkClick('my-bookings') },
   ]
