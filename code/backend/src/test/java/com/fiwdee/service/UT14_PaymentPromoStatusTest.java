@@ -8,7 +8,6 @@ import com.fiwdee.domain.enums.BookingStatus;
 import com.fiwdee.domain.enums.PaymentMethod;
 import com.fiwdee.exception.ValidationException;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -58,7 +57,6 @@ class UT14_PaymentPromoStatusTest extends PaymentTestBase {
     }
 
     @Test
-    @Tag("known-defect")
     @DisplayName("UT14-TC009 (I3) CHECKED_IN ต้องคง CHECKED_IN ห้ามข้ามไป COMPLETED (DEF-001)")
     void tc009() {
         booking.setStatus(BookingStatus.CHECKED_IN);
@@ -67,7 +65,6 @@ class UT14_PaymentPromoStatusTest extends PaymentTestBase {
     }
 
     @Test
-    @Tag("known-defect")
     @DisplayName("UT14-TC010 (I4) booking CANCELLED ห้ามรับเงิน (DEF-003)")
     void tc010() {
         booking.setStatus(BookingStatus.CANCELLED);
@@ -75,7 +72,6 @@ class UT14_PaymentPromoStatusTest extends PaymentTestBase {
     }
 
     @Test
-    @Tag("known-defect")
     @DisplayName("UT14-TC011 (I4) booking NO_SHOW ห้ามรับเงิน (DEF-003)")
     void tc011() {
         booking.setStatus(BookingStatus.NO_SHOW);

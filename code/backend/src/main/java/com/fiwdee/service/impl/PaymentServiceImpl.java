@@ -22,6 +22,8 @@ import com.fiwdee.repository.BookingRepository;
 import com.fiwdee.repository.PaymentRepository;
 import com.fiwdee.repository.ShopRepository;
 import com.fiwdee.service.PaymentService;
+import com.fiwdee.pattern.observer.BookingStatusChangedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -47,6 +49,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentStrategyFactory paymentStrategyFactory;
     private final DiscountStrategyFactory discountStrategyFactory;
     private final PaymentMapper paymentMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -62,6 +65,11 @@ public class PaymentServiceImpl implements PaymentService {
         Booking booking = bookingRepository.findDetailedById(bookingId)
                 .orElseThrow(() -> new NotFoundException("Booking not found with ID: " + bookingId));
 
+        if (booking.getStatus() == BookingStatus.CANCELLED || booking.getStatus() == BookingStatus.NO_SHOW) {
+            throw new ValidationException(
+                    "Cannot accept payment for a " + booking.getStatus() + " booking");
+        }
+        
         // 2. Idempotency & Conflict Check: Each Booking has at most 1 Payment (1:1 settledBy)
         Optional<Payment> existingPayment = paymentRepository.findByBookingId(bookingId);
         if (existingPayment.isPresent()) {
@@ -130,13 +138,20 @@ public class PaymentServiceImpl implements PaymentService {
 
         // 8. Update Booking status to COMPLETED (if physically in service or completed)
         // Or CONFIRMED if pre-paid online booking
-        if (booking.getStatus() == BookingStatus.IN_SERVICE || booking.getStatus() == BookingStatus.CHECKED_IN) {
-            booking.setStatus(BookingStatus.COMPLETED);
-        } else if (booking.getStatus() == BookingStatus.PENDING) {
-            booking.setStatus(BookingStatus.CONFIRMED);
-        }
+        BookingStatus oldStatus = booking.getStatus();
         booking.setPayment(savedPayment);
+        if (oldStatus == BookingStatus.PENDING) {
+            booking.confirm();
+        } else if (oldStatus == BookingStatus.IN_SERVICE) {
+            booking.complete();
+        }
+
         bookingRepository.save(booking);
+
+        if (booking.getStatus() != oldStatus) {
+            eventPublisher.publishEvent(new BookingStatusChangedEvent(
+                    this, booking.getId(), oldStatus, booking.getStatus()));
+        }
 
         log.info("Payment successfully settled: ID={}, Ref={}, NetAmount={}", 
                 savedPayment.getId(), savedPayment.getPaymentReferenceCode(), savedPayment.getNetAmount());

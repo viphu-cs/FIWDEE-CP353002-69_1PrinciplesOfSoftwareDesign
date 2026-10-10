@@ -9,7 +9,6 @@ import java.time.LocalTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -56,7 +55,6 @@ class UT10_AvailabilityDurationTest extends BookingWorldTestBase {
     }
 
     @Test
-    @Tag("known-defect")
     @DisplayName("UT10-TC008 durationMinutes = 900 (เวลาวนข้ามเที่ยงคืน) → 0 รอบ (DEF-012)")
     void tc008() {
         AvailabilityResponseDTO res = availabilityService.checkAvailability(DAY, 1L, 900);

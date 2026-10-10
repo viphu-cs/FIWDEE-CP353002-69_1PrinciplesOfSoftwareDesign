@@ -19,7 +19,6 @@ import java.time.LocalDateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.springframework.http.HttpStatus;
@@ -122,7 +121,6 @@ class UT05_CancelBookingTest extends BookingWorldTestBase {
     }
 
     @Test
-    @Tag("known-defect")
     @DisplayName("UT05-TC007 [R6] ยกเลิกรายการที่จ่ายแล้ว → CANCELLED และคืนเงิน (DEF-007)")
     void tc007() {
         Booking b = mine(14, TOMORROW_1500, BookingStatus.CONFIRMED);
@@ -131,10 +129,10 @@ class UT05_CancelBookingTest extends BookingWorldTestBase {
         bookingService.cancelBooking(14L, null, c1);
 
         assertThat(b.getStatus()).isEqualTo(BookingStatus.CANCELLED);
-        // UC-10 A1: ต้องคืนเงินเต็มจำนวน เมื่อทีมแก้แล้ว (เช่นเรียก RefundService) ให้เปลี่ยนเป็น verify(refundService)...
-        assertThat(b.getPayment().getPaymentStatus())
-                .as("ยกเลิกรายการที่จ่ายแล้วต้องคืนเงิน")
-                .isEqualTo(PaymentStatus.REFUNDED);
+        // UC-10 A1: ต้องส่งคืนเงินเต็มจำนวนผ่าน RefundService (วิธีแก้ที่แนะนำใน DEF-007)
+        org.mockito.Mockito.verify(refundService).processRefund(org.mockito.ArgumentMatchers.argThat(r ->
+                Long.valueOf(514L).equals(r.getPaymentId())
+                        && r.getRefundAmount().compareTo(new java.math.BigDecimal("600.00")) == 0));
     }
 
     @Test

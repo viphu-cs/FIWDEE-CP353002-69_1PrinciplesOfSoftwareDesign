@@ -9,7 +9,6 @@ import com.fiwdee.exception.ValidationException;
 import com.fiwdee.testsupport.TestData;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** UT08 (ต่อ) – BookingServiceImpl.updateBookingStatus: 2 เคสสุดท้ายของชีต UT08 */
@@ -29,7 +28,6 @@ class UT08_UpdateBookingStatusTest extends BookingWorldTestBase {
     }
 
     @Test
-    @Tag("known-defect")
     @DisplayName("UT08-TC045 NO_SHOW ก่อนเลยเวลานัด 15 นาที → ValidationException (DEF-009)")
     void tc045() {
         Booking b = TestData.booking(10, c1, t5, r101, s1, o11, LocalDateTime.now().plusDays(1), 60, BookingStatus.CONFIRMED);

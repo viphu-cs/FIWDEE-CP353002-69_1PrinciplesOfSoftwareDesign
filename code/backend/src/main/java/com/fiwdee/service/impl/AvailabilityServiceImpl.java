@@ -44,13 +44,14 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     public static final int CLEANING_BUFFER_MINUTES = 15;
     private static final Collection<BookingStatus> EXCLUDED_STATUSES = List.of(
             BookingStatus.CANCELLED,
-            BookingStatus.NO_SHOW
+            BookingStatus.NO_SHOW,
+            BookingStatus.COMPLETED
     );
 
     private final ServiceRepository serviceRepository;
     private final ServiceDurationOptionRepository durationOptionRepository;
     private final RoomRepository roomRepository;
-    private final TherapistRepository therapistRepository;
+    //private final TherapistRepository therapistRepository;
     private final TherapistSkillRepository therapistSkillRepository;
     private final TherapistScheduleRepository therapistScheduleRepository;
     private final BusinessHoursRepository businessHoursRepository;
@@ -131,9 +132,11 @@ public class AvailabilityServiceImpl implements AvailabilityService {
 
         // 4. Iterate over time slots
         List<AvailabilityResponseDTO.TimeSlotDTO> slotDTOs = new ArrayList<>();
-        LocalTime slotTime = openTime;
+        int openMin = openTime.toSecondOfDay() / 60;
+        int closeMin = closeTime.toSecondOfDay() / 60;
 
-        while (!slotTime.plusMinutes(duration).isAfter(closeTime)) {
+        for (int m = openMin; m + duration <= closeMin; m += 60) {
+            LocalTime slotTime = LocalTime.ofSecondOfDay(m * 60L);
             LocalDateTime slotStart = LocalDateTime.of(date, slotTime);
             LocalDateTime slotEnd = slotStart.plusMinutes(duration);
 
@@ -143,6 +146,9 @@ public class AvailabilityServiceImpl implements AvailabilityService {
                 Optional<TherapistSchedule> schedOpt = therapistScheduleRepository
                         .findByTherapistIdAndScheduleDate(therapist.getId(), date);
                 if (schedOpt.isPresent() && Boolean.TRUE.equals(schedOpt.get().getIsDayOff())) {
+                    continue;
+                }
+                if (!ScheduleRules.onShift(schedOpt, slotStart, slotEnd)) {
                     continue;
                 }
 
@@ -182,7 +188,6 @@ public class AvailabilityServiceImpl implements AvailabilityService {
                     .availableRooms(availableRooms)
                     .build());
 
-            slotTime = slotTime.plusMinutes(step);
         }
 
         return AvailabilityResponseDTO.builder()
