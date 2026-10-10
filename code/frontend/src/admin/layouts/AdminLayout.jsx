@@ -24,9 +24,9 @@ function AdminLayoutContent({ currentRoute = 'dashboard', onNavigate, children }
 
     // Role-based route guard
     if (user?.role === 'THERAPIST') {
-      const allowedTherapistRoutes = ['therapist-queue', 'therapist-schedule', 'therapist-earnings']
+      const allowedTherapistRoutes = ['therapist-schedule', 'therapist-earnings']
       if (!allowedTherapistRoutes.includes(currentRoute)) {
-        onNavigate('therapist-queue')
+        onNavigate('therapist-schedule')
       }
     } else if (user?.role === 'RECEPTIONIST') {
       if (currentRoute === 'users') {

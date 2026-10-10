@@ -146,8 +146,8 @@ export default function AdminTherapistQueue() {
           </h1>
           <p className="text-xs sm:text-sm text-charcoal-muted mt-0.5">
             {lang === 'th'
-              ? 'ตรวจสอบรายการลูกค้าที่ได้รับมอบหมาย กดเริ่มการนวด และกดจบงานเมื่อให้บริการเสร็จสิ้น'
-              : 'Review your assigned customer sessions, start treatments, and complete services'}
+              ? 'ตรวจสอบรายการลูกค้าและคิวงานที่ได้รับมอบหมาย (การเริ่มและจบบริการจะดำเนินการโดยพนักงานต้อนรับ)'
+              : 'Review your assigned customer sessions (service start and completion are managed by receptionists)'}
           </p>
         </div>
 
@@ -200,13 +200,9 @@ export default function AdminTherapistQueue() {
                     {lang === 'th' ? 'ห้องบริการ:' : 'Assigned Room:'} <strong>{item.roomNo || '-'}</strong>
                   </div>
                 </div>
-                <button
-                  onClick={() => handleComplete(item)}
-                  disabled={updatingId === (item.queueId || item.queueNo)}
-                  className="w-full py-2.5 rounded-xl bg-teak-dark text-warm-ivory hover:bg-teak-deep text-xs font-semibold transition-colors cursor-pointer text-center disabled:opacity-50"
-                >
-                  {updatingId === (item.queueId || item.queueNo) ? '...' : (lang === 'th' ? 'กดจบงานเมื่อให้บริการเสร็จสิ้น (Complete)' : 'Complete Treatment')}
-                </button>
+                <div className="w-full py-2 px-3 rounded-xl bg-surface-container-low text-charcoal-muted text-[11px] text-center font-medium border border-outline-variant/60">
+                  {lang === 'th' ? 'จบบริการผ่านพนักงานต้อนรับ' : 'Managed by Receptionist'}
+                </div>
               </div>
             ))}
           </div>
@@ -241,13 +237,9 @@ export default function AdminTherapistQueue() {
                     </div>
                   </div>
                 </div>
-                <button
-                  onClick={() => handleStart(item)}
-                  disabled={updatingId === (item.queueId || item.queueNo)}
-                  className="w-full py-2 rounded-xl bg-teak-dark text-warm-ivory hover:bg-teak-deep text-xs font-semibold transition-colors cursor-pointer text-center disabled:opacity-50"
-                >
-                  {updatingId === (item.queueId || item.queueNo) ? '...' : (lang === 'th' ? 'เริ่มนวด (Start Service)' : 'Start Service')}
-                </button>
+                <div className="w-full py-2 px-3 rounded-xl bg-surface-container-low text-charcoal-muted text-[11px] text-center font-medium border border-outline-variant/60">
+                  {lang === 'th' ? 'เริ่มงานผ่านพนักงานต้อนรับ' : 'Managed by Receptionist'}
+                </div>
               </div>
             ))}
           </div>

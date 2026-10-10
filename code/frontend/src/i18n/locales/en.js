@@ -293,6 +293,8 @@ export const en = {
     therapists: 'Therapists & Work Shifts',
     services: 'Services & Pricing Menu',
     users: 'All Users Summary',
+    mySchedule: 'My Work Shifts',
+    myEarnings: 'My Earnings & Commission',
     addQueue: '+ Add Queue',
     walkinBooking: 'Walk-in Registration',
     phoneBooking: 'Phone Booking Reservation',
