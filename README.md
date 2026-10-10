@@ -1,10 +1,9 @@
 # FIWDEE — Massage Management & Booking System
 
 # Deploy Link
-## Frontend : https://l.messenger.com/l.php?u=https%3A%2F%2Ffiwdee.vercel.app%2F&h=AUCqEwDFPYdrGksRdhR_WNQahqgqrkAyygHDfDEjtkxyrpszccg_bffwTBp87kh17S61t7eEIYiCnMwoIkjyQLsGFV9yfFkWTkvpb0xFIWyfyIhBp6-PXAhWicv8PnM
+## Frontend : https://fiwdee.vercel.app/
 
-## Backend : https://l.messenger.com/l.php?u=https%3A%2F%2Ffiwdee-cp353002-69.onrender.com%2Fapi&h=AUCnO80j1dJB5O3VkMb1B1inBLgxHVFMdYUS-iqwZ8yzG-2uZwLuLl-mx1nQPmrCGxLWz60ltLF8Cizk5lct5IpUr0D7d63UP6BoyvZvzHY6QskM06OF3_qIpm_Lvb0
-
+## Backend : https://fiwdee-cp353002-69.onrender.com/api
 ระบบบริหารจัดการร้านนวดแผนไทยและสปาแบบครบวงจร (Web-based Application) ที่เชื่อมโยงการจองคิวออนไลน์ของลูกค้าเข้ากับการจัดการคิวสดหน้าร้านแบบ Real-time รองรับการจัดสรรห้องนวดและหมอนวดตามความเชี่ยวชาญ พร้อมระบบทำความสะอาดห้อง 15 นาทีอัตโนมัติ ออกแบบตามสถาปัตยกรรม Layered Architecture บน Spring Boot 3 และ React 19 โดยประยุกต์ใช้ GoF Design Patterns (State, Strategy, Observer) เพื่อประสิทธิภาพ ความถูกต้องของข้อมูล และความปลอดภัยระดับองค์กร
 
 ---
