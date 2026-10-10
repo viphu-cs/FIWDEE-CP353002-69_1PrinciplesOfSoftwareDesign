@@ -30,17 +30,20 @@ public class TherapistServiceImpl implements TherapistService {
     private final TherapistRepository therapistRepository;
     private final TherapistScheduleRepository scheduleRepository;
     private final ServiceRepository serviceRepository;
+    private final com.fiwdee.repository.TherapistSkillRepository skillRepository;
     private final TherapistMapper therapistMapper;
     private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     public TherapistServiceImpl(TherapistRepository therapistRepository,
                                 TherapistScheduleRepository scheduleRepository,
                                 ServiceRepository serviceRepository,
+                                com.fiwdee.repository.TherapistSkillRepository skillRepository,
                                 TherapistMapper therapistMapper,
                                 org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
         this.therapistRepository = therapistRepository;
         this.scheduleRepository = scheduleRepository;
         this.serviceRepository = serviceRepository;
+        this.skillRepository = skillRepository;
         this.therapistMapper = therapistMapper;
         this.passwordEncoder = passwordEncoder;
     }
@@ -134,6 +137,13 @@ public class TherapistServiceImpl implements TherapistService {
     }
 
     private void applySkills(Therapist therapist, List<Long> serviceIds) {
+        if (therapist.getId() != null) {
+            List<TherapistSkill> existingSkills = skillRepository.findByTherapistId(therapist.getId());
+            if (!existingSkills.isEmpty()) {
+                skillRepository.deleteAll(existingSkills);
+                skillRepository.flush();
+            }
+        }
         therapist.getSkills().clear();
         if (serviceIds == null) return;
         for (Long serviceId : serviceIds.stream().distinct().toList()) {

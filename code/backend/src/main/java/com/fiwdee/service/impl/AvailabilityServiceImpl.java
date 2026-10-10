@@ -92,8 +92,8 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         DayOfWeek dow = mapDayOfWeek(date.getDayOfWeek());
         Optional<BusinessHours> hoursOpt = businessHoursRepository.findByDayOfWeek(dow);
 
-        LocalTime openTime = LocalTime.of(10, 0);
-        LocalTime closeTime = LocalTime.of(21, 0);
+        LocalTime openTime = LocalTime.of(6, 0);
+        LocalTime closeTime = LocalTime.of(23, 0);
         boolean isClosed = false;
 
         if (hoursOpt.isPresent()) {

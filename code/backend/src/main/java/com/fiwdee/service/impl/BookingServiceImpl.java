@@ -439,8 +439,8 @@ public class BookingServiceImpl implements BookingService {
         if (hours != null && Boolean.TRUE.equals(hours.getIsClosed())) {
             throw new ValidationException("The shop is closed on " + start.toLocalDate());
         }
-        LocalTime open = hours == null ? LocalTime.of(10, 0) : hours.getOpenTime();   // ค่าเริ่มต้นเหมือน Availability
-        LocalTime close = hours == null ? LocalTime.of(21, 0) : hours.getCloseTime();
+        LocalTime open = hours == null ? LocalTime.of(6, 0) : hours.getOpenTime();   // ค่าเริ่มต้นเหมือน Availability
+        LocalTime close = hours == null ? LocalTime.of(23, 0) : hours.getCloseTime();
         boolean sameDay = end.toLocalDate().equals(start.toLocalDate());
         if (start.toLocalTime().isBefore(open) || !sameDay || end.toLocalTime().isAfter(close)) {
             throw new ValidationException("Booking must be within business hours " + open + "–" + close);

@@ -70,11 +70,11 @@ export default function AdminTherapistSchedule() {
   const getShiftBadge = (shift) => {
     switch (shift) {
       case 'MORNING':
-        return { label: lang === 'th' ? 'กะเช้า (10:00 - 19:00)' : 'Morning (10:00 - 19:00)', cls: 'bg-surface-container text-teak-dark border border-outline-variant' }
+        return { label: lang === 'th' ? 'กะเช้า (06:00 - 15:00)' : 'Morning (06:00 - 15:00)', cls: 'bg-surface-container text-teak-dark border border-outline-variant' }
       case 'EVENING':
-        return { label: lang === 'th' ? 'กะบ่าย (13:00 - 22:00)' : 'Evening (13:00 - 22:00)', cls: 'bg-surface-container text-teak-deep border border-outline-variant' }
+        return { label: lang === 'th' ? 'กะบ่าย (14:00 - 23:00)' : 'Evening (14:00 - 23:00)', cls: 'bg-surface-container text-teak-deep border border-outline-variant' }
       case 'FULL_DAY':
-        return { label: lang === 'th' ? 'เต็มวัน (10:00 - 22:00)' : 'Full Day (10:00 - 22:00)', cls: 'bg-teak-dark text-warm-ivory' }
+        return { label: lang === 'th' ? 'เต็มวัน (06:00 - 23:00)' : 'Full Day (06:00 - 23:00)', cls: 'bg-teak-dark text-warm-ivory' }
       case 'OFF':
       default:
         return { label: lang === 'th' ? 'วันหยุด (Off Duty)' : 'Day Off', cls: 'bg-surface-container-low text-charcoal-muted border border-outline-variant/60' }

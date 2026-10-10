@@ -259,6 +259,14 @@ export function generateDateOptions() {
 export const dateOptions = generateDateOptions()
 
 export const timeSlots = [
+  { time: '06:00', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '06:30', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '07:00', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '07:30', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '08:00', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '08:30', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '09:00', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '09:30', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
   { time: '10:00', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
   { time: '10:30', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
   { time: '11:00', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
@@ -280,6 +288,10 @@ export const timeSlots = [
   { time: '19:00', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
   { time: '19:30', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
   { time: '20:00', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '20:30', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '21:00', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '21:30', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
+  { time: '22:00', duration: '60-90 นาที', available: true, label: 'ว่างสำหรับ 1 ท่าน' },
 ]
 
 export const bookingService = {
