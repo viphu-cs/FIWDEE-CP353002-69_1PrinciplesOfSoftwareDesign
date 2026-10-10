@@ -294,6 +294,8 @@ export const th = {
     therapists: 'ข้อมูลหมอนวด & กะงาน',
     services: 'เมนูบริการ & ราคา',
     users: 'สรุปข้อมูลผู้ใช้ทั้งหมด',
+    mySchedule: 'ตารางกะงานของฉัน',
+    myEarnings: 'รายได้ & ค่าคอมมิชชัน',
     addQueue: 'เพิ่มคิวใหม่',
     walkinBooking: 'ลงทะเบียนคิว Walk-in',
     phoneBooking: 'จองคิวทางโทรศัพท์ (Phone Booking)',

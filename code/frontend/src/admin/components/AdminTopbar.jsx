@@ -25,10 +25,10 @@ export default function AdminTopbar({ currentRoute, onNavigate, onOpenWalkInModa
         {/* Left side: Logo matching #top Navbar (No F icon circle) */}
         <div className="flex items-center gap-3">
           <a
-            href="#admin/dashboard"
+            href={user?.role === 'THERAPIST' ? '#admin/therapist-schedule' : '#admin/dashboard'}
             onClick={(e) => {
               e.preventDefault()
-              onNavigate('dashboard')
+              onNavigate(user?.role === 'THERAPIST' ? 'therapist-schedule' : 'dashboard')
             }}
             className="flex flex-col transition-opacity duration-200 hover:opacity-80 cursor-pointer"
           >
@@ -57,17 +57,19 @@ export default function AdminTopbar({ currentRoute, onNavigate, onOpenWalkInModa
             <span className="sm:hidden">Customer</span>
           </button>
 
-          {/* Quick Walk-in Button */}
-          <button
-            onClick={onOpenWalkInModal}
-            type="button"
-            className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-teak-dark text-on-primary hover:bg-teak-deep text-xs font-semibold shadow-xs transition-all cursor-pointer"
-          >
-            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            <span>{t('admin.addQueue')}</span>
-          </button>
+          {/* Quick Walk-in Button (ไม่แสดงสำหรับหมอนวด) */}
+          {user?.role !== 'THERAPIST' && (
+            <button
+              onClick={onOpenWalkInModal}
+              type="button"
+              className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-teak-dark text-on-primary hover:bg-teak-deep text-xs font-semibold shadow-xs transition-all cursor-pointer"
+            >
+              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              <span>{t('admin.addQueue')}</span>
+            </button>
+          )}
 
           {/* Language Switcher TH ↔ EN (Matching Customer Navbar #top) */}
           <button

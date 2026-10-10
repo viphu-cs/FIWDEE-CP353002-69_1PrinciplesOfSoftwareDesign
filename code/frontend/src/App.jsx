@@ -68,13 +68,13 @@ function getInitialNavigation() {
     }
 
     const parts = hash.split('/')
-    let subRoute = parts[1] || (role === 'THERAPIST' ? 'therapist-queue' : 'dashboard')
+    let subRoute = parts[1] || (role === 'THERAPIST' ? 'therapist-schedule' : 'dashboard')
 
     // ตรวจสอบสิทธิ์เฉพาะของแต่ละบทบาท
     if (role === 'THERAPIST') {
-      const allowedTherapist = ['therapist-queue', 'therapist-schedule', 'therapist-earnings']
+      const allowedTherapist = ['therapist-schedule', 'therapist-earnings']
       if (!allowedTherapist.includes(subRoute)) {
-        subRoute = 'therapist-queue'
+        subRoute = 'therapist-schedule'
       }
     } else if (role === 'RECEPTIONIST') {
       if (subRoute === 'users') {
