@@ -5,12 +5,14 @@ import com.fiwdee.domain.entity.Payment;
 import com.fiwdee.domain.entity.Shop;
 import com.fiwdee.domain.enums.BookingStatus;
 import com.fiwdee.domain.enums.PaymentStatus;
+import com.fiwdee.domain.enums.RoomStatus;
 import com.fiwdee.dto.request.PaymentRequestDTO;
 import com.fiwdee.dto.request.ValidatePromoRequestDTO;
 import com.fiwdee.dto.response.PaymentResponseDTO;
 import com.fiwdee.dto.response.PromoValidationResponseDTO;
 import com.fiwdee.dto.response.ReceiptResponseDTO;
 import com.fiwdee.exception.ConflictException;
+import com.fiwdee.exception.PaymentFailedException;
 import com.fiwdee.exception.NotFoundException;
 import com.fiwdee.exception.ValidationException;
 import com.fiwdee.mapper.PaymentMapper;
@@ -52,7 +54,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = PaymentFailedException.class)
     public PaymentResponseDTO processPayment(Long bookingId, PaymentRequestDTO request) {
         if (bookingId == null) {
             throw new ValidationException("Booking ID cannot be null");
@@ -112,17 +114,16 @@ public class PaymentServiceImpl implements PaymentService {
         String paymentRefCode = "PAY-" + System.currentTimeMillis() + "-" + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
         String receiptNumber = "REC-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
 
-        Payment payment = Payment.builder()
-                .booking(booking)
-                .paymentReferenceCode(paymentRefCode)
-                .receiptNumber(receiptNumber)
-                .grossAmount(grossAmount)
-                .discountAmount(discountAmount)
-                .netAmount(netAmount)
-                .paymentMethod(request.getPaymentMethod())
-                .paymentStatus(PaymentStatus.PENDING)
-                .transactionNote(request.getTransactionNote())
-                .build();
+        Payment payment = existingPayment.orElseGet(Payment::new);
+        payment.setBooking(booking);
+        payment.setPaymentReferenceCode(paymentRefCode);
+        payment.setReceiptNumber(receiptNumber);
+        payment.setGrossAmount(grossAmount);
+        payment.setDiscountAmount(discountAmount);
+        payment.setNetAmount(netAmount);
+        payment.setPaymentMethod(request.getPaymentMethod());
+        payment.setPaymentStatus(PaymentStatus.PENDING);
+        payment.setTransactionNote(request.getTransactionNote());
 
         // 6. Execute Settlement via GoF Payment Strategy
         PaymentStrategy paymentStrategy = paymentStrategyFactory.getStrategy(request.getPaymentMethod());
@@ -130,7 +131,7 @@ public class PaymentServiceImpl implements PaymentService {
         if (!success) {
             payment.setPaymentStatus(PaymentStatus.FAILED);
             paymentRepository.save(payment);
-            throw new ValidationException("Payment execution failed for method: " + request.getPaymentMethod());
+            throw new PaymentFailedException("Payment execution failed for method: " + request.getPaymentMethod());
         }
 
         // 7. Save Immutable Audit Record
@@ -144,6 +145,10 @@ public class PaymentServiceImpl implements PaymentService {
             booking.confirm();
         } else if (oldStatus == BookingStatus.IN_SERVICE) {
             booking.complete();
+            // Phase D: บริการจบและจ่ายครบแล้ว ปล่อยห้องเข้าสู่การทำความสะอาด (ถ้าหมอนวดยังไม่ได้ปล่อย)
+            if (booking.getRoom() != null && booking.getRoom().getRoomStatus() == RoomStatus.OCCUPIED) {
+                booking.getRoom().setRoomStatus(RoomStatus.CLEANING);
+            }
         }
 
         bookingRepository.save(booking);

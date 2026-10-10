@@ -5,6 +5,9 @@ import com.fiwdee.dto.request.PaymentRequestDTO;
 import com.fiwdee.dto.response.PaymentResponseDTO;
 import com.fiwdee.dto.response.ReceiptResponseDTO;
 import com.fiwdee.service.PaymentService;
+import com.fiwdee.domain.entity.User;
+import com.fiwdee.service.BookingService;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class PaymentController {
 
     private final PaymentService paymentService;
+    private final BookingService bookingService;
 
     /**
      * Process payment for a booking (UC-19).
@@ -56,7 +60,11 @@ public class PaymentController {
      */
     @GetMapping("/bookings/{id}/payment")
     public ResponseEntity<ApiResponse<PaymentResponseDTO>> getPaymentByBooking(
-            @PathVariable("id") Long bookingId) {
+            @PathVariable("id") Long bookingId,
+            @AuthenticationPrincipal User currentUser) {
+
+        // DEF-016: ตรวจสิทธิ์ดู booking ก่อน (ลูกค้าคนอื่น → 403, ไม่มี booking → 404)
+        bookingService.getBookingById(bookingId, currentUser);
 
         PaymentResponseDTO response = paymentService.getPaymentByBookingId(bookingId);
         return ResponseEntity.ok(ApiResponse.success("ดึงข้อมูลการชำระเงินสำเร็จ", response));

@@ -77,6 +77,18 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/services/**", "/api/therapists/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/bookings/availability").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/payments/promotions/validate").permitAll()
+                // DEF-015: UC-12 Check-in → Receptionist / Owner
+                .requestMatchers(HttpMethod.PATCH, "/api/bookings/*/check-in").hasAnyRole("OWNER", "RECEPTIONIST")
+                // DEF-015: UC-16/17 Start/Complete service → Therapist (พนักงานหน้าร้านและ Owner ช่วยได้)
+                .requestMatchers("/api/therapist/**").hasAnyRole("THERAPIST", "RECEPTIONIST", "OWNER")
+                // DEF-015: UC-23..27 เพิ่ม/แก้/ปิด ห้อง บริการ หมอนวด ตารางงาน ร้าน → Owner เท่านั้น
+                .requestMatchers(HttpMethod.POST,
+                        "/api/admin/rooms", "/api/admin/services", "/api/admin/therapists").hasRole("OWNER")
+                .requestMatchers(HttpMethod.PUT,
+                        "/api/admin/rooms/*", "/api/admin/services/*", "/api/admin/therapists/*",
+                        "/api/admin/therapists/*/schedules", "/api/admin/shop").hasRole("OWNER")
+                .requestMatchers(HttpMethod.DELETE,
+                        "/api/admin/rooms/*", "/api/admin/services/*", "/api/admin/therapists/*").hasRole("OWNER")
                 // Admin user & financial reports management: Owner only
                 .requestMatchers("/api/admin/users/**").hasRole("OWNER")
                 .requestMatchers("/api/admin/reports/**").hasRole("OWNER")

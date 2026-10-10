@@ -35,6 +35,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long>, JpaSpec
     List<Booking> findBookingsByDate(
             @Param("startOfDay") LocalDateTime startOfDay,
             @Param("endOfDay") LocalDateTime endOfDay);
+    
 
     /**
      * Paginated and sorted query for administrative booking overview with optional date, status, and keyword search filters.
@@ -97,4 +98,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long>, JpaSpec
                 endTime.plusMinutes(cleaningBufferMinutes),
                 excludedStatuses);
     }
+    
+    @Query(value = "SELECT 1 FROM (SELECT pg_advisory_xact_lock(:key)) AS booking_lock", nativeQuery = true)
+    Integer lockBookingDay(@Param("key") long key);
 }
