@@ -5,7 +5,7 @@ import StatusBadge from '../components/StatusBadge.jsx'
 import { api } from '../../lib/api.js'
 
 export default function AdminTherapistSchedule() {
-  const { user, therapists, getTherapistShiftForDate } = useAdminAuth()
+  const { user, therapists, getTherapistShiftForDate, queueItems: fallbackQueueItems } = useAdminAuth()
   const { lang } = useLanguage()
   const [liveAppointments, setLiveAppointments] = useState([])
   const [loading, setLoading] = useState(false)
@@ -32,6 +32,33 @@ export default function AdminTherapistSchedule() {
 
     return () => { isMounted = false }
   }, [therapistId])
+
+  const appointmentsList = liveAppointments.length > 0
+    ? liveAppointments.map(app => ({
+        key: app.queueId || app.queueNumber,
+        queueNo: app.queueNumber || `Q-${app.queueId}`,
+        customerName: app.customerName || 'ลูกค้า',
+        serviceName: app.serviceName || 'บริการนวด',
+        roomNo: app.roomNumber,
+        status: app.queueStatus || 'WAITING',
+        time: app.scheduledStartDateTime
+          ? new Date(app.scheduledStartDateTime).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+          : (app.checkInTime ? new Date(app.checkInTime).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : '-')
+      }))
+    : (fallbackQueueItems || [])
+        .filter(q => {
+          if (!q.therapistName || q.therapistName === 'ไม่ระบุ') return false
+          return therapistName.includes(q.therapistName) || q.therapistName.includes(therapistName)
+        })
+        .map(q => ({
+          key: q.queueNo,
+          queueNo: q.queueNo,
+          customerName: q.customerName,
+          serviceName: q.serviceName,
+          roomNo: q.roomNo,
+          status: q.status,
+          time: q.time
+        }))
 
   // 7-day dates window starting today
   const shiftDates = Array.from({ length: 7 }, (_, i) => {
@@ -127,26 +154,50 @@ export default function AdminTherapistSchedule() {
         })}
       </div>
 
-      {/* Live Appointments Breakdown if any */}
-      {liveAppointments.length > 0 && (
-        <div className="bg-surface rounded-2xl border border-outline-variant p-5 shadow-[var(--admin-shadow-sm)] space-y-3">
+      {/* Appointments Breakdown for Today (Read-only for therapist) */}
+      <div className="bg-surface rounded-2xl border border-outline-variant p-5 shadow-[var(--admin-shadow-sm)] space-y-3">
+        <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-teak-deep uppercase tracking-wider">
-            {lang === 'th' ? 'รายการนัดหมายที่เชื่อมโยงกับระบบวันนี้' : 'Live Booked Appointments Today'}
+            {lang === 'th' ? 'รายการนัดหมายและคิวงานของฉันวันนี้' : 'My Assigned Appointments Today'}
           </h2>
+          <span className="text-xs text-charcoal-muted">
+            {lang === 'th' ? `ทั้งหมด ${appointmentsList.length} รายการ` : `${appointmentsList.length} total`}
+          </span>
+        </div>
+
+        {appointmentsList.length === 0 ? (
+          <div className="py-6 text-center text-xs text-charcoal-muted">
+            {lang === 'th' ? 'ไม่มีคิวหรือนัดหมายบริการที่ได้รับมอบหมายในวันนี้' : 'No sessions assigned for today'}
+          </div>
+        ) : (
           <div className="divide-y divide-outline-variant/60 text-xs">
-            {liveAppointments.map(app => (
-              <div key={app.queueId} className="py-2.5 flex items-center justify-between">
-                <div>
-                  <span className="font-semibold text-teak-dark mr-2">{app.queueNumber}</span>
-                  <span>{app.customerName}</span>
-                  <span className="text-charcoal-muted ml-2">({app.serviceName})</span>
+            {appointmentsList.map(app => (
+              <div key={app.key} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-3">
+                  <span className="font-headline font-bold text-teak-dark px-2 py-0.5 bg-surface-container rounded-lg border border-outline-variant/60">
+                    {app.queueNo}
+                  </span>
+                  <div>
+                    <div className="font-semibold text-on-surface">
+                      {app.customerName}
+                      <span className="text-charcoal-muted font-normal ml-2">({app.serviceName})</span>
+                    </div>
+                    <div className="text-[11px] text-charcoal-muted flex items-center gap-2 mt-0.5">
+                      <span>{app.time}</span>
+                      {app.roomNo && (
+                        <span>• ห้อง {app.roomNo}</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <StatusBadge status={app.queueStatus} size="sm" />
+                <div>
+                  <StatusBadge status={app.status} size="sm" />
+                </div>
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Policy Notice */}
       <div className="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/60 text-xs text-charcoal-muted leading-relaxed">

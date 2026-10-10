@@ -9,7 +9,6 @@ export function getNavLinks(t, queueCount, role = 'OWNER') {
 
   if (role === 'THERAPIST') {
     return [
-      { key: 'therapist-queue', label: translate('myQueue', 'คิวงานของฉัน'), hash: '#admin/therapist-queue', iconType: 'queue' },
       { key: 'therapist-schedule', label: translate('mySchedule', 'ตารางกะงานของฉัน'), hash: '#admin/therapist-schedule', iconType: 'therapists' },
       { key: 'therapist-earnings', label: translate('myEarnings', 'รายได้ & ค่าคอมมิชชัน'), hash: '#admin/therapist-earnings', iconType: 'dashboard' },
     ]
