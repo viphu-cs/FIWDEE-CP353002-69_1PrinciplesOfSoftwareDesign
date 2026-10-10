@@ -10,6 +10,7 @@ export default function AdminDashboard({ onNavigate, onOpenWalkInModal, onOpenAs
 
   // Real Executive Report from backend (Role OWNER)
   const [reportData, setReportData] = useState(null)
+  const [revenueData, setRevenueData] = useState(null)
   const [reportLoading, setReportLoading] = useState(false)
 
   const isOwner = user?.role === 'OWNER'
@@ -18,13 +19,15 @@ export default function AdminDashboard({ onNavigate, onOpenWalkInModal, onOpenAs
     let isMounted = true
     if (isOwner) {
       setReportLoading(true)
-      api.get('/admin/reports/dashboard')
-        .then((res) => {
-          if (isMounted && res.success && res.data) {
-            setReportData(res.data)
-          }
-        })
-        .catch(() => {})
+      Promise.all([
+        api.get('/admin/reports/dashboard'),
+        api.get('/admin/reports/revenue')
+      ]).then(([dashRes, revRes]) => {
+        if (isMounted) {
+          if (dashRes && dashRes.success && dashRes.data) setReportData(dashRes.data)
+          if (revRes && revRes.success && revRes.data) setRevenueData(revRes.data)
+        }
+      }).catch(() => {})
         .finally(() => {
           if (isMounted) setReportLoading(false)
         })
@@ -289,6 +292,76 @@ export default function AdminDashboard({ onNavigate, onOpenWalkInModal, onOpenAs
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Financial Revenue & Refund Summary (Visible to OWNER) */}
+      {isOwner && revenueData && (
+        <div className="bg-surface rounded-2xl p-6 border border-outline-variant shadow-[var(--admin-shadow-sm)] space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h2 className="font-headline font-semibold text-teak-dark text-base sm:text-lg">
+                {lang === 'th' ? 'รายงานรายได้และการเงิน (Financial Revenue & Refunds)' : 'Financial Revenue & Refunds Summary'}
+              </h2>
+              <p className="text-xs text-charcoal-muted">
+                {lang === 'th' ? 'สรุปยอดขายสุทธิ ส่วนลดโปรโมชั่น และยอดเงินที่คืนลูกค้า' : 'Audited net revenues, promotional discounts, and refund logs'}
+              </p>
+            </div>
+            <div className="text-xs text-secondary font-medium">
+              {revenueData.startDate} — {revenueData.endDate}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+            <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/60">
+              <span className="text-[11px] font-semibold text-charcoal-muted uppercase block">
+                {lang === 'th' ? 'ยอดขายรวม (Gross)' : 'Gross Total'}
+              </span>
+              <span className="text-base font-bold text-teak-deep mt-1 block">
+                ฿{Number(revenueData.grossTotal || 0).toLocaleString()}
+              </span>
+            </div>
+            <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/60">
+              <span className="text-[11px] font-semibold text-charcoal-muted uppercase block">
+                {lang === 'th' ? 'ส่วนลด (Discounts)' : 'Discounts'}
+              </span>
+              <span className="text-base font-bold text-emerald-800 mt-1 block">
+                -฿{Number(revenueData.discountTotal || 0).toLocaleString()}
+              </span>
+            </div>
+            <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/60">
+              <span className="text-[11px] font-semibold text-charcoal-muted uppercase block">
+                {lang === 'th' ? 'รายได้สุทธิ (Net Revenue)' : 'Net Revenue'}
+              </span>
+              <span className="text-base font-bold text-primary mt-1 block">
+                ฿{Number(revenueData.netRevenue || 0).toLocaleString()}
+              </span>
+            </div>
+            <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/60">
+              <span className="text-[11px] font-semibold text-charcoal-muted uppercase block">
+                {lang === 'th' ? 'ยอดคืนเงิน (Refunded)' : 'Refunded Total'}
+              </span>
+              <span className="text-base font-bold text-rose-700 mt-1 block">
+                ฿{Number(revenueData.refundedTotal || 0).toLocaleString()}
+              </span>
+            </div>
+          </div>
+
+          {revenueData.breakdownByPaymentMethod && revenueData.breakdownByPaymentMethod.length > 0 && (
+            <div className="pt-2 border-t border-outline-variant/60">
+              <div className="text-[11px] font-semibold text-charcoal-muted uppercase mb-2">
+                {lang === 'th' ? 'จำแนกตามช่องทางชำระเงิน:' : 'Breakdown by Payment Method:'}
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                {revenueData.breakdownByPaymentMethod.map((m, idx) => (
+                  <div key={idx} className="p-2.5 rounded-lg bg-surface border border-outline-variant flex items-center justify-between">
+                    <span className="font-medium text-teak-dark uppercase text-[11px]">{m.paymentMethod}</span>
+                    <span className="font-bold text-secondary">฿{Number(m.totalAmount).toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

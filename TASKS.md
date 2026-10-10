@@ -26,18 +26,18 @@
 - [x] 2.4 `POST /api/bookings` (CUSTOMER/Staff) + view own booking history (2026-10-09 — Dev 3: BookingService + BookingController createBooking, auto-allocation of room/therapist with skills and cleaning buffer, optimistic locking via @Version, refCode BK-yyyyMMdd-XXXXXX; view own history `GET /api/bookings/my` เสร็จก่อนหน้านี้)
 - [x] 2.5 Booking State pattern (`pattern/state/`) — transitions: PENDING→CONFIRMED→CHECKED_IN→IN_SERVICE→COMPLETED, CANCELLED, NO_SHOW, invalid transition = ValidationException (LSP compliant via AbstractBookingState; BookingStateFactory flyweight; InServiceState enforces payment completion pre-condition) (2026-10-09 — Dev 3)
 - [x] 2.6 Cancel: `PATCH /api/bookings/{id}/cancel` (Customer enforces 2-hour policy; Staff can cancel anytime; state transition via State pattern) (2026-10-09 — Dev 3)
-- [ ] 2.7 Front-desk (RECEPTIONIST): check-in, `GET /api/admin/queue?date=`, change booking status, assign room/therapist
-- [ ] 2.8 Therapist endpoints: own schedule, start/complete service (role THERAPIST)
+- [x] 2.7 Front-desk (RECEPTIONIST): check-in (`PATCH /api/bookings/{id}/check-in`), `GET /api/admin/queue?date=`, `POST /api/admin/queue/call-next`, `PATCH /api/admin/queue/{id}/status` (2026-10-10)
+- [x] 2.8 Therapist endpoints: own schedule (`GET /api/therapist/me/schedule`), start/complete service (`POST /api/therapist/queue/{id}/start`, `/complete`), commission earnings (`GET /api/admin/reports/commissions`) (2026-10-10)
 - [x] 2.9 Payment (Strategy pattern `pattern/strategy/`): `POST /api/bookings/{id}/payment` — PromptPay (mock QR) / cash / card, Payment = immutable, receipt (`GET /api/payments/{id}/receipt`), plus extensible promotional discount strategy engine (`pattern/strategy/discount/` supporting `FIWDEE20` - 20% discount) (2026-10-09 — Dev 5)
 - [ ] 2.10 Observer pattern (`pattern/observer/`) — booking created/cancelled/queue-called events → notifications
-- [ ] 2.11 Review: `POST /api/bookings/{id}/review` (only for COMPLETED bookings)
-- [~] 2.12 Admin CRUD (OWNER/RECEPTIONIST): rooms, services (+durations), therapists (+skills, schedules) — `POST /api/admin/therapists` creates User (role THERAPIST, BCrypt password) + Therapist record + TherapistSkills; frontend `#admin/therapists` modal connected with credentials and schedule (2026-10-10)
-- [x] 2.13 Refund (if specified in use-case) — immutable like Payment: `POST /api/payments/{id}/refund`, `GET /api/payments/{id}/refund`, `GET /api/bookings/{id}/refunds` (2026-10-09 — Dev 5)
+- [x] 2.11 Review: `POST /api/bookings/{id}/review` (only for COMPLETED bookings) with overall, therapist, and cleanliness 5-star ratings (2026-10-10)
+- [x] 2.12 Admin CRUD (OWNER/RECEPTIONIST): rooms, services (+durations), therapists (+skills, schedules) — fully wired with real backend endpoints `GET/POST/PUT/DELETE /api/admin/services`, `GET/PATCH /api/admin/rooms`, `GET/POST/PUT /api/admin/therapists` (2026-10-10)
+- [x] 2.13 Refund (if specified in use-case) — immutable like Payment: `POST /api/payments/{id}/refund`, `GET /api/payments/{id}/refund`, `GET /api/bookings/{id}/refunds` (2026-10-09 — Dev 5; wired RefundModal in AdminBookings 2026-10-10)
 - [x] 2.14 Users summary endpoints: `GET /api/admin/users` (all registered users, counts by role), `GET /api/admin/users/online` (currently logged-in sessions) — mock page already exists (see 4.8); backend response must include: total count, online count, active-today count, new-this-month count, per-user fields (name, email, phone, role, session status, registeredAt, lastLoginAt, totalBookings) (2026-10-06 — Dev 1: UserService + UserSessionService (in-memory online window 15 นาที) + AdminUserController (OWNER only) + เพิ่ม POST /api/admin/users/{id}/force-logout; User entity เพิ่มคอลัมน์ `last_login_at`)
 
 ## Phase 3 — Reports + Wrap-up
 
-- [x] 3.1 Dashboard/Reports (UC-21, UC-22): daily/monthly revenue, therapist commission (aggregation queries, no extra tables), booking counts — `GET /api/admin/reports/dashboard`, `GET /api/admin/reports/revenue`, `GET /api/admin/reports/commissions` (Role: OWNER) (2026-10-09 — Dev 5)
+- [x] 3.1 Dashboard/Reports (UC-21, UC-22): daily/monthly revenue, therapist commission (aggregation queries, no extra tables), booking counts — `GET /api/admin/reports/dashboard`, `GET /api/admin/reports/revenue`, `GET /api/admin/reports/commissions` (Role: OWNER) (2026-10-09 — Dev 5; wired financial revenue breakdown into AdminDashboard 2026-10-10)
 - [ ] 3.2 Tests: unit tests for Services (Mockito) + integration tests for key controllers (booking flow, payment)
 - [ ] 3.3 Full DTO validation coverage, CORS config for the frontend origin
 
@@ -48,8 +48,8 @@
 - [x] 4.3 Replace mocks on Services + Therapists pages with `GET /api/services`, `GET /api/therapists` (2026-10-09)
 - [x] 4.4 Replace Booking wizard mocks — call availability + create booking + real payment (2026-10-09)
 - [x] 4.5 Admin pages (Dashboard, Bookings, Queue, Therapists, Rooms, Services) UI polished according to project objectives, DESIGN.md (Serene Thai Sanctuary), and real backend endpoints (2026-10-09)
-- [ ] 4.6 Therapist view — schedule + start/complete service
-- [ ] 4.7 i18n — verify backend error messages display in TH/EN (backend sends message keys or frontend maps them)
+- [x] 4.6 Therapist view — schedule + start/complete service wired to `/api/therapist/queue/{id}/*` and `/api/admin/reports/commissions` (2026-10-10)
+- [x] 4.7 i18n — verify backend error messages display in TH/EN (backend sends message keys or frontend maps them; history, review, and receipt fully bilingual) (2026-10-10)
 - [x] 4.8 Admin Users summary page (`src/admin/pages/AdminUsers.jsx`, mock data in `AdminAuthContext.jsx`) — separate "currently logged-in" panel (online sessions + force logout) from "all registered users" table, with summary cards (total / online / active today / new this month), role + session filters, search — **no DB yet**; wire it to `GET /api/admin/users` when 2.14 is done (2026-10-03) → **wired to real API 2026-10-06:** ลบ mock `initialUsers`/`forceLogoutUser` ออกจาก AdminAuthContext แล้ว, หน้าเด้งข้อมูลจาก `GET /api/admin/users` (การ์ดสรุปใช้ตัวเลขจาก backend), Force Logout เรียก `POST /api/admin/users/{id}/force-logout`
 
 ---
@@ -58,6 +58,7 @@
 
 | Date | Note |
 |---|---|
+| 2026-10-10 | **เชื่อมต่อ Frontend ครบตาม API 100% (5 Phases):** (1) Customer Self-Service: เพิ่มปุ่มยกเลิกการจอง `PATCH /api/bookings/{id}/cancel` (นโยบายล่วงหน้า 2 ชม.), `BookingReviewModal` สำหรับประเมินบริการ `POST /api/bookings/{bookingId}/review` (5 ดาว 3 ด้าน), `BookingReceiptModal` แสดง/พิมพ์ใบเสร็จ `GET /api/payments/{id}/receipt`, (2) Front Desk & Queue: เช็คอินหน้าร้าน `PATCH /api/bookings/{id}/check-in`, ดึงคิวสด `GET /api/admin/queue?date=`, เรียกคิว `POST /call-next`, อัปเดตสถานะคิว `PATCH /status`, (3) Therapist: เริ่ม/จบงาน `POST /api/therapist/queue/{id}/start` & `/complete`, ดึงตารางงานสด `GET /me/schedule`, รายงานค่าคอมมิชชัน `GET /api/admin/reports/commissions`, (4) Admin CRUD: Rooms, Services, Therapists เชื่อมต่อ Endpoint จริงพร้อม fallback, (5) Financial & Refund: `RefundModal` ทำเรื่องคืนเงิน `POST /api/payments/{id}/refund`, แผงสรุปรายได้และยอดคืนเงินใน Admin Dashboard `GET /api/admin/reports/revenue` |
 | 2026-10-10 | ปรับสถาปัตยกรรมระบบโปรโมชั่น: ยกเลิกการคำนวณส่วนลดบน Frontend ทั้งหมด ให้ Backend เป็น Single Source of Truth ผ่าน `POST /api/payments/promotions/validate` + GoF Discount Strategy |
 | 2026-10-03 | File created — entities/enums done, everything else not started |
 | 2026-10-03 | Added Admin Users summary page (frontend mock, no DB) — `#admin/users` route; backend counterpart tracked in 2.14, API wiring in 4.8 |
