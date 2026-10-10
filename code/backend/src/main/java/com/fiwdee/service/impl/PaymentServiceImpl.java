@@ -128,11 +128,14 @@ public class PaymentServiceImpl implements PaymentService {
 
         // 8. Update Booking status to COMPLETED (if physically in service or completed)
         // Or CONFIRMED if pre-paid online booking
-        if (booking.getStatus() == BookingStatus.IN_SERVICE || booking.getStatus() == BookingStatus.CHECKED_IN) {
-            booking.setStatus(BookingStatus.COMPLETED);
-        } else if (booking.getStatus() == BookingStatus.PENDING) {
-            booking.setStatus(BookingStatus.CONFIRMED);
+        BookingStatus oldStatus = booking.getStatus();
+        booking.setPayment(savedPayment);
+        if (oldStatus == BookingStatus.PENDING) {
+            booking.confirm();
+        } else if (oldStatus == BookingStatus.IN_SERVICE) {
+            booking.complete();
         }
+
         bookingRepository.save(booking);
 
         log.info("Payment successfully settled: ID={}, Ref={}, NetAmount={}", 
