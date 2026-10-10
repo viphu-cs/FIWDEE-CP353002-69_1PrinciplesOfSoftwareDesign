@@ -29,7 +29,6 @@ class UT08_UpdateBookingStatusTest extends BookingWorldTestBase {
     }
 
     @Test
-    @Tag("known-defect")
     @DisplayName("UT08-TC045 NO_SHOW ก่อนเลยเวลานัด 15 นาที → ValidationException (DEF-009)")
     void tc045() {
         Booking b = TestData.booking(10, c1, t5, r101, s1, o11, LocalDateTime.now().plusDays(1), 60, BookingStatus.CONFIRMED);

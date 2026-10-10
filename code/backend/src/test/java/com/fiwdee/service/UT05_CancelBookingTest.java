@@ -122,7 +122,6 @@ class UT05_CancelBookingTest extends BookingWorldTestBase {
     }
 
     @Test
-    @Tag("known-defect")
     @DisplayName("UT05-TC007 [R6] ยกเลิกรายการที่จ่ายแล้ว → CANCELLED และคืนเงิน (DEF-007)")
     void tc007() {
         Booking b = mine(14, TOMORROW_1500, BookingStatus.CONFIRMED);

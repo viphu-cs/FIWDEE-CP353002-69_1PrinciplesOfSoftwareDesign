@@ -47,7 +47,6 @@ class UT03_CreateBookingTimeTest extends BookingWorldTestBase {
         assertThat(b.getEndDateTime()).isEqualTo(start.plusMinutes(60));
     }
 
-    @Tag("known-defect")
     @ParameterizedTest(name = "{0} [{1}] start {2} → ต้องถูกปฏิเสธ (DEF-004)")
     @CsvSource({
         "UT03-TC002, lead min-,  2026-11-02T15:29",

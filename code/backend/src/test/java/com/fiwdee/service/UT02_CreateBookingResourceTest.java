@@ -36,7 +36,6 @@ class UT02_CreateBookingResourceTest extends BookingWorldTestBase {
     }
 
     @Test
-    @Tag("known-defect")
     @DisplayName("UT02-TC002 [R1] ระบุ T5 แต่จองนอกกะ 10:00–14:00 → ConflictException (DEF-005)")
     void tc002() {
         shift(t5, DAY, LocalTime.of(10, 0), LocalTime.of(14, 0));

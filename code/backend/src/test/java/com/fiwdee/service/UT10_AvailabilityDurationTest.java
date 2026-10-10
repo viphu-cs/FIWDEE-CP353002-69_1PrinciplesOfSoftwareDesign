@@ -56,7 +56,6 @@ class UT10_AvailabilityDurationTest extends BookingWorldTestBase {
     }
 
     @Test
-    @Tag("known-defect")
     @DisplayName("UT10-TC008 durationMinutes = 900 (เวลาวนข้ามเที่ยงคืน) → 0 รอบ (DEF-012)")
     void tc008() {
         AvailabilityResponseDTO res = availabilityService.checkAvailability(DAY, 1L, 900);

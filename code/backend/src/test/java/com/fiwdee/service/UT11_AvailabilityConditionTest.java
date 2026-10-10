@@ -87,7 +87,6 @@ class UT11_AvailabilityConditionTest extends BookingWorldTestBase {
     }
 
     @Test
-    @Tag("known-defect")
     @DisplayName("UT11-TC006 (V8) คิวเดิมสถานะ COMPLETED ต้องไม่ล็อกห้อง (DEF-006)")
     void tc006() {
         existing(500, t1, r101, DAY.atTime(13, 0), 60, BookingStatus.COMPLETED);
