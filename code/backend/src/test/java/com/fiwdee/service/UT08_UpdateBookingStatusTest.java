@@ -9,7 +9,6 @@ import com.fiwdee.exception.ValidationException;
 import com.fiwdee.testsupport.TestData;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** UT08 (ต่อ) – BookingServiceImpl.updateBookingStatus: 2 เคสสุดท้ายของชีต UT08 */

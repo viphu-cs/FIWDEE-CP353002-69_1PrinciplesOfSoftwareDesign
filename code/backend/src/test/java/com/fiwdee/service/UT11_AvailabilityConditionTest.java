@@ -14,7 +14,6 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** UT11 – AvailabilityServiceImpl.checkAvailability: สภาพร้านและทรัพยากร (Weak Robust EC) */
