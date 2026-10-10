@@ -390,35 +390,41 @@ export default function AdminDashboard({ onNavigate, onOpenWalkInModal, onOpenAs
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {rooms.map((room) => (
-              <div
-                key={room.id}
-                onClick={() => onNavigate('rooms')}
-                className="p-4 rounded-xl border border-outline-variant bg-surface-container-low hover:border-outline transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-[var(--admin-shadow-sm)]"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-teak-deep text-sm">{room.id}</span>
-                  <StatusBadge status={room.status} size="sm" />
-                </div>
-                <div className="mt-2 text-xs font-medium text-teak-deep">{room.name}</div>
-                <div className="text-[10px] text-charcoal-muted uppercase tracking-wider">{room.type}</div>
-
-                {room.status === 'OCCUPIED' && (
-                  <div className="mt-3 pt-2 border-t border-outline-variant text-[11px] space-y-0.5 text-on-surface">
-                    <div className="truncate font-medium text-teak-deep">{room.service}</div>
-                    <div className="text-charcoal-muted truncate">{lang === 'th' ? 'หมอ:' : 'Therapist:'} {room.therapist}</div>
-                    <div className="text-charcoal-muted">{room.startTime} - {room.endTime} น.</div>
-                  </div>
-                )}
-
-                {room.status === 'CLEANING' && (
-                  <div className="mt-3 pt-2 border-t border-outline-variant text-[11px] text-amber-900 font-medium flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                    <span>{lang === 'th' ? 'กำลังทำความสะอาดห้อง' : 'Sanitizing in progress'}</span>
-                  </div>
-                )}
+            {rooms.length === 0 ? (
+              <div className="col-span-full py-8 text-center text-xs text-charcoal-muted">
+                {t('admin.noMatchingRecords')}
               </div>
-            ))}
+            ) : (
+              rooms.map((room) => (
+                <div
+                  key={room.id}
+                  onClick={() => onNavigate('rooms')}
+                  className="p-4 rounded-xl border border-outline-variant bg-surface-container-low hover:border-outline transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-[var(--admin-shadow-sm)]"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-teak-deep text-sm">{room.id}</span>
+                    <StatusBadge status={room.status} size="sm" />
+                  </div>
+                  <div className="mt-2 text-xs font-medium text-teak-deep">{room.name}</div>
+                  <div className="text-[10px] text-charcoal-muted uppercase tracking-wider">{room.type}</div>
+
+                  {room.status === 'OCCUPIED' && (
+                    <div className="mt-3 pt-2 border-t border-outline-variant text-[11px] space-y-0.5 text-on-surface">
+                      <div className="truncate font-medium text-teak-deep">{room.service}</div>
+                      <div className="text-charcoal-muted truncate">{lang === 'th' ? 'หมอ:' : 'Therapist:'} {room.therapist}</div>
+                      <div className="text-charcoal-muted">{room.startTime} - {room.endTime} น.</div>
+                    </div>
+                  )}
+
+                  {room.status === 'CLEANING' && (
+                    <div className="mt-3 pt-2 border-t border-outline-variant text-[11px] text-amber-900 font-medium flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                      <span>{lang === 'th' ? 'กำลังทำความสะอาดห้อง' : 'Sanitizing in progress'}</span>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
           </div>
         </div>
 

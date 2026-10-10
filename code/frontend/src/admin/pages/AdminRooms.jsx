@@ -22,7 +22,7 @@ export default function AdminRooms({ onOpenRoomModal }) {
     setLoading(true)
     try {
       const res = await api.get('/admin/rooms')
-      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+      if (res && res.success && Array.isArray(res.data)) {
         const mapped = res.data.map(r => ({
           id: r.roomNumber || `RM-${r.id}`,
           backendId: r.id,
@@ -37,20 +37,20 @@ export default function AdminRooms({ onOpenRoomModal }) {
         }))
         setLiveRooms(mapped)
       } else {
-        setLiveRooms(fallbackRooms)
+        setLiveRooms([])
       }
     } catch {
-      setLiveRooms(fallbackRooms)
+      setLiveRooms([])
     } finally {
       setLoading(false)
     }
-  }, [fallbackRooms])
+  }, [])
 
   useEffect(() => {
     fetchRooms()
   }, [fetchRooms])
 
-  const displayRooms = liveRooms.length > 0 ? liveRooms : fallbackRooms
+  const displayRooms = liveRooms
 
   const handleUpdateStatus = async (room, newStatus) => {
     if (room.backendId) {
@@ -162,7 +162,12 @@ export default function AdminRooms({ onOpenRoomModal }) {
 
       {/* Room Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filteredRooms.map((room) => (
+        {filteredRooms.length === 0 ? (
+          <div className="col-span-full bg-surface rounded-2xl p-12 text-center border border-outline-variant text-charcoal-muted shadow-[var(--admin-shadow-sm)]">
+            <p className="font-medium text-sm">{t('admin.noMatchingRecords')}</p>
+          </div>
+        ) : (
+          filteredRooms.map((room) => (
           <div
             key={room.id}
             className="bg-surface rounded-2xl border border-outline-variant p-5 shadow-[var(--admin-shadow-sm)] hover:border-outline transition-all flex flex-col justify-between space-y-4"
@@ -249,7 +254,7 @@ export default function AdminRooms({ onOpenRoomModal }) {
               </div>
             </div>
           </div>
-        ))}
+        )))}
       </div>
     </div>
   )

@@ -15,15 +15,15 @@
 -- -------------------------------------------------------------------
 INSERT INTO users (id, username, password_hash, full_name, email, phone_number, role, is_active, created_at)
 VALUES
-    (1, 'owner@fiwdee-massage.co.th', '$2a$10$Lwzcm1S3BUyk2WBgyZZWdOh7JoRcWgL0LBVXIZSeItxeTjxwfGzQ2', 'สมชาย สุขสบาย', 'owner@fiwdee-massage.co.th', '081-000-1111', 'OWNER', TRUE, CURRENT_TIMESTAMP),
-    (2, 'reception@fiwdee-massage.co.th', '$2a$10$eOlHNzf29ZUDgp77pUKCm.mCFzys1fQnK.LXcGbJj4oLL4zXUzEAG', 'วิภาวรรณ ต้อนรับ', 'reception@fiwdee-massage.co.th', '081-000-2222', 'RECEPTIONIST', TRUE, CURRENT_TIMESTAMP),
-    (3, 'customer@test.com', '$2a$10$blABMtDK.vjioD3WwNZIqugJX/YUY..Xgl3IcrVcyXiuExCsVpAgO', 'สมหญิง รักสุขภาพ', 'customer@test.com', '081-000-3333', 'CUSTOMER', TRUE, CURRENT_TIMESTAMP),
-    (4, 'therapist1@fiwdee-massage.co.th', '$2a$10$fSloZHvrWPZ9S2Guer39x.tvwHUAvGewWfK8jOPtw6335T.nlDPMG', 'มาลี มือนวด', 'therapist1@fiwdee-massage.co.th', '081-000-4444', 'THERAPIST', TRUE, CURRENT_TIMESTAMP),
-    (5, 'therapist2@fiwdee-massage.co.th', '$2a$10$fSloZHvrWPZ9S2Guer39x.tvwHUAvGewWfK8jOPtw6335T.nlDPMG', 'ปรีชา ปลดปล่อย', 'therapist2@fiwdee-massage.co.th', '081-000-5555', 'THERAPIST', TRUE, CURRENT_TIMESTAMP),
-    (6, 'therapist3@fiwdee-massage.co.th', '$2a$10$fSloZHvrWPZ9S2Guer39x.tvwHUAvGewWfK8jOPtw6335T.nlDPMG', 'สมศรี สมดุล', 'therapist3@fiwdee-massage.co.th', '081-000-6666', 'THERAPIST', TRUE, CURRENT_TIMESTAMP),
-    (7, 'therapist4@fiwdee-massage.co.th', '$2a$10$fSloZHvrWPZ9S2Guer39x.tvwHUAvGewWfK8jOPtw6335T.nlDPMG', 'จันทร์ เจ้าเวทย์', 'therapist4@fiwdee-massage.co.th', '081-000-7777', 'THERAPIST', TRUE, CURRENT_TIMESTAMP),
-    (8, 'therapist5@fiwdee-massage.co.th', '$2a$10$fSloZHvrWPZ9S2Guer39x.tvwHUAvGewWfK8jOPtw6335T.nlDPMG', 'บุญมี บำบัด', 'therapist5@fiwdee-massage.co.th', '081-000-8888', 'THERAPIST', TRUE, CURRENT_TIMESTAMP),
-    (9, 'therapist6@fiwdee-massage.co.th', '$2a$10$fSloZHvrWPZ9S2Guer39x.tvwHUAvGewWfK8jOPtw6335T.nlDPMG', 'วิไล วิเวก', 'therapist6@fiwdee-massage.co.th', '081-000-9999', 'THERAPIST', TRUE, CURRENT_TIMESTAMP)
+    (1, 'owner@fiwdee-massage.co.th', '$2a$10$Lwzcm1S3BUyk2WBgyZZWdOh7JoRcWgL0LBVXIZSeItxeTjxwfGzQ2', 'สมชาย สุขสบาย', 'owner@fiwdee-massage.co.th', '081-000-1111', 'OWNER', TRUE, (CURRENT_DATE - INTERVAL '30 days') + TIME '09:00:00'),
+    (2, 'reception@fiwdee-massage.co.th', '$2a$10$eOlHNzf29ZUDgp77pUKCm.mCFzys1fQnK.LXcGbJj4oLL4zXUzEAG', 'วิภาวรรณ ต้อนรับ', 'reception@fiwdee-massage.co.th', '081-000-2222', 'RECEPTIONIST', TRUE, (CURRENT_DATE - INTERVAL '30 days') + TIME '09:00:00'),
+    (3, 'customer@test.com', '$2a$10$blABMtDK.vjioD3WwNZIqugJX/YUY..Xgl3IcrVcyXiuExCsVpAgO', 'สมหญิง รักสุขภาพ', 'customer@test.com', '081-000-3333', 'CUSTOMER', TRUE, (CURRENT_DATE - INTERVAL '30 days') + TIME '09:00:00'),
+    (4, 'therapist1@fiwdee-massage.co.th', '$2a$10$fSloZHvrWPZ9S2Guer39x.tvwHUAvGewWfK8jOPtw6335T.nlDPMG', 'มาลี มือนวด', 'therapist1@fiwdee-massage.co.th', '081-000-4444', 'THERAPIST', TRUE, (CURRENT_DATE - INTERVAL '30 days') + TIME '09:00:00'),
+    (5, 'therapist2@fiwdee-massage.co.th', '$2a$10$fSloZHvrWPZ9S2Guer39x.tvwHUAvGewWfK8jOPtw6335T.nlDPMG', 'ปรีชา ปลดปล่อย', 'therapist2@fiwdee-massage.co.th', '081-000-5555', 'THERAPIST', TRUE, (CURRENT_DATE - INTERVAL '30 days') + TIME '09:00:00'),
+    (6, 'therapist3@fiwdee-massage.co.th', '$2a$10$fSloZHvrWPZ9S2Guer39x.tvwHUAvGewWfK8jOPtw6335T.nlDPMG', 'สมศรี สมดุล', 'therapist3@fiwdee-massage.co.th', '081-000-6666', 'THERAPIST', TRUE, (CURRENT_DATE - INTERVAL '30 days') + TIME '09:00:00'),
+    (7, 'therapist4@fiwdee-massage.co.th', '$2a$10$fSloZHvrWPZ9S2Guer39x.tvwHUAvGewWfK8jOPtw6335T.nlDPMG', 'จันทร์ เจ้าเวทย์', 'therapist4@fiwdee-massage.co.th', '081-000-7777', 'THERAPIST', TRUE, (CURRENT_DATE - INTERVAL '30 days') + TIME '09:00:00'),
+    (8, 'therapist5@fiwdee-massage.co.th', '$2a$10$fSloZHvrWPZ9S2Guer39x.tvwHUAvGewWfK8jOPtw6335T.nlDPMG', 'บุญมี บำบัด', 'therapist5@fiwdee-massage.co.th', '081-000-8888', 'THERAPIST', TRUE, (CURRENT_DATE - INTERVAL '30 days') + TIME '09:00:00'),
+    (9, 'therapist6@fiwdee-massage.co.th', '$2a$10$fSloZHvrWPZ9S2Guer39x.tvwHUAvGewWfK8jOPtw6335T.nlDPMG', 'วิไล วิเวก', 'therapist6@fiwdee-massage.co.th', '081-000-9999', 'THERAPIST', TRUE, (CURRENT_DATE - INTERVAL '30 days') + TIME '09:00:00')
 ON CONFLICT (id) DO NOTHING;
 
 -- -------------------------------------------------------------------
@@ -44,20 +44,20 @@ ON CONFLICT (id) DO NOTHING;
 -- 4. customers: Subtype Specialization for Customer Profile
 -- -------------------------------------------------------------------
 INSERT INTO customers (id, health_notes, preferred_pressure, registered_date)
-VALUES (3, 'ปวดบ่าและต้นคอเรื้อรัง หลีกเลี่ยงการกดแรงบริเวณกระดูกสันหลังส่วนเอว', 'MEDIUM', CURRENT_TIMESTAMP)
+VALUES (3, 'ปวดบ่าและต้นคอเรื้อรัง หลีกเลี่ยงการกดแรงบริเวณกระดูกสันหลังส่วนเอว', 'MEDIUM', (CURRENT_DATE - INTERVAL '30 days') + TIME '09:00:00')
 ON CONFLICT (id) DO NOTHING;
 
 -- -------------------------------------------------------------------
 -- 5. therapists: 6 Massage Therapists (Dynamic Resource Requirement)
 -- -------------------------------------------------------------------
-INSERT INTO therapists (id, nickname, bio, commission_rate, employment_status, average_rating)
+INSERT INTO therapists (id, nickname, bio, commission_rate, employment_status, average_rating, photo_url)
 VALUES
-    (4, 'มาลี', 'ผู้เชี่ยวชาญการนวดไทยแผนโบราณและอโรม่า ประสบการณ์ 8 ปี มือหนักปานกลาง-หนัก', 30.00, 'ACTIVE', 4.90),
-    (5, 'ปรีชา', 'ชำนาญการนวดคลายเส้น กดจุดสมาธิ และแก้อาการออฟฟิศซินโดรม ประสบการณ์ 10 ปี', 30.00, 'ACTIVE', 4.85),
-    (6, 'สมศรี', 'เชี่ยวชาญการนวดอโรม่าเธอราปีและนวดหินร้อน ฟื้นฟูสมดุลร่างกาย ประสบการณ์ 6 ปี', 30.00, 'ACTIVE', 4.95),
-    (7, 'จันทร์', 'เชี่ยวชาญการนวดไทยประยุกต์และนวดกดจุดสะท้อนฝ่าเท้า ประสบการณ์ 5 ปี', 30.00, 'ACTIVE', 4.80),
-    (8, 'บุญมี', 'นวดคลายกล้ามเนื้อระดับลึก Deep Tissue ปลดล็อกกล้ามเนื้อตึงสะสม ประสบการณ์ 7 ปี', 30.00, 'ACTIVE', 4.75),
-    (9, 'วิไล', 'ผู้เชี่ยวชาญการนวดน้ำมันอุ่นและสปาผ่อนคลายระดับพรีเมียม ประสบการณ์ 9 ปี', 30.00, 'ACTIVE', 4.90)
+    (4, 'มาลี', 'ผู้เชี่ยวชาญการนวดไทยแผนโบราณและอโรม่า ประสบการณ์ 8 ปี มือหนักปานกลาง-หนัก', 30.00, 'ACTIVE', 4.90, '/images/booking/therapist-mali.jpg'),
+    (5, 'ปรีชา', 'ชำนาญการนวดคลายเส้น กดจุดสมาธิ และแก้อาการออฟฟิศซินโดรม ประสบการณ์ 10 ปี', 30.00, 'ACTIVE', 4.85, '/images/booking/therapist-mali.jpg'),
+    (6, 'สมศรี', 'เชี่ยวชาญการนวดอโรม่าเธอราปีและนวดหินร้อน ฟื้นฟูสมดุลร่างกาย ประสบการณ์ 6 ปี', 30.00, 'ACTIVE', 4.95, '/images/booking/therapist-bua.jpg'),
+    (7, 'จันทร์', 'เชี่ยวชาญการนวดไทยประยุกต์และนวดกดจุดสะท้อนฝ่าเท้า ประสบการณ์ 5 ปี', 30.00, 'ACTIVE', 4.80, '/images/booking/therapist-praew.jpg'),
+    (8, 'บุญมี', 'นวดคลายกล้ามเนื้อระดับลึก Deep Tissue ปลดล็อกกล้ามเนื้อตึงสะสม ประสบการณ์ 7 ปี', 30.00, 'ACTIVE', 4.75, '/images/booking/therapist-karn.jpg'),
+    (9, 'วิไล', 'ผู้เชี่ยวชาญการนวดน้ำมันอุ่นและสปาผ่อนคลายระดับพรีเมียม ประสบการณ์ 9 ปี', 30.00, 'ACTIVE', 4.90, '/images/booking/therapist-bua.jpg')
 ON CONFLICT (id) DO NOTHING;
 
 -- -------------------------------------------------------------------
@@ -190,32 +190,49 @@ INSERT INTO bookings (
 )
 VALUES
     (
-        1, 'BK-20261003-000001', 3, 4, 1, 1,
-        1, 2, CURRENT_TIMESTAMP - INTERVAL '7 days' + INTERVAL '14 hours', CURRENT_TIMESTAMP - INTERVAL '7 days' + INTERVAL '15 hours',
+        1, 'BK-' || TO_CHAR(CURRENT_DATE - INTERVAL '7 days', 'YYYYMMDD') || '-7A1B2C', 3, 4, 1, 1,
+        1, 2,
+        (CURRENT_DATE - INTERVAL '7 days') + TIME '14:00:00',
+        (CURRENT_DATE - INTERVAL '7 days') + TIME '15:00:00',
         500.00, 'COMPLETED', 'ONLINE', 'ข้อมูลตัวอย่างการจองที่เสร็จสิ้นสมบูรณ์',
-        CURRENT_TIMESTAMP - INTERVAL '7 days' + INTERVAL '14 hours', CURRENT_TIMESTAMP - INTERVAL '7 days' + INTERVAL '15 hours', 0,
-        CURRENT_TIMESTAMP - INTERVAL '8 days', CURRENT_TIMESTAMP - INTERVAL '7 days'
+        (CURRENT_DATE - INTERVAL '7 days') + TIME '14:00:00',
+        (CURRENT_DATE - INTERVAL '7 days') + TIME '15:00:00',
+        0,
+        (CURRENT_DATE - INTERVAL '8 days') + TIME '10:30:00',
+        (CURRENT_DATE - INTERVAL '7 days') + TIME '15:00:00'
     ),
     (
-        2, 'BK-20261007-000002', 3, 5, 1, 1,
-        1, NULL, CURRENT_TIMESTAMP - INTERVAL '3 days' + INTERVAL '10 hours', CURRENT_TIMESTAMP - INTERVAL '3 days' + INTERVAL '11 hours',
+        2, 'BK-' || TO_CHAR(CURRENT_DATE - INTERVAL '3 days', 'YYYYMMDD') || '-8D4E5F', 3, 5, 1, 1,
+        1, NULL,
+        (CURRENT_DATE - INTERVAL '3 days') + TIME '10:00:00',
+        (CURRENT_DATE - INTERVAL '3 days') + TIME '11:00:00',
         500.00, 'CANCELLED', 'ONLINE', 'ลูกค้ายกเลิกเนื่องจากติดธุระด่วน',
-        NULL, NULL, 0,
-        CURRENT_TIMESTAMP - INTERVAL '4 days', CURRENT_TIMESTAMP - INTERVAL '3 days'
+        NULL, NULL,
+        0,
+        (CURRENT_DATE - INTERVAL '4 days') + TIME '09:15:00',
+        (CURRENT_DATE - INTERVAL '3 days') + TIME '08:00:00'
     ),
     (
-        3, 'BK-20261011-000003', 3, 4, 1, 1,
-        2, 2, CURRENT_TIMESTAMP + INTERVAL '1 day' + INTERVAL '16 hours', CURRENT_TIMESTAMP + INTERVAL '1 day' + INTERVAL '17 hours 30 minutes',
+        3, 'BK-' || TO_CHAR(CURRENT_DATE + INTERVAL '1 day', 'YYYYMMDD') || '-9C3E1A', 3, 4, 1, 1,
+        2, 2,
+        (CURRENT_DATE + INTERVAL '1 day') + TIME '16:00:00',
+        (CURRENT_DATE + INTERVAL '1 day') + TIME '17:30:00',
         700.00, 'CONFIRMED', 'ONLINE', 'ยืนยันการจองเรียบร้อย รอลูกค้าเดินทางมาถึง',
-        NULL, NULL, 0,
-        CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        NULL, NULL,
+        0,
+        CURRENT_DATE + TIME '10:00:00',
+        CURRENT_DATE + TIME '10:00:00'
     ),
     (
-        4, 'BK-20261013-000004', 3, 6, 2, 2,
-        5, NULL, CURRENT_TIMESTAMP + INTERVAL '3 days' + INTERVAL '11 hours', CURRENT_TIMESTAMP + INTERVAL '3 days' + INTERVAL '12 hours 30 minutes',
+        4, 'BK-' || TO_CHAR(CURRENT_DATE + INTERVAL '3 days', 'YYYYMMDD') || '-2F8D4B', 3, 6, 2, 2,
+        5, NULL,
+        (CURRENT_DATE + INTERVAL '3 days') + TIME '11:00:00',
+        (CURRENT_DATE + INTERVAL '3 days') + TIME '12:30:00',
         950.00, 'PENDING', 'ONLINE', 'รอการยืนยันคิวจากแผนกต้อนรับ',
-        NULL, NULL, 0,
-        CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        NULL, NULL,
+        0,
+        CURRENT_DATE + TIME '11:00:00',
+        CURRENT_DATE + TIME '11:00:00'
     )
 ON CONFLICT (id) DO UPDATE SET
     booking_reference_code = EXCLUDED.booking_reference_code,
@@ -242,9 +259,9 @@ ON CONFLICT (id) DO UPDATE SET
 -- -------------------------------------------------------------------
 INSERT INTO queue_items (id, booking_id, queue_number, queue_date, check_in_time, called_time, queue_status, priority_level)
 VALUES (
-    1, 1, 'Q001', CURRENT_DATE - 7,
-    CURRENT_TIMESTAMP - INTERVAL '7 days' + INTERVAL '13 hours 50 minutes',
-    CURRENT_TIMESTAMP - INTERVAL '7 days' + INTERVAL '13 hours 58 minutes',
+    1, 1, 'Q-001', CURRENT_DATE - INTERVAL '7 days',
+    (CURRENT_DATE - INTERVAL '7 days') + TIME '13:50:00',
+    (CURRENT_DATE - INTERVAL '7 days') + TIME '13:58:00',
     'COMPLETED', 0
 )
 ON CONFLICT (id) DO UPDATE SET
@@ -265,9 +282,11 @@ INSERT INTO payments (
     paid_at, transaction_note
 )
 VALUES (
-    1, 1, 2, 'PAY-20261003-000001', 'REC-20261003-000001',
+    1, 1, 2,
+    'PAY-' || TO_CHAR(CURRENT_DATE - INTERVAL '7 days', 'YYYYMMDD') || '-7A1B2C',
+    'REC-' || TO_CHAR(CURRENT_DATE - INTERVAL '7 days', 'YYYYMMDD') || '-7A1B2C',
     500.00, 0.00, 500.00, 'QR_PROMPTPAY', 'COMPLETED',
-    CURRENT_TIMESTAMP - INTERVAL '7 days' + INTERVAL '15 hours',
+    (CURRENT_DATE - INTERVAL '7 days') + TIME '15:00:00',
     'ชำระผ่าน PromptPay QR เรียบร้อย ตรวจสอบยอดเงินแล้ว'
 )
 ON CONFLICT (id) DO UPDATE SET
@@ -290,9 +309,15 @@ INSERT INTO reviews (id, booking_id, overall_rating, therapist_rating, cleanline
 VALUES (
     1, 1, 5, 5, 5,
     'หมอนวดมาลีบริการดีมาก นวดตรงจุด น้ำหนักมือกำลังดี บรรยากาศห้องสะอาดและผ่อนคลาย ประทับใจมากค่ะ',
-    CURRENT_TIMESTAMP - INTERVAL '7 days' + INTERVAL '15 hours 15 minutes'
+    (CURRENT_DATE - INTERVAL '7 days') + TIME '15:15:00'
 )
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    booking_id = EXCLUDED.booking_id,
+    overall_rating = EXCLUDED.overall_rating,
+    therapist_rating = EXCLUDED.therapist_rating,
+    cleanliness_rating = EXCLUDED.cleanliness_rating,
+    comment = EXCLUDED.comment,
+    submitted_at = EXCLUDED.submitted_at;
 
 -- -------------------------------------------------------------------
 -- Synchronize PostgreSQL Identity Sequences with Max Inserted IDs

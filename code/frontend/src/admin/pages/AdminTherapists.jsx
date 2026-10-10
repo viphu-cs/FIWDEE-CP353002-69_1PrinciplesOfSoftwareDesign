@@ -53,6 +53,7 @@ export default function AdminTherapists() {
     password: '',
     phone: '',
     bio: '',
+    photoUrl: '',
     commissionRate: 30.0,
     selectedServiceIds: [],
     initialShift: 'FULL_DAY',
@@ -66,6 +67,7 @@ export default function AdminTherapists() {
     email: '',
     phoneNumber: '',
     bio: '',
+    photoUrl: '',
     commissionRate: 30.0,
     selectedServiceIds: [],
   })
@@ -88,28 +90,28 @@ export default function AdminTherapists() {
   // โหลดรายการ Therapists จาก Backend API
   const fetchTherapists = React.useCallback(() => {
     api.get('/admin/therapists').then((res) => {
-      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
-        setTherapists((prev) => {
-          return res.data.map((bt) => {
-            const matched = prev.find(p => p.id === bt.id || (p.nickname && bt.nickname && p.nickname.toLowerCase() === bt.nickname.toLowerCase()))
-            return {
-              id: bt.id,
-              nickname: bt.nickname,
-              fullName: bt.fullName,
-              email: bt.email || matched?.email || '',
-              phoneNumber: bt.phoneNumber || matched?.phoneNumber || '',
-              bio: bt.bio || matched?.bio || '',
-              commissionRate: bt.commissionRate !== undefined && bt.commissionRate !== null ? Number(bt.commissionRate) : (matched?.commissionRate || 30.0),
-              status: bt.isActive ? (matched?.status || 'ON_DUTY') : 'OFF_DUTY',
-              skills: bt.skills && bt.skills.length > 0 ? bt.skills : (matched?.skills || []),
-              shiftsByDate: matched?.shiftsByDate || {},
-              totalJobsToday: matched?.totalJobsToday || 0,
-              currentRoom: matched?.currentRoom || null
-            }
-          })
-        })
+      if (res && res.success && Array.isArray(res.data)) {
+        setTherapists(res.data.map((bt) => ({
+          id: bt.id,
+          nickname: bt.nickname,
+          fullName: bt.fullName,
+          email: bt.email || '',
+          phoneNumber: bt.phoneNumber || '',
+          bio: bt.bio || '',
+          photoUrl: bt.photoUrl || '',
+          commissionRate: bt.commissionRate !== undefined && bt.commissionRate !== null ? Number(bt.commissionRate) : 30.0,
+          status: bt.isActive ? 'ON_DUTY' : 'OFF_DUTY',
+          skills: bt.skills || [],
+          shiftsByDate: {},
+          totalJobsToday: 0,
+          currentRoom: null
+        })))
+      } else {
+        setTherapists([])
       }
-    }).catch(() => {})
+    }).catch(() => {
+      setTherapists([])
+    })
   }, [setTherapists])
 
   useEffect(() => {
@@ -235,6 +237,7 @@ export default function AdminTherapists() {
       email: tItem.email || '',
       phoneNumber: tItem.phoneNumber || '',
       bio: tItem.bio || '',
+      photoUrl: tItem.photoUrl || '',
       commissionRate: tItem.commissionRate || 30.0,
       selectedServiceIds: currentServiceIds,
     })
@@ -268,6 +271,7 @@ export default function AdminTherapists() {
         phoneNumber: editFormData.phoneNumber.trim() || '0800000000',
         nickname: editFormData.nickname.trim(),
         bio: editFormData.bio.trim() || `หมอนวดผู้เชี่ยวชาญ ${updatedSkills.join(', ')}`,
+        photoUrl: editFormData.photoUrl.trim() || null,
         commissionRate: parseFloat(editFormData.commissionRate) || 30.0,
         serviceIds: editFormData.selectedServiceIds
       }
@@ -284,6 +288,7 @@ export default function AdminTherapists() {
             email: payload.email,
             phoneNumber: payload.phoneNumber,
             bio: payload.bio,
+            photoUrl: payload.photoUrl,
             commissionRate: payload.commissionRate,
             skills: updatedSkills
           }
@@ -351,6 +356,7 @@ export default function AdminTherapists() {
         phoneNumber: defaultPhone,
         nickname: newTherapist.nickname.trim(),
         bio: newTherapist.bio.trim() || `หมอนวดผู้เชี่ยวชาญ ${selectedSkillNames.join(', ')}`,
+        photoUrl: newTherapist.photoUrl.trim() || null,
         commissionRate: parseFloat(newTherapist.commissionRate) || 30.0,
         serviceIds: newTherapist.selectedServiceIds
       }
@@ -375,6 +381,7 @@ export default function AdminTherapists() {
         email: payload.email,
         phoneNumber: payload.phoneNumber,
         bio: payload.bio,
+        photoUrl: payload.photoUrl,
         commissionRate: payload.commissionRate,
         status: newTherapist.initialShift === 'OFF' ? 'OFF_DUTY' : 'ON_DUTY',
         skills: selectedSkillNames,
@@ -517,7 +524,12 @@ export default function AdminTherapists() {
 
       {/* Therapists Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredTherapists.map((tItem) => {
+        {filteredTherapists.length === 0 ? (
+          <div className="col-span-full bg-surface rounded-2xl p-12 text-center border border-outline-variant text-charcoal-muted shadow-[var(--admin-shadow-sm)]">
+            <p className="font-medium text-sm">{t('admin.noMatchingRecords')}</p>
+          </div>
+        ) : (
+          filteredTherapists.map((tItem) => {
           const shiftOnSelectedDate = getTherapistShiftForDate(tItem, selectedShiftDate)
 
           return (
@@ -528,9 +540,17 @@ export default function AdminTherapists() {
               <div>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-surface-container text-teak-deep font-bold font-headline text-base flex items-center justify-center border border-outline-variant">
-                      {tItem.nickname.charAt(0)}
-                    </div>
+                    {tItem.photoUrl ? (
+                      <img
+                        src={tItem.photoUrl}
+                        alt={tItem.nickname}
+                        className="w-10 h-10 rounded-xl object-cover border border-outline-variant shadow-xs"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-xl bg-surface-container text-teak-deep font-bold font-headline text-base flex items-center justify-center border border-outline-variant">
+                        {tItem.nickname.charAt(0)}
+                      </div>
+                    )}
                     <div>
                       <h3 className="font-semibold text-teak-deep text-sm">{tItem.fullName} ({tItem.nickname})</h3>
                       <p className="text-xs text-charcoal-muted">
@@ -643,7 +663,7 @@ export default function AdminTherapists() {
               </div>
             </div>
           )
-        })}
+        }))}
       </div>
 
       {/* Edit Therapist Modal Dialog */}
@@ -744,6 +764,33 @@ export default function AdminTherapists() {
                   placeholder="ความเชี่ยวชาญ เทคนิคพิเศษ หรือคำแนะนำตัว..."
                   className="w-full px-3 py-2 rounded-xl border border-outline-variant bg-surface text-xs text-on-surface focus:border-teak-dark outline-none resize-none"
                 />
+              </div>
+
+              {/* Photo URL Input & Live Preview */}
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-charcoal-muted uppercase">
+                  {lang === 'th' ? 'ลิงก์รูปภาพหมอนวด (Photo URL)' : 'Photo URL'}
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="text"
+                    value={editFormData.photoUrl}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, photoUrl: e.target.value }))}
+                    placeholder="เช่น /images/booking/therapist-mali.jpg หรือ https://..."
+                    className="flex-1 px-3 py-2 rounded-xl border border-outline-variant bg-surface text-xs text-on-surface focus:border-teak-dark outline-none"
+                  />
+                  {editFormData.photoUrl && (
+                    <img
+                      src={editFormData.photoUrl}
+                      alt="Preview"
+                      className="w-9 h-9 rounded-xl object-cover border border-outline-variant shadow-xs shrink-0"
+                      onError={(e) => { e.currentTarget.style.display = 'none' }}
+                    />
+                  )}
+                </div>
+                <p className="text-[11px] text-charcoal-muted">
+                  {lang === 'th' ? 'ใส่พาธไฟล์ใน /images/booking/ หรือ Direct URL ของรูปภาพ' : 'Provide relative image path or direct image URL.'}
+                </p>
               </div>
 
               {/* Specialty Services Checklist (Linked to DB Services) */}
@@ -947,6 +994,33 @@ export default function AdminTherapists() {
                     className="w-full px-3 py-2 rounded-xl border border-outline-variant bg-surface text-xs text-on-surface focus:border-teak-dark outline-none"
                   />
                 </div>
+              </div>
+
+              {/* Photo URL Input & Live Preview */}
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-charcoal-muted uppercase">
+                  {lang === 'th' ? 'ลิงก์รูปภาพหมอนวด (Photo URL)' : 'Photo URL'}
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="text"
+                    value={newTherapist.photoUrl}
+                    onChange={(e) => setNewTherapist(prev => ({ ...prev, photoUrl: e.target.value }))}
+                    placeholder="เช่น /images/booking/therapist-mali.jpg หรือ https://..."
+                    className="flex-1 px-3 py-2 rounded-xl border border-outline-variant bg-surface text-xs text-on-surface focus:border-teak-dark outline-none"
+                  />
+                  {newTherapist.photoUrl && (
+                    <img
+                      src={newTherapist.photoUrl}
+                      alt="Preview"
+                      className="w-9 h-9 rounded-xl object-cover border border-outline-variant shadow-xs shrink-0"
+                      onError={(e) => { e.currentTarget.style.display = 'none' }}
+                    />
+                  )}
+                </div>
+                <p className="text-[11px] text-charcoal-muted">
+                  {lang === 'th' ? 'ใส่พาธไฟล์ใน /images/booking/ หรือ Direct URL ของรูปภาพ' : 'Provide relative image path or direct image URL.'}
+                </p>
               </div>
 
               {/* Service Selection Checklist */}

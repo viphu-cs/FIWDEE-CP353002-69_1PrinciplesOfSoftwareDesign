@@ -320,6 +320,8 @@ export const en = {
     occupied: 'Occupied',
     cleaning: 'Cleaning',
     maintenance: 'Under Maintenance',
+    awaitArrival: 'Awaiting Check-in (Today)',
+    checkInFrontDesk: 'Front-desk Check-in',
     waiting: 'Waiting',
     checkedIn: 'Checked-in',
     inService: 'In-Service',

@@ -4,10 +4,7 @@ import { useCustomerAuth } from '../../context/CustomerAuthContext.jsx'
 import {
   bookingService,
   formatLocalDateISO,
-  therapistsData as initialTherapists,
-  servicesData as initialServices,
   dateOptions as initialDateOptions,
-  timeSlots as initialTimeSlots,
 } from '../../services/bookingService.js'
 import {
   therapistCanPerformService,
@@ -35,34 +32,21 @@ export default function BookingPage({ onNavigate, initialStep = 1, initialTherap
   const { user } = useCustomerAuth()
   const [step, setStep] = useState(initialStep)
 
-  // Dataset states loaded asynchronously from backend with instant fallback
-  const [therapistsList, setTherapistsList] = useState(initialTherapists)
-  const [servicesList, setServicesList] = useState(initialServices)
+  // Dataset states loaded asynchronously from backend
+  const [therapistsList, setTherapistsList] = useState([])
+  const [servicesList, setServicesList] = useState([])
   const [dateList, setDateList] = useState(initialDateOptions)
-  const [slotsList, setSlotsList] = useState(initialTimeSlots)
+  const [slotsList, setSlotsList] = useState([])
+  const [loadingCatalog, setLoadingCatalog] = useState(true)
 
-  const initialMatchedTherapist = initialTherapistId
-    ? initialTherapists.find(
-        (t) =>
-          String(t.id) === String(initialTherapistId) ||
-          String(t.backendId) === String(initialTherapistId)
-      )
-    : null
-  const anyTherapist =
-    initialTherapists.find((t) => t.id === 'any') || initialTherapists[0]
-
-  const [selectedTherapist, setSelectedTherapist] = useState(
-    initialMatchedTherapist || anyTherapist
-  )
+  const [selectedTherapist, setSelectedTherapist] = useState(null)
   const [isDirectTherapistBooking, setIsDirectTherapistBooking] = useState(
-    Boolean(initialMatchedTherapist)
+    Boolean(initialTherapistId)
   )
-  const [selectedService, setSelectedService] = useState(initialServices[0])
-  const [selectedDuration, setSelectedDuration] = useState(
-    initialServices[0]?.durationOptions?.[0]
-  )
+  const [selectedService, setSelectedService] = useState(null)
+  const [selectedDuration, setSelectedDuration] = useState(null)
   const [selectedDate, setSelectedDate] = useState(initialDateOptions[0])
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState(initialTimeSlots[2] || initialTimeSlots[0])
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState(null)
   const [pressureLevel, setPressureLevel] = useState('ปานกลาง (แนะนำ)')
   const [specialNotes, setSpecialNotes] = useState(
     'ปวดตึงกล้ามเนื้อบริเวณสะบักและคอเป็นพิเศษจากการทำงานหน้าจอคอมพิวเตอร์'
@@ -80,40 +64,51 @@ export default function BookingPage({ onNavigate, initialStep = 1, initialTherap
   useEffect(() => {
     let isMounted = true
 
-    bookingService.getServices().then((svcs) => {
-      if (isMounted && Array.isArray(svcs) && svcs.length > 0) {
-        setServicesList(svcs)
-        // Keep selected service in sync with live data
-        const match = svcs.find((s) => s.id === selectedService.id || s.serviceCode === selectedService.serviceCode)
-        if (match) {
-          setSelectedService(match)
-          const durMatch = match.durationOptions.find((d) => d.minutes === selectedDuration?.minutes)
-          setSelectedDuration(durMatch || match.durationOptions[0])
-        }
-      }
-    })
+    Promise.all([bookingService.getServices(), bookingService.getTherapists()])
+      .then(([svcs, thps]) => {
+        if (!isMounted) return
+        setLoadingCatalog(false)
 
-    bookingService.getTherapists().then((thps) => {
-      if (isMounted && Array.isArray(thps) && thps.length > 0) {
-        setTherapistsList(thps)
-        if (initialTherapistId) {
-          const matchThp = thps.find(
-            (t) =>
-              String(t.id) === String(initialTherapistId) ||
-              String(t.backendId) === String(initialTherapistId)
-          )
-          if (matchThp) {
-            setSelectedTherapist(matchThp)
-            setIsDirectTherapistBooking(true)
+        if (Array.isArray(svcs) && svcs.length > 0) {
+          setServicesList(svcs)
+          setSelectedService(svcs[0])
+          setSelectedDuration(svcs[0]?.durationOptions?.[0] || null)
+        } else {
+          setServicesList([])
+          setSelectedService(null)
+          setSelectedDuration(null)
+        }
+
+        if (Array.isArray(thps) && thps.length > 0) {
+          setTherapistsList(thps)
+          if (initialTherapistId) {
+            const matchThp = thps.find(
+              (t) =>
+                String(t.id) === String(initialTherapistId) ||
+                String(t.backendId) === String(initialTherapistId)
+            )
+            if (matchThp) {
+              setSelectedTherapist(matchThp)
+              setIsDirectTherapistBooking(true)
+            } else {
+              setSelectedTherapist(thps[0])
+            }
+          } else {
+            const anyThp = thps.find((t) => t.id === 'any') || thps[0]
+            setSelectedTherapist(anyThp)
           }
         } else {
-          const matchThp = thps.find((t) => t.id === selectedTherapist.id)
-          if (matchThp) {
-            setSelectedTherapist(matchThp)
-          }
+          setTherapistsList([])
+          setSelectedTherapist(null)
         }
-      }
-    })
+      })
+      .catch(() => {
+        if (isMounted) {
+          setLoadingCatalog(false)
+          setServicesList([])
+          setTherapistsList([])
+        }
+      })
 
     const dates = bookingService.getDateOptions()
     setDateList(dates)
@@ -374,21 +369,45 @@ export default function BookingPage({ onNavigate, initialStep = 1, initialTherap
           ) : (
             <>
               {step === 1 && (
-                <BookingStepService
-                  therapists={therapistsList}
-                  services={servicesList}
-                  selectedTherapist={selectedTherapist}
-                  setSelectedTherapist={handleSelectTherapist}
-                  isDirectTherapistBooking={isDirectTherapistBooking}
-                  setIsDirectTherapistBooking={setIsDirectTherapistBooking}
-                  selectedService={selectedService}
-                  selectedDuration={selectedDuration}
-                  handleSelectService={handleSelectService}
-                  handleSelectDuration={handleSelectDuration}
-                  activeService={activeService}
-                  autoSwitchNotice={autoSwitchNotice}
-                  onNext={handleNextStep}
-                />
+                loadingCatalog ? (
+                  <div className="w-full py-24 text-center">
+                    <span className="material-symbols-outlined text-4xl text-primary animate-spin mb-3">progress_activity</span>
+                    <p className="font-body-md text-secondary">กำลังโหลดข้อมูลบริการและผู้บำบัด...</p>
+                  </div>
+                ) : servicesList.length === 0 ? (
+                  <div className="w-full py-24 text-center max-w-xl mx-auto px-6">
+                    <div className="bg-surface-container-low rounded-2xl p-10 border border-outline-variant/30">
+                      <span className="material-symbols-outlined text-5xl text-charcoal-muted mb-3">spa</span>
+                      <h3 className="font-headline-sm text-on-surface mb-2">ไม่พบข้อมูลบริการในระบบ</h3>
+                      <p className="font-body-md text-secondary mb-6">
+                        ขณะนี้ยังไม่มีรายการบริการเปิดให้จอง กรุณาติดต่อทางร้านโดยตรงหรือลองใหม่อีกครั้งภายหลัง
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => onNavigate?.('home')}
+                        className="px-6 py-2.5 rounded bg-primary text-warm-ivory font-label-md uppercase tracking-wider"
+                      >
+                        กลับหน้าแรก
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <BookingStepService
+                    therapists={therapistsList}
+                    services={servicesList}
+                    selectedTherapist={selectedTherapist}
+                    setSelectedTherapist={handleSelectTherapist}
+                    isDirectTherapistBooking={isDirectTherapistBooking}
+                    setIsDirectTherapistBooking={setIsDirectTherapistBooking}
+                    selectedService={selectedService}
+                    selectedDuration={selectedDuration}
+                    handleSelectService={handleSelectService}
+                    handleSelectDuration={handleSelectDuration}
+                    activeService={activeService}
+                    autoSwitchNotice={autoSwitchNotice}
+                    onNext={handleNextStep}
+                  />
+                )
               )}
 
               {step === 2 && (

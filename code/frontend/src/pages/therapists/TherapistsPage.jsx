@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useLanguage } from '../../i18n/useLanguage.js'
-import { therapists as mockTherapists } from '../../data/mock.js'
 import FadeIn from '../../components/motion/FadeIn.jsx'
 import api from '../../lib/api.js'
 
@@ -12,51 +11,68 @@ const filterCategories = [
   { key: 'foot', labelKey: 'specialties.foot' },
 ]
 
+const THERAPIST_DEFAULT_IMAGES = {
+  4: '/images/booking/therapist-mali.jpg',
+  5: '/images/booking/therapist-mali.jpg',
+  6: '/images/booking/therapist-bua.jpg',
+  7: '/images/booking/therapist-praew.jpg',
+  8: '/images/booking/therapist-karn.jpg',
+  9: '/images/booking/therapist-bua.jpg',
+}
+
 export default function TherapistsPage({ onNavigate }) {
-  const { t } = useLanguage()
-  const [therapistsList, setTherapistsList] = useState(mockTherapists)
+  const { t, lang } = useLanguage()
+  const [therapistsList, setTherapistsList] = useState([])
   const [activeFilter, setActiveFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [hasLoadedMore, setHasLoadedMore] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let isMounted = true
     api.get('/therapists')
       .then((res) => {
-        if (isMounted && res && res.success && Array.isArray(res.data) && res.data.length > 0) {
-          const merged = res.data.map((bt, idx) => {
-            // Find existing mock therapist by nickname or index for rich imagery & narrative
-            const matchedMock =
-              mockTherapists.find((mt) => mt.nickname.toLowerCase() === bt.nickname.toLowerCase()) ||
-              mockTherapists[idx % mockTherapists.length]
+        if (isMounted) {
+          if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+            const mapped = res.data.map((bt) => {
+              // Normalize backend skills into filter categories: thai, aroma, oil, foot
+              const backendSkills = bt.skills || []
+              const specialties = []
+              backendSkills.forEach((s) => {
+                const lower = s.toLowerCase()
+                if (lower.includes('thai') || lower.includes('ไทย')) specialties.push('thai')
+                if (lower.includes('aroma') || lower.includes('อโรมา') || lower.includes('อโรม่า')) specialties.push('aroma')
+                if (lower.includes('oil') || lower.includes('น้ำมัน')) specialties.push('oil')
+                if (lower.includes('foot') || lower.includes('เท้า')) specialties.push('foot')
+              })
 
-            // Normalize backend skills into filter categories: thai, aroma, oil, foot
-            const backendSkills = bt.skills || []
-            const specialties = []
-            backendSkills.forEach((s) => {
-              const lower = s.toLowerCase()
-              if (lower.includes('thai')) specialties.push('thai')
-              if (lower.includes('aroma')) specialties.push('aroma')
-              if (lower.includes('oil')) specialties.push('oil')
-              if (lower.includes('foot')) specialties.push('foot')
+              const img = bt.photoUrl || bt.imageUrl || THERAPIST_DEFAULT_IMAGES[bt.id] || '/images/booking/therapist-mali.jpg'
+
+              return {
+                id: bt.id,
+                nickname: bt.nickname,
+                specialties: specialties.length > 0 ? specialties : ['thai'],
+                rating: bt.averageRating > 0 ? Number(bt.averageRating) : 5.0,
+                bio: bt.bio || '',
+                imageUrl: img,
+                experienceYears: bt.experienceYears || 5,
+                roleKey: 'seniorTherapist',
+                availableTime: '10:00'
+              }
             })
-            if (specialties.length === 0 && matchedMock.specialties) {
-              specialties.push(...matchedMock.specialties)
-            }
-
-            return {
-              ...matchedMock,
-              id: bt.id,
-              nickname: bt.nickname,
-              specialties,
-              rating: bt.averageRating > 0 ? Number(bt.averageRating) : matchedMock.rating,
-              bio: bt.bio || matchedMock.bio,
-            }
-          })
-          setTherapistsList(merged)
+            setTherapistsList(mapped)
+          } else {
+            setTherapistsList([])
+          }
+          setLoading(false)
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        if (isMounted) {
+          setTherapistsList([])
+          setLoading(false)
+        }
+      })
 
     return () => {
       isMounted = false
@@ -204,7 +220,24 @@ export default function TherapistsPage({ onNavigate }) {
 
           {/* Therapists Directory Grid */}
           <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-lg min-h-[300px]">
-            {filteredTherapists.map((therapist, index) => (
+            {loading ? (
+              <div className="col-span-full py-20 text-center text-charcoal-muted">
+                <span className="material-symbols-outlined text-4xl text-primary animate-spin mb-3">progress_activity</span>
+                <p className="font-body-md text-secondary">
+                  {lang === 'th' ? 'กำลังโหลดข้อมูลหมอนวด...' : 'Loading therapists...'}
+                </p>
+              </div>
+            ) : filteredTherapists.length === 0 ? (
+              <div className="col-span-full py-16 text-center text-charcoal-muted">
+                <p className="font-headline-sm text-headline-sm text-primary font-normal mb-2">
+                  {t('admin.noMatchingRecords')}
+                </p>
+                <p className="font-body-md text-body-md text-charcoal-muted">
+                  {lang === 'th' ? 'ไม่พบข้อมูลหมอนวดในระบบขณะนี้' : 'No therapist profiles found in database'}
+                </p>
+              </div>
+            ) : (
+              filteredTherapists.map((therapist, index) => (
               <FadeIn key={therapist.id} delay={0.08 + index * 0.1} variant="up">
                 <article className="bg-linen-surface flex flex-col h-full transition-all duration-300 hover:shadow-md group">
                   <div className="relative w-full aspect-[3/4] overflow-hidden bg-sand-warm">
@@ -280,7 +313,7 @@ export default function TherapistsPage({ onNavigate }) {
                   </div>
                 </article>
               </FadeIn>
-            ))}
+            )))}
 
             {filteredTherapists.length === 0 && (
               <div className="col-span-full py-16 text-center space-y-4">

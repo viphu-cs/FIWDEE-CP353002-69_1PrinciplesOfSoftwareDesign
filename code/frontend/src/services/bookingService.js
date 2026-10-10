@@ -139,20 +139,21 @@ export const therapistsData = [
     image: '/images/booking/therapist-karn.jpg',
     avatar: '/images/booking/therapist-karn.jpg',
   },
-  {
-    id: 'any',
-    backendId: null,
-    name: 'ให้ร้านจัดสรรให้ (Any Specialist)',
-    shortName: 'ให้ร้านจัดสรรให้',
-    role: 'คัดสรรโดย FIWDEE Boutique Retreatment',
-    exp: 'Any Available Specialist',
-    avatarExp: 'คัดเลือกโดยผู้จัดการสาขา',
-    badges: ['คัดเลือกเฉพาะบุคคล', 'เวลาคิวรวดเร็ว'],
-    bio: 'ให้ทีมงานคัดเลือกผู้บำบัดที่เชี่ยวชาญเหมาะสมกับทรีตเมนต์และสรีระของท่านที่สุด',
-    handWeight: 'แมตช์ตามประเภทบริการ',
-    isConcierge: true,
-  },
 ]
+
+export const anyTherapistOption = {
+  id: 'any',
+  backendId: null,
+  name: 'ให้ร้านจัดสรรให้ (Any Specialist)',
+  shortName: 'ให้ร้านจัดสรรให้',
+  role: 'คัดสรรโดย FIWDEE Boutique Retreatment',
+  exp: 'Any Available Specialist',
+  avatarExp: 'คัดเลือกโดยผู้จัดการสาขา',
+  badges: ['คัดเลือกเฉพาะบุคคล', 'เวลาคิวรวดเร็ว'],
+  bio: 'ให้ทีมงานคัดเลือกผู้บำบัดที่เชี่ยวชาญเหมาะสมกับทรีตเมนต์และสรีระของท่านที่สุด',
+  handWeight: 'แมตช์ตามประเภทบริการ',
+  isConcierge: true,
+}
 
 export const servicesData = [
   {
@@ -288,6 +289,8 @@ export const bookingService = {
       if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
         const mapped = res.data.map((t) => {
           const extra = THERAPIST_ASSETS[t.id] || {}
+          const photo = t.photoUrl || extra.image || '/images/booking/therapist-mali.jpg'
+          const avatarPhoto = t.photoUrl || extra.avatar || photo
           return {
             id: t.id,
             backendId: t.id,
@@ -302,17 +305,17 @@ export const bookingService = {
             badges: t.skills || ['สรีระบำบัด', 'ผ่อนคลายลึก'],
             bio: t.bio || 'มุ่งเน้นการดูแลสุขภาพและฟื้นฟูสมดุลของร่างกายด้วยความประณีต',
             handWeight: extra.handWeight || 'ปานกลาง - ละเมียดละไม',
-            image: extra.image || '/images/booking/therapist-mali.jpg',
-            avatar: extra.avatar || '/images/booking/therapist-mali-avatar.jpg',
+            image: photo,
+            avatar: avatarPhoto,
           }
         })
-        mapped.push(therapistsData.find((t) => t.id === 'any'))
+        mapped.push(anyTherapistOption)
         return mapped
       }
     } catch {
-      // Graceful fallback to static therapistsData
+      // API error -> return empty
     }
-    return therapistsData
+    return []
   },
 
   getServices: async () => {
@@ -338,9 +341,9 @@ export const bookingService = {
         })
       }
     } catch {
-      // Graceful fallback
+      // API error -> return empty
     }
-    return servicesData
+    return []
   },
 
   getDateOptions: () => generateDateOptions(),

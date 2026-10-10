@@ -22,9 +22,17 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
     setLoading(true)
     try {
       const todayStr = new Date().toISOString().slice(0, 10)
-      const res = await api.get(`/admin/queue?date=${todayStr}`)
-      if (res && res.success && Array.isArray(res.data)) {
-        const mapped = res.data.map((q) => {
+      const [queueRes, bookingsRes] = await Promise.allSettled([
+        api.get(`/admin/queue?date=${todayStr}`),
+        api.get(`/admin/bookings/daily?date=${todayStr}`)
+      ])
+
+      let queueItems = []
+      const checkedInBookingIds = new Set()
+
+      if (queueRes.status === 'fulfilled' && queueRes.value?.success && Array.isArray(queueRes.value.data)) {
+        queueItems = queueRes.value.data.map((q) => {
+          if (q.bookingId) checkedInBookingIds.add(q.bookingId)
           const timeFormatted = q.scheduledStartDateTime
             ? new Date(q.scheduledStartDateTime).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
             : (q.checkInTime ? new Date(q.checkInTime).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : '-')
@@ -44,12 +52,43 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
             type: 'ONLINE',
             time: timeFormatted,
             price: 600,
+            isAwaitingArrival: false
           }
         })
-        setLiveQueueItems(mapped)
-      } else {
-        setLiveQueueItems([])
       }
+
+      // Merge today's confirmed/scheduled bookings that are awaiting arrival
+      let appointmentItems = []
+      if (bookingsRes.status === 'fulfilled' && bookingsRes.value?.success && Array.isArray(bookingsRes.value.data)) {
+        appointmentItems = bookingsRes.value.data
+          .filter(b => !checkedInBookingIds.has(b.id) && (b.status === 'CONFIRMED' || b.status === 'PENDING'))
+          .map(b => {
+            const timeFormatted = b.startDateTime
+              ? new Date(b.startDateTime).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+              : '-'
+
+            return {
+              queueId: null,
+              queueNo: 'รอคิว',
+              bookingCode: b.bookingReferenceCode || `BK-${b.id}`,
+              bookingId: b.id,
+              customerName: b.customerName || 'ลูกค้า',
+              phone: b.customerPhone || '—',
+              serviceName: b.serviceName || 'บริการนวด',
+              durationMinutes: b.durationMinutes || 60,
+              therapistName: b.therapistName || null,
+              roomNo: b.roomNumber || null,
+              status: 'AWAITING_ARRIVAL',
+              type: b.bookingChannel || 'ONLINE',
+              time: timeFormatted,
+              price: b.totalPrice || 600,
+              isAwaitingArrival: true
+            }
+          })
+      }
+
+      // Combine queue items and awaiting arrival bookings
+      setLiveQueueItems([...queueItems, ...appointmentItems])
     } catch {
       setLiveQueueItems([])
     } finally {
@@ -63,6 +102,23 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
 
   // Current display items from live DB
   const displayItems = liveQueueItems
+
+  const handleCheckInBooking = async (item) => {
+    try {
+      const res = await api.patch(`/bookings/${item.bookingId}/check-in`)
+      if (res.success) {
+        showNotification(lang === 'th'
+          ? `เช็คอินลูกค้า ${item.customerName} สำเร็จ — ได้รับหมายเลขคิว ${res.data?.queueNumber || ''}`
+          : `Checked-in ${item.customerName} — Queue ticket ${res.data?.queueNumber || ''}`)
+        fetchDailyQueue()
+        return
+      } else {
+        alert(res.message || (lang === 'th' ? 'เช็คอินไม่สำเร็จ' : 'Check-in failed'))
+      }
+    } catch (err) {
+      alert(err.message || (lang === 'th' ? 'เกิดข้อผิดพลาดในการเช็คอิน' : 'Error checking in customer'))
+    }
+  }
 
   const handleCallNext = async () => {
     try {
@@ -141,6 +197,7 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
   }
 
   const filteredItems = displayItems.filter((item) => {
+    if (activeTab === 'AWAITING_ARRIVAL' && item.status !== 'AWAITING_ARRIVAL') return false
     if (activeTab === 'WAITING' && !(item.status === 'WAITING' || item.status === 'PENDING' || item.status === 'CHECKED_IN' || item.status === 'CALLED')) return false
     if (activeTab === 'IN_SERVICE' && item.status !== 'IN_SERVICE') return false
     if (activeTab === 'COMPLETED' && item.status !== 'COMPLETED') return false
@@ -224,6 +281,7 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
         <div className="flex items-center gap-1.5 overflow-x-auto pb-2 md:pb-0 scrollbar-none">
           {[
             { key: 'ALL', label: lang === 'th' ? 'ทั้งหมด' : 'All', count: displayItems.length },
+            { key: 'AWAITING_ARRIVAL', label: t('admin.awaitArrival'), count: displayItems.filter(q => q.status === 'AWAITING_ARRIVAL').length },
             { key: 'WAITING', label: t('admin.waiting'), count: displayItems.filter(q => ['WAITING', 'PENDING', 'CHECKED_IN', 'CALLED'].includes(q.status)).length },
             { key: 'IN_SERVICE', label: t('admin.inService'), count: displayItems.filter(q => q.status === 'IN_SERVICE').length },
             { key: 'COMPLETED', label: t('admin.completed'), count: displayItems.filter(q => q.status === 'COMPLETED').length },
@@ -270,7 +328,7 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
         ) : (
           filteredItems.map((item) => (
             <div
-              key={item.queueNo}
+              key={item.queueId ? `Q-${item.queueId}` : `BK-${item.bookingId}`}
               className="bg-surface rounded-2xl border border-outline-variant p-5 flex flex-col justify-between space-y-4 shadow-[var(--admin-shadow-sm)] hover:border-outline transition-all"
             >
               {/* Card Top Header */}
@@ -325,7 +383,19 @@ export default function AdminQueue({ onOpenWalkInModal, onOpenAssignModal }) {
 
               {/* Action Buttons for Queue */}
               <div className="pt-2 border-t border-outline-variant flex flex-wrap items-center gap-2">
-                {item.status === 'WAITING' || item.status === 'PENDING' ? (
+                {item.status === 'AWAITING_ARRIVAL' ? (
+                  <>
+                    <button
+                      onClick={() => handleCheckInBooking(item)}
+                      className="w-full px-3 py-2 rounded-xl bg-teak-dark text-warm-ivory hover:bg-teak-deep text-xs font-semibold transition-colors cursor-pointer text-center flex items-center justify-center gap-1.5 shadow-xs"
+                    >
+                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>{t('admin.checkInFrontDesk')}</span>
+                    </button>
+                  </>
+                ) : item.status === 'WAITING' || item.status === 'PENDING' ? (
                   <>
                     <button
                       onClick={() => showNotification(lang === 'th' ? `เรียกคิว [${item.queueNo}] คุณ${item.customerName} เข้าจุดต้อนรับ` : `Called queue ${item.queueNo} to reception`)}

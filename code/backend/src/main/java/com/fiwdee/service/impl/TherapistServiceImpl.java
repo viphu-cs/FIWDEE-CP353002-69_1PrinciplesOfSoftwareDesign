@@ -69,6 +69,7 @@ public class TherapistServiceImpl implements TherapistService {
         therapist.setIsActive(true);
         therapist.setNickname(request.nickname().trim());
         therapist.setBio(request.bio());
+        therapist.setPhotoUrl(request.photoUrl() != null && !request.photoUrl().isBlank() ? request.photoUrl().trim() : null);
         therapist.setCommissionRate(request.commissionRate() == null ? BigDecimal.ZERO : request.commissionRate());
         therapist.setEmploymentStatus("ACTIVE");
         therapist.setAverageRating(BigDecimal.ZERO);
@@ -84,6 +85,7 @@ public class TherapistServiceImpl implements TherapistService {
         therapist.setPhoneNumber(request.phoneNumber().trim());
         therapist.setNickname(request.nickname().trim());
         therapist.setBio(request.bio());
+        therapist.setPhotoUrl(request.photoUrl() != null && !request.photoUrl().isBlank() ? request.photoUrl().trim() : null);
         therapist.setCommissionRate(request.commissionRate() == null ? BigDecimal.ZERO : request.commissionRate());
         applySkills(therapist, request.serviceIds());
         return therapistMapper.toResponse(therapistRepository.save(therapist));
