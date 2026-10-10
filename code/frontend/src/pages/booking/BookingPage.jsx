@@ -276,9 +276,7 @@ export default function BookingPage({ onNavigate, initialStep = 1, initialTherap
       }
     } catch (err) {
       console.error('Booking confirmation failed:', err)
-      // Fallback in case backend has a temporary connection issue: allow user confirmation to succeed gracefully
-      setIsConfirmed(true)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+      setSubmitError(err.message || 'เกิดข้อผิดพลาดในการสร้างการจอง กรุณาลองใหม่อีกครั้งหรือติดต่อเจ้าหน้าที่')
     } finally {
       setIsSubmitting(false)
     }
