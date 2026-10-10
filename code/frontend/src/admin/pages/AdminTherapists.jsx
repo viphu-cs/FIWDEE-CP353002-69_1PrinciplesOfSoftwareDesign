@@ -62,6 +62,31 @@ export default function AdminTherapists() {
 
   const isOwner = user?.role === 'OWNER'
 
+  React.useEffect(() => {
+    let isMounted = true
+    api.get('/admin/therapists').then((res) => {
+      if (isMounted && res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+        setTherapists((prev) => {
+          return res.data.map((bt) => {
+            const matched = prev.find(p => p.id === bt.id || (p.nickname && bt.nickname && p.nickname.toLowerCase() === bt.nickname.toLowerCase()))
+            return {
+              id: bt.id,
+              nickname: bt.nickname,
+              fullName: bt.fullName,
+              status: bt.isActive ? (matched?.status || 'ON_DUTY') : 'OFF_DUTY',
+              skills: bt.skills && bt.skills.length > 0 ? bt.skills : (matched?.skills || ['Traditional Thai Massage']),
+              shiftsByDate: matched?.shiftsByDate || {},
+              totalJobsToday: matched?.totalJobsToday || 0,
+              currentRoom: matched?.currentRoom || null
+            }
+          })
+        })
+      }
+    }).catch(() => {})
+
+    return () => { isMounted = false }
+  }, [setTherapists])
+
   const filteredTherapists = therapists.filter(t => {
     if (filterDuty === 'ALL') return true
     return t.status === filterDuty
