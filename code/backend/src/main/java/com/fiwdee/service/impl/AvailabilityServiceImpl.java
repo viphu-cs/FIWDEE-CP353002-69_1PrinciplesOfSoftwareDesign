@@ -138,6 +138,9 @@ public class AvailabilityServiceImpl implements AvailabilityService {
                 if (schedOpt.isPresent() && Boolean.TRUE.equals(schedOpt.get().getIsDayOff())) {
                     continue;
                 }
+                if (!ScheduleRules.onShift(schedOpt, slotStart, slotEnd)) {
+                    continue;
+                }
 
                 List<Booking> conflicts = bookingRepository.findConflictingTherapistBookings(
                         therapist.getId(), slotStart, slotEnd, EXCLUDED_STATUSES);
